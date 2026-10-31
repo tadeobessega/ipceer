@@ -25,6 +25,14 @@ SEPA (portal, últimos días)  →  archivo local de zips  →  panel diario  �
 
 ## Instalación (en la PC que va a correr la tarea)
 
+**Windows, en un paso:** abrir PowerShell y pegar
+
+```powershell
+irm https://raw.githubusercontent.com/Subsepresupuesto/ipceer/main/scripts/instalar.ps1 | iex
+```
+
+Instala Python y Git si faltan, clona el repo, extrae los ponderadores, registra la tarea diaria y la corre una vez. Lo que sigue es la instalación manual.
+
 Requiere Python 3.10 o más nuevo y git.
 
 ```bash
@@ -45,7 +53,7 @@ Baja la Metodología INDEC n° 32 y extrae el Anexo II, Cuadro 7 (pesos por aper
 
 ### 2. Carpeta de archivo
 
-Los zips se guardan en la carpeta de la variable `IPCEER_ARCHIVO` (por defecto, `SEPA` en la carpeta del usuario, si se usa la tarea programada). Cada zip diario probablemente pese entre 150 y 400 MB: hay que prever decenas de GB por año (hasta unos 100 GB). Se lleva un `manifiesto.csv` con fecha, tamaño, hash SHA-256 y URL de cada archivo.
+Los zips se guardan en la carpeta de la variable `IPCEER_ARCHIVO` (por defecto, `SEPA` en la carpeta del usuario, si se usa la tarea programada). **Cada zip diario pesa unos 310-325 MB** (medido el 30/10/2026): son unos 115 GB por año. El portal publica el archivo de cada día alrededor de las 16:20; la tarea de las 11:00 baja el del día anterior. Se lleva un `manifiesto.csv` con fecha, tamaño, hash SHA-256 y URL de cada archivo.
 
 ### 3. Tarea programada
 

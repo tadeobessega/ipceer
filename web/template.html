@@ -9,11 +9,13 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cascadia+Code:wght@400;600;700&display=swap">
 <style>
 :root{
-  --bg:#efefee; --panel:#ffffff; --panel2:#f6f6f5; --line:#dcdcda; --line2:#c6c6c3;
-  --fg:#111111; --fg2:#3b3b3a; --muted:#6f6f6d;
-  --accent:#0057ff; --accentbg:rgba(0,87,255,.08); --accent2:#7fa8ff;
-  --bar:#b4b4b1; --bar2:#d6d6d3; --warn:#a86200;
-  --title:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  /* Sistema de marca CEER (claro): azul-600 marca, ámbar para el dato, cian para signos */
+  --bg:#f6f7f9; --panel:#ffffff; --panel2:#f0f2f6; --line:#dfe1e5; --line2:#c6c9d0;
+  --fg:#171a24; --fg2:#3c3f49; --muted:#5d6069;
+  --accent:#2840a5; --accentbg:rgba(40,64,165,.10); --accent2:#c0d0f9;
+  --ambar:#d6810c; --ambar-t:#915c08; --cian:#138282; --neg:#af3e30;
+  --bar:#2840a5; --bar2:#c0d0f9; --resto:#9c9ea5; --warn:#915c08;
+  --title:"Cascadia Code","Cascadia Mono",Consolas,"SFMono-Regular",Menlo,monospace;
   --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
   --mono:"Cascadia Code","Cascadia Mono",Consolas,"SFMono-Regular",Menlo,monospace;
   color-scheme:light;
@@ -29,8 +31,9 @@ a{color:var(--accent)}
 .top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
 .topin{max-width:1280px;margin:0 auto;padding:10px 20px 0;display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:12px;padding-bottom:10px}
-.logo{height:26px;display:block}
-.brand span{font-family:var(--title);font-weight:700;font-size:15px;letter-spacing:-.01em;border-left:1px solid var(--line2);padding-left:12px}
+.logo{display:block;width:111px;height:26px}
+.blogo{display:block;width:128px;height:30px}
+.brand>span:last-child{font-family:var(--font);font-weight:600;font-size:15px;letter-spacing:-.01em;border-left:1px solid var(--line2);padding-left:12px}
 .tabs{display:flex;flex:1;min-width:0;overflow-x:auto}
 .tabs button{font:600 14px var(--font);background:transparent;color:var(--muted);border:0;border-bottom:2px solid transparent;padding:10px 14px 12px;cursor:pointer;white-space:nowrap}
 .tabs button:hover{color:var(--fg)}
@@ -42,10 +45,12 @@ select{font:500 13px var(--font);background:var(--panel);color:var(--fg);border:
 .subin .upd{margin-left:auto}
 
 main{max-width:1280px;margin:0 auto;padding:0 20px 80px}
-.demo{margin-top:18px;border:1px solid var(--warn);color:var(--warn);background:#fff8ee;padding:10px 14px;font-size:13.5px}
+.demo{margin-top:18px;border:1px solid var(--ambar);color:var(--ambar-t);background:#fff;padding:10px 14px;font-size:13.5px}
 .hero{padding:40px 0 26px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:40px;align-items:start;border-bottom:1px solid var(--line)}
 .eyebrow{font-size:13px;color:var(--muted);font-weight:500}
-h1{font-size:clamp(30px,4.2vw,50px);line-height:1.03;letter-spacing:-.03em;margin:.2em 0 .35em;font-weight:700;text-wrap:balance}
+h1{font-size:clamp(28px,3.6vw,46px);line-height:1.08;letter-spacing:-.01em;margin:.2em 0 .1em;font-weight:700;text-wrap:balance}
+.signos{font-family:var(--mono);font-weight:700;color:var(--cian);font-size:26px;margin:0 0 .5em;letter-spacing:.02em}
+.barra{color:var(--cian);font-family:var(--mono);font-weight:700}
 h1 em{font-style:normal;color:var(--accent)}
 .lead{color:var(--fg2);font-size:16px;max-width:62ch;margin:0;text-align:justify;hyphens:auto}
 .note{font-size:12.5px;color:var(--muted);margin-top:12px}
@@ -56,24 +61,28 @@ h1 em{font-style:normal;color:var(--accent)}
 .kpi>span{display:block;font-size:13px;color:var(--muted)}
 .kpi b{display:block;font-size:30px;font-weight:700;margin:2px 0}
 .kpi b.ac{color:var(--accent)}
+.kpi b.am{color:var(--ambar-t)}
+.kpi b.nd,.minik b.nd{color:var(--resto);font-weight:400;font-size:18px;line-height:36px}
+.vacio{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13.5px;text-align:center;padding:0 20px}
+.neg{color:var(--neg)}
 .kpi small{font-size:12.5px;color:var(--fg2);line-height:1.4;display:block}
 .kpi small .mono{color:var(--fg)}
 
 section{padding:40px 0 6px}
-h2{font-size:clamp(22px,2.4vw,30px);letter-spacing:-.02em;margin:0 0 6px;font-weight:700;border-top:2px solid var(--fg);padding-top:14px}
+h2{font-size:clamp(20px,2.2vw,27px);letter-spacing:-.01em;margin:0 0 6px;font-weight:600;border-top:2px solid var(--fg);padding-top:14px}
 h2 .tag{display:block;font-family:var(--font);font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0;margin-bottom:2px}
 .sub{color:var(--fg2);margin:0 0 18px;max-width:90ch;text-align:justify;hyphens:auto}
 .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
 .card{background:var(--panel);border:1px solid var(--line);padding:16px 18px;min-width:0;position:relative}
 .s12{grid-column:span 12}.s8{grid-column:span 8}.s7{grid-column:span 7}.s6{grid-column:span 6}.s5{grid-column:span 5}.s4{grid-column:span 4}
-.card h3{font-size:15px;margin:0 0 8px;font-weight:700;padding-bottom:8px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}
+.card h3{font-size:15px;margin:0 0 8px;font-weight:600;padding-bottom:8px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}
 .card .cap{font-size:12.5px;color:var(--muted);margin:0 0 10px}
 .card .src{font-size:11.5px;color:var(--muted);margin-top:10px}
 .chart{position:relative;height:320px}.chart.tall{height:400px}.chart.short{height:230px}
 .seg{display:inline-flex;border:1px solid var(--line2);flex-shrink:0}
 .seg button{font:500 12px var(--font);background:transparent;color:var(--fg2);border:0;border-right:1px solid var(--line2);padding:4px 9px;cursor:pointer}
 .seg button:last-child{border-right:0}
-.seg button[aria-pressed="true"]{background:var(--fg);color:#fff}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--fg2);margin:0 0 8px}
 .legend i{display:inline-block;width:12px;height:12px;vertical-align:-2px;margin-right:6px}
 
@@ -103,24 +112,24 @@ td.n{font-family:var(--mono)}
 .met article{max-width:84ch}
 .met h3{font-size:19px;margin:34px 0 8px;letter-spacing:-.01em;scroll-margin-top:120px}
 .met h3:first-child{margin-top:0}
-.met h3 .k{font-family:var(--mono);color:var(--accent);font-size:14px;margin-right:8px;font-weight:600}
+.met h3 .k{font-family:var(--mono);color:var(--cian);font-size:14px;margin-right:8px;font-weight:600}
 .met p,.met li{color:var(--fg2);text-align:justify;hyphens:auto}
 .met li{margin-bottom:6px}
 .met code,.met .f{font-family:var(--mono);font-size:13px;color:var(--fg)}
-.formula{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);padding:12px 16px;font-family:var(--mono);font-size:13.5px;margin:12px 0;overflow-x:auto;white-space:pre;color:var(--fg)}
+.formula{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--cian);padding:12px 16px;font-family:var(--mono);font-size:13.5px;margin:12px 0;overflow-x:auto;white-space:pre;color:var(--fg)}
 .box{background:var(--panel);border:1px solid var(--line);padding:14px 16px;margin:12px 0}
-.box.warn{border-left:3px solid var(--warn)}
+.box.warn{border-left:3px solid var(--ambar)}
 .box table{font-size:12.5px}
 .box .cap{font-size:12px;color:var(--muted);margin:8px 0 0}
 
-footer.banner{background:#0d0d0d;color:#ededed;margin-top:56px}
+footer.banner{background:#2840a5;color:#fff;margin-top:56px}
 .bannerin{max-width:1280px;margin:0 auto;padding:26px 20px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
 .bl{display:flex;align-items:center;gap:14px}
-.blogo{height:30px}
 .bl span{font-size:14.5px}
 .social{display:flex;gap:10px;flex-wrap:wrap}
-.social a{color:#ededed;text-decoration:none;border:1px solid #333;padding:8px 13px;font-size:13px}
-.social a:hover{border-color:#ededed}
+.social a{color:#fff;text-decoration:none;border:1px solid #3c59c0;padding:8px 13px;font-size:13px}
+.social a:hover{border-color:#fff}
+.bl .sep{color:#57d4d4;font-family:var(--mono);font-weight:700}
 [hidden]{display:none!important}
 @media (max-width:900px){
   .hero,.met{grid-template-columns:1fr}
@@ -133,7 +142,7 @@ footer.banner{background:#0d0d0d;color:#ededed;margin-top:56px}
 <body>
 <header class="top">
   <div class="topin">
-    <div class="brand"><img class="logo" alt="CEER" src="__LOGO_POS__"><span>Índice de precios de bienes</span></div>
+    <div class="brand"><span class="logo" style="color:#2840a5;--cursor:#d6810c" role="img" aria-label="CEER"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 469 110" width="100%" height="100%"><path fill="currentColor" d="M60.5 110Q31.6 110 15.8 95.8Q0 81.5 0 54.8Q0 28.8 14.4 14.4Q28.8 0 55.5 0Q71.9 0 83.7 6.4Q95.4 12.8 100.3 24.5L80.7 40.1Q76.3 33.2 69.5 29.4Q62.8 25.7 54.7 25.7Q42 25.7 34.9 33Q27.7 40.3 27.7 53.8Q27.7 68.7 36.9 76.5Q46 84.3 62.9 84.3Q70.1 84.3 77.2 83.6Q84.4 82.9 91.2 81.7L94 107Q85.9 108.8 77.3 109.4Q68.7 110 60.5 110ZM156.5 110Q129 110 114 95.8Q99 81.5 99 54.8Q99 28.8 111.8 14.4Q124.5 0 147.7 0Q170.4 0 182.8 13.3Q195.2 26.6 195.2 52Q195.2 59.2 194.6 65.7H116.8V46.9H168.6Q168.6 36.2 163.1 30.5Q157.7 24.8 147.9 24.8Q137.3 24.8 131.4 32.3Q125.6 39.9 125.6 53.8Q125.6 68.8 134.2 76.6Q142.9 84.4 158.9 84.4Q166.1 84.4 173.1 83.7Q180.1 82.9 187.4 81.6L190 107.2Q179.8 109 171.4 109.5Q163 110 156.5 110ZM255.5 110Q228 110 213 95.8Q198 81.5 198 54.8Q198 28.8 210.8 14.4Q223.5 0 246.7 0Q269.4 0 281.8 13.3Q294.2 26.6 294.2 52Q294.2 59.2 293.6 65.7H215.8V46.9H267.6Q267.6 36.2 262.1 30.5Q256.7 24.8 246.9 24.8Q236.3 24.8 230.4 32.3Q224.6 39.9 224.6 53.8Q224.6 68.8 233.2 76.6Q241.9 84.4 257.9 84.4Q265.1 84.4 272.1 83.7Q279.1 82.9 286.4 81.6L289 107.2Q278.8 109 270.4 109.5Q262 110 255.5 110ZM345.8 62.4 339.6 25.9H348.7Q350.3 0 375.8 0Q390.9 0 399 11.1Q407 22.2 407 43.1H380Q380 33.7 376.6 29.6Q373.1 25.5 365.5 25.5Q355.6 25.5 350.7 35.1Q345.8 44.7 345.8 62.4ZM296.4 108V84.8H370.6V108ZM318.8 108V2H341.8L345.8 32.4V108ZM300.4 25.2V2H340.4L342.4 25.2Z"/><rect fill="var(--cursor,#f7ac4d)" x="417" y="87" width="52" height="21"/></svg></span><span>Índice de precios de bienes</span></div>
     <nav class="tabs" role="tablist" aria-label="Secciones">
       <button role="tab" data-tab="res" aria-selected="true">Resumen</button>
       <button role="tab" data-tab="sem" aria-selected="false">Semanal</button>
@@ -157,8 +166,9 @@ footer.banner{background:#0d0d0d;color:#ededed;margin-top:56px}
   <div data-panel="res">
     <div class="hero">
       <div>
-        <div class="eyebrow">CEER · Precios de supermercados de todo el país (SEPA)</div>
+        <div class="eyebrow">Precios de supermercados de todo el país (SEPA) <span id="fecha-hero"></span></div>
         <h1>Inflación de bienes, <em>semana a semana</em></h1>
+        <div class="signos" aria-hidden="true">&gt;&gt;</div>
         <p class="lead">Medimos todos los días los precios que los grandes supermercados informan a la Secretaría de Comercio (base SEPA, más de 70.000 productos) y los agregamos con la canasta del IPC del INDEC. Es un indicador de alta frecuencia de los bienes que se venden en góndola, no un IPC completo: no incluye servicios, tarifas ni alquileres.</p>
         <p class="note" id="hero-note"></p>
       </div>
@@ -172,7 +182,7 @@ footer.banner{background:#0d0d0d;color:#ededed;margin-top:56px}
         <div class="card s12">
           <h3><span id="t-sem">Variación semanal</span>
             <span class="seg" id="seg-sem"><button data-v="m" aria-pressed="true">Mensualizada</button><button data-v="s" aria-pressed="false">Semanal</button></span></h3>
-          <div class="legend"><span><i style="background:var(--bar)"></i>Semana</span><span><i style="background:var(--bar2);outline:1px dashed var(--bar)"></i>Semana en curso (incompleta)</span><span><i style="background:var(--accent);height:3px;vertical-align:3px"></i>Promedio 4 semanas</span></div>
+          <div class="legend"><span><i style="background:var(--bar)"></i>Semana</span><span><i style="background:var(--bar2);outline:1px dashed var(--bar)"></i>Semana en curso (incompleta)</span><span><i style="background:var(--ambar);height:3px;vertical-align:3px"></i>Promedio 4 semanas</span></div>
           <div class="chart tall"><canvas id="c-sem"></canvas></div>
           <div class="src">Fuente: CEER en base a SEPA (Secretaría de Industria y Comercio). Semanas ISO; cada semana se asigna al mes en que cae su jueves.</div>
         </div>
@@ -185,7 +195,7 @@ footer.banner{background:#0d0d0d;color:#ededed;margin-top:56px}
       <div class="grid">
         <div class="card s8">
           <h3>Variación mensual</h3>
-          <div class="legend"><span><i style="background:var(--bar)"></i>Mes cerrado</span><span><i style="background:var(--accentbg);outline:1px solid var(--accent)"></i>Mes en curso: relevado</span><span><i style="background:var(--accent)"></i>Proyección</span><span><i style="background:var(--fg2);height:3px;vertical-align:3px"></i>Arrastre</span></div>
+          <div class="legend"><span><i style="background:var(--bar)"></i>Mes cerrado</span><span><i style="background:var(--accentbg);outline:1px solid var(--accent)"></i>Mes en curso: relevado</span><span><i style="background:var(--ambar)"></i>Proyección</span><span><i style="background:var(--fg2);height:3px;vertical-align:3px"></i>Arrastre</span></div>
           <div class="chart"><canvas id="c-men"></canvas></div>
           <div class="src">Media mensual de precios diarios. Fuente: CEER en base a SEPA.</div>
         </div>
@@ -254,7 +264,7 @@ footer.banner{background:#0d0d0d;color:#ededed;margin-top:56px}
 
 <footer class="banner">
   <div class="bannerin">
-    <div class="bl"><img class="blogo" alt="CEER" src="__LOGO_NEG__"><span>Centro de Estudios Económicos Renovación</span></div>
+    <div class="bl"><span class="blogo" style="color:#ffffff;--cursor:#f7ac4d" role="img" aria-label="CEER"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 469 110" width="100%" height="100%"><path fill="currentColor" d="M60.5 110Q31.6 110 15.8 95.8Q0 81.5 0 54.8Q0 28.8 14.4 14.4Q28.8 0 55.5 0Q71.9 0 83.7 6.4Q95.4 12.8 100.3 24.5L80.7 40.1Q76.3 33.2 69.5 29.4Q62.8 25.7 54.7 25.7Q42 25.7 34.9 33Q27.7 40.3 27.7 53.8Q27.7 68.7 36.9 76.5Q46 84.3 62.9 84.3Q70.1 84.3 77.2 83.6Q84.4 82.9 91.2 81.7L94 107Q85.9 108.8 77.3 109.4Q68.7 110 60.5 110ZM156.5 110Q129 110 114 95.8Q99 81.5 99 54.8Q99 28.8 111.8 14.4Q124.5 0 147.7 0Q170.4 0 182.8 13.3Q195.2 26.6 195.2 52Q195.2 59.2 194.6 65.7H116.8V46.9H168.6Q168.6 36.2 163.1 30.5Q157.7 24.8 147.9 24.8Q137.3 24.8 131.4 32.3Q125.6 39.9 125.6 53.8Q125.6 68.8 134.2 76.6Q142.9 84.4 158.9 84.4Q166.1 84.4 173.1 83.7Q180.1 82.9 187.4 81.6L190 107.2Q179.8 109 171.4 109.5Q163 110 156.5 110ZM255.5 110Q228 110 213 95.8Q198 81.5 198 54.8Q198 28.8 210.8 14.4Q223.5 0 246.7 0Q269.4 0 281.8 13.3Q294.2 26.6 294.2 52Q294.2 59.2 293.6 65.7H215.8V46.9H267.6Q267.6 36.2 262.1 30.5Q256.7 24.8 246.9 24.8Q236.3 24.8 230.4 32.3Q224.6 39.9 224.6 53.8Q224.6 68.8 233.2 76.6Q241.9 84.4 257.9 84.4Q265.1 84.4 272.1 83.7Q279.1 82.9 286.4 81.6L289 107.2Q278.8 109 270.4 109.5Q262 110 255.5 110ZM345.8 62.4 339.6 25.9H348.7Q350.3 0 375.8 0Q390.9 0 399 11.1Q407 22.2 407 43.1H380Q380 33.7 376.6 29.6Q373.1 25.5 365.5 25.5Q355.6 25.5 350.7 35.1Q345.8 44.7 345.8 62.4ZM296.4 108V84.8H370.6V108ZM318.8 108V2H341.8L345.8 32.4V108ZM300.4 25.2V2H340.4L342.4 25.2Z"/><rect fill="var(--cursor,#f7ac4d)" x="417" y="87" width="52" height="21"/></svg></span><span>Centro de Estudios Económicos Renovación</span></div>
     <nav class="social" aria-label="Redes del CEER">
       <a href="https://www.instagram.com/ceerenovacion/" target="_blank" rel="noopener">Instagram</a>
       <a href="https://x.com/ceerenovacion" target="_blank" rel="noopener">Twitter / X</a>
@@ -270,8 +280,8 @@ const D = JSON.parse(document.getElementById('data').textContent);
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const nf = d => new Intl.NumberFormat('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
-const pct = (v,d=1) => v==null||isNaN(v) ? '–' : nf(d).format(v)+'%';
-const num = (v,d=1) => v==null||isNaN(v) ? '–' : nf(d).format(v);
+const pct = (v,d=1) => v==null||isNaN(v) ? '–' : nf(d).format(v).replace('-','−')+'%';
+const num = (v,d=1) => v==null||isNaN(v) ? '–' : nf(d).format(v).replace('-','−');
 const mesLbl = m => { const [a,b]=m.split('-'); return MESES[+b-1]+' '+a; };
 const mesLargo = m => { const n=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; const [a,b]=m.split('-'); return n[+b-1]+' de '+a; };
 const diaLbl = s => { const d=new Date(s+'T12:00:00'); return d.getDate()+' '+MESES[d.getMonth()]; };
@@ -305,6 +315,7 @@ function initControles(){
   });
   document.getElementById('upd').innerHTML = 'Actualizado: <span class="mono">'+D.generado.replace('T',' ')+'</span>';
   document.getElementById('demo').hidden = !D.demo;
+  { const d=new Date(D.generado); const n=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; document.getElementById('fecha-hero').innerHTML=`<span class="barra">/</span> ${d.getDate()} de ${n[d.getMonth()]} ${d.getFullYear()}`; }
 }
 
 /* ---------- chart.js base ---------- */
@@ -324,13 +335,14 @@ function renderKpis(){
   const ult=sem[sem.length-1], ultC=[...sem].reverse().find(x=>!x.parcial)||ult;
   const k=[];
   if(ultC){
-    k.push(`<div class="kpi"><span>Última semana completa · ${semLbl(ultC)}</span><b>${pct(ultC.var,2)}</b><small>Mensualizada: <span class="mono">${pct(ultC.var_mensualizada)}</span></small></div>`);
+    k.push(`<div class="kpi"><span>${ultC.parcial?'Semana en curso':'Última semana completa'} · ${semLbl(ultC)}</span><b>${pct(ultC.var,2)}</b><small>Mensualizada: <span class="mono">${pct(ultC.var_mensualizada)}</span></small></div>`);
     k.push(`<div class="kpi"><span>Promedio últimas 4 semanas</span><b class="ac">${pct(ultC.prom4_mensualizada)}</b><small>mensualizado · semanal <span class="mono">${pct(ultC.prom4,2)}</span></small></div>`);
   }
   if(p){
     k.push(`<div class="kpi"><span>${mesLargo(p.mes)} · relevado</span><b>${pct(p.relevado)}</b><small><span class="mono">${p.semanas_observadas}</span> de <span class="mono">${p.semanas_mes}</span> semanas con datos</small></div>`);
-    k.push(`<div class="kpi"><span>${mesLargo(p.mes)} · proyección</span><b class="ac">${pct(p.proyeccion)}</b><small>Piso por arrastre: <span class="mono">${pct(p.arrastre)}</span></small></div>`);
+    k.push(`<div class="kpi"><span>${mesLargo(p.mes)} · proyección</span><b class="am">${pct(p.proyeccion)}</b><small>Piso por arrastre: <span class="mono">${pct(p.arrastre)}</span></small></div>`);
   }
+  k.forEach((h,i)=>{ k[i]=h.replace(/<b class="(ac|am)">–<\/b>/,'<b class="nd">sin datos aún</b>').replace(/<b>–<\/b>/,'<b class="nd">sin datos aún</b>'); });
   document.getElementById('kpis').innerHTML = k.join('') || '<div class="kpi"><span>Sin datos todavía</span><b>–</b></div>';
   const cob=(D.cobertura||[]).find(c=>c.region===st.reg);
   document.getElementById('hero-note').innerHTML = `${esc(st.reg)} · ${esc(SERIES[st.ser]||st.ser)}`+(cob&&st.ser==='TOTAL'?` · cubre el <span class="mono">${num(cob.ponderacion_cubierta_pct,1)}%</span> de la canasta del IPC de la región`:'')+'.';
@@ -340,7 +352,7 @@ function renderKpis(){
 function renderSemanal(){
   const sem=(serie().semanal||[]).filter(x=>x.var!=null), m=st.semModo==='m';
   document.getElementById('t-sem').textContent = m ? 'Variación semanal mensualizada' : 'Variación semanal';
-  const bar=css('--bar'), bar2=css('--bar2'), ac=css('--accent');
+  const bar=css('--bar'), bar2=css('--bar2'), ac=css('--ambar');
   draw('c-sem',{type:'bar',data:{labels:sem.map(semLbl),datasets:[
     {type:'line',label:'Promedio 4 semanas',data:sem.map(x=>m?x.prom4_mensualizada:x.prom4),borderColor:ac,backgroundColor:ac,borderWidth:2.5,pointRadius:0,pointHoverRadius:4,tension:.25,spanGaps:true,order:0},
     {label:m?'Semana (mensualizada)':'Semana',data:sem.map(x=>m?x.var_mensualizada:x.var),backgroundColor:sem.map(x=>x.parcial?bar2:bar),borderColor:sem.map(x=>x.parcial?bar:'transparent'),borderWidth:sem.map(x=>x.parcial?1:0),borderDash:[3,3],order:1,barPercentage:.8,categoryPercentage:.9}
@@ -350,20 +362,25 @@ function renderSemanal(){
 /* ---------- mensual (resumen) ---------- */
 function renderMensual(){
   const s=serie(), men=(s.mensual||[]).filter(x=>x.var!=null), p=s.proyeccion;
-  const labels=men.map(x=>mesLbl(x.mes)), ac=css('--accent');
+  const cont=document.getElementById('c-men').parentElement;
+  if(!men.length){ if(charts['c-men']){charts['c-men'].destroy(); delete charts['c-men'];}
+    cont.querySelector('.vacio')||cont.insertAdjacentHTML('beforeend','<div class="vacio">La primera variación mensual aparece cuando haya un mes completo de datos para comparar.</div>');
+    document.getElementById('c-men').hidden=true; }
+  else { document.getElementById('c-men').hidden=false; const v=cont.querySelector('.vacio'); if(v) v.remove(); }
+  const labels=men.map(x=>mesLbl(x.mes)), ac=css('--ambar'), az=css('--accent');
   const rel=men.map(x=>x.var);
   const cerr=men.map(x=>x.parcial?null:x.var), curso=men.map(x=>x.parcial?x.var:null);
   const pr=men.map(x=>p&&x.mes===p.mes&&x.parcial?p.proyeccion:null), ar=men.map(x=>p&&x.mes===p.mes&&x.parcial?p.arrastre:null);
-  draw('c-men',{type:'bar',data:{labels,datasets:[
+  if(men.length) draw('c-men',{type:'bar',data:{labels,datasets:[
     {label:'Mes cerrado',data:cerr,backgroundColor:css('--bar'),barPercentage:.6,grouped:false},
-    {label:'Relevado',data:curso,backgroundColor:css('--accentbg'),borderColor:ac,borderWidth:1,barPercentage:.6,grouped:false},
+    {label:'Relevado',data:curso,backgroundColor:css('--accentbg'),borderColor:az,borderWidth:1,barPercentage:.6,grouped:false},
     {type:'line',label:'Proyección',data:pr,showLine:false,pointStyle:'rect',pointRadius:9,pointHoverRadius:10,backgroundColor:ac,borderColor:ac},
     {type:'line',label:'Arrastre',data:ar,showLine:false,pointStyle:'line',pointRadius:14,borderWidth:3,borderColor:css('--fg2')}
   ]},options:baseOpts({plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',bodyFont:{family:css('--mono')},cornerRadius:0,filter:i=>i.parsed.y!=null,callbacks:{label:c=>' '+c.dataset.label+': '+pct(c.parsed.y,2)}}}})});
   const box=document.getElementById('proy');
   if(!p){ box.innerHTML='<p class="cap">Hacen falta al menos un mes completo y una semana del mes siguiente.</p>'; return; }
   box.innerHTML = `<p class="cap">${mesLargo(p.mes)}. Promedio de las semanas del mes contra el promedio del mes anterior.</p>
-   <div class="minik"><div><span>Relevado</span><b>${pct(p.relevado)}</b></div><div><span>Arrastre</span><b>${pct(p.arrastre)}</b></div><div><span>Proyección</span><b style="color:var(--accent)">${pct(p.proyeccion)}</b></div></div>
+   <div class="minik"><div><span>Relevado</span><b>${pct(p.relevado)}</b></div><div><span>Arrastre</span><b>${pct(p.arrastre)}</b></div><div><span>Proyección</span><b style="color:var(--ambar-t)">${pct(p.proyeccion)}</b></div></div>
    <table><tr><td>Semanas con datos</td><td class="n">${p.semanas_observadas} / ${p.semanas_mes}</td></tr>
    <tr><td>Ritmo usado (prom. 4 semanas)</td><td class="n">${pct(p.ritmo_semanal,2)} semanal</td></tr></table>
    <p class="src">La proyección supone que las semanas que faltan suben al ritmo promedio reciente. Como los aumentos suelen concentrarse a comienzo de mes, a fin de mes tiende a sobrestimar. El arrastre es un piso si los precios no bajan.</p>`;
@@ -393,7 +410,7 @@ function renderRubros(){
   const s0=rs[0];
   document.getElementById('rub-sub').innerHTML = s0 ? `${esc(st.reg)}. Última semana: <span class="mono">${s0.semana}</span>. Mes: ${s0.mes?mesLargo(s0.mes)+(s0.mes_parcial?' (parcial)':''):'–'}.` : 'Sin datos.';
   document.getElementById('t-rubros').innerHTML = `<thead><tr><th>Código</th><th>Rubro</th><th class="n">Peso %</th><th class="n">Últ. semana</th><th class="n">Prom. 4 sem. mensualiz.</th><th></th><th class="n">Mes</th><th class="n">Productos</th></tr></thead><tbody>`+
-    rs.map(r=>`<tr><td class="mono">${r.codigo}</td><td>${esc(r.nombre)}</td><td class="n">${num(pondClase(r.codigo,st.reg),2)}</td><td class="n">${pct(r.var,2)}</td><td class="n">${pct(r.prom4_mensualizada)}</td><td class="barcell"><i style="width:${Math.max(1,Math.abs(r.prom4_mensualizada||0)/mx*100)}%;${(r.prom4_mensualizada||0)<0?'background:var(--bar)':''}"></i></td><td class="n">${pct(r.var_mes,2)}</td><td class="n">${num(r.n,0)}</td></tr>`).join('')+'</tbody>';
+    rs.map(r=>`<tr><td class="mono">${r.codigo}</td><td>${esc(r.nombre)}</td><td class="n">${num(pondClase(r.codigo,st.reg),2)}</td><td class="n">${pct(r.var,2)}</td><td class="n">${pct(r.prom4_mensualizada)}</td><td class="barcell"><i style="width:${Math.max(1,Math.abs(r.prom4_mensualizada||0)/mx*100)}%;${(r.prom4_mensualizada||0)<0?'background:var(--neg)':''}"></i></td><td class="n">${pct(r.var_mes,2)}</td><td class="n">${num(r.n,0)}</td></tr>`).join('')+'</tbody>';
 }
 function renderRegiones(){
   const regs=D.regiones.filter(r=>D.series[r]&&D.series[r][st.ser]);
@@ -401,7 +418,7 @@ function renderRegiones(){
   const fs=regs.map(fila);
   document.getElementById('t-reg').innerHTML = `<thead><tr><th>Región</th><th class="n">Últ. semana</th><th class="n">Prom. 4 sem. mens.</th><th class="n">Mes relevado</th><th class="n">Proyección</th><th class="n">Cobertura</th></tr></thead><tbody>`+
     fs.map(f=>`<tr class="${f.r==='Nacional'?'hl':''}"><td>${f.r}</td><td class="n">${pct(f.u.var,2)}</td><td class="n">${pct(f.u.prom4_mensualizada)}</td><td class="n">${pct(f.p&&f.p.relevado)}</td><td class="n">${pct(f.p&&f.p.proyeccion)}</td><td class="n">${f.cob?num(f.cob.ponderacion_cubierta_pct,1)+'%':'–'}</td></tr>`).join('')+'</tbody>';
-  draw('c-reg',{type:'bar',data:{labels:fs.map(f=>f.r),datasets:[{label:'Prom. 4 sem. mensualizado',data:fs.map(f=>f.u.prom4_mensualizada),backgroundColor:fs.map(f=>f.r==='Nacional'?css('--accent'):css('--bar'))}]},options:baseOpts({indexAxis:'y',scales:{x:{grid:{color:css('--line')},border:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>num(v,1)+'%'}},y:{grid:{display:false},ticks:{color:css('--fg2')}}}})});
+  draw('c-reg',{type:'bar',data:{labels:fs.map(f=>f.r),datasets:[{label:'Prom. 4 sem. mensualizado',data:fs.map(f=>f.u.prom4_mensualizada),backgroundColor:fs.map(f=>f.r==='Nacional'?css('--ambar'):css('--bar'))}]},options:baseOpts({indexAxis:'y',scales:{x:{grid:{color:css('--line')},border:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>num(v,1)+'%'}},y:{grid:{display:false},ticks:{color:css('--fg2')}}}})});
 }
 
 /* ---------- metodología ---------- */

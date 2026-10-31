@@ -1,4 +1,4 @@
-# Instalación de IPCEER en Windows, de una sola vez.
+﻿# Instalación de IPCEER en Windows, de una sola vez.
 #
 # Abrir PowerShell (no hace falta como administrador) y pegar:
 #   irm https://raw.githubusercontent.com/Subsepresupuesto/ipceer/main/scripts/instalar.ps1 | iex
@@ -10,7 +10,7 @@
 
 param(
   [string]$Destino = "$env:USERPROFILE\Documents\ipceer",
-  [string]$Archivo = "$env:USERPROFILE\SEPA",
+  [string]$Archivo = "$env:USERPROFILE\Documents\SEPA",
   [string]$Hora = "11:00"
 )
 $ErrorActionPreference = "Stop"

@@ -61,6 +61,12 @@ abreviaturas:
   mant: manteca
   marg: margarina
   galletit: galletitas
+  desod: desodorante
+  sha: shampoo
+  shamp: shampoo
+  aromat: aromatizante
+  arom: aromatizante
+  limp: limpiador
 
 reglas:
 
@@ -99,6 +105,8 @@ reglas:
       - '\bsal para lavavajillas\b'
       - '\bcera (para pisos|liquida|autobrillo)\b'
       - '\bvelas?\b'
+      - '\b(difusor|aromatizador|autobrillo|residuos|repuesto aromatizante)\b'
+      - '\b(ayudin|lysoform|glade|poett|cif|harpic|procenex|vivere|comfort|skip|ariel|magistral|raid|fuyi|mr musculo|odex|vanish|drive)\b'
 
   - clase: "12.1.3"
     nombre: Artículos para el cuidado personal
@@ -122,6 +130,8 @@ reglas:
       - '\bagua (micelar|oxigenada|de colonia)\b'
       - '\bfijador (para el cabello|capilar)\b'
       - '\bgel fijador\b'
+      - '\b(mascarilla|serum|peinar|capilar|repelente|pomada para peinar|oleo calcareo|toallitas)\b'
+      - '\b(dove|elvive|pantene|sedal|rexona|nivea|dermaglos|tresemme|plusbelle|axe|colgate|gillette|always|kotex|huggies|pampers|babysec|carefree|lady soft|head shoulders|dove men|garnier|loreal|veet|johnson|algabo|lux|rexona men|speed stick|oral b|sensodyne|listerine)\b'
 
   - clase: "02.2.1"
     nombre: Tabaco
@@ -194,6 +204,7 @@ reglas:
       - '\b(postre|gelatina|flan) en polvo\b'
       - '\bpastillas? (de menta|frutales|refrescantes)\b'
       - '\bhuevo de pascua\b'
+      - '\bgelatina\b'
     excluir:
       - '\b(sin|bajo en|reducido en|cero|0) azucar\b'
       - '\bleche chocolatada\b'
@@ -206,6 +217,7 @@ reglas:
     incluir:
       - '\b(leche|yogur|yogurt|yoghurt|queso|quesos|ricota|ricotta|mozzarella|muzzarella|muzarella|reggianito|provolone|cremoso|chocolatada|postre lacteo|dulce de leche|kefir|huevo|huevos)\b'
       - '\bcrema (de leche|doble|para batir|chantilly|liviana)\b'
+      - '\bpostre\b'
     excluir:
       - '\b(pan|galletita|galletitas|budin|bizcochuelo|bizcochos|alfajor|medialunas|cereal|cereales|pizza|pizzas|prepizza|empanada|empanadas|tarta|tartas|ravioles|sorrentinos|canelones|capeletinis|fideos|fideo|pasta|pastas|tallarines|spaghetti|tirabuzon|tirabuzones|mostachol|mostacholes|coditos|cintas|nidos|panqueques)\b'
       - '\b(de coco|de almendras|de soja|de avena|de arroz)\b'

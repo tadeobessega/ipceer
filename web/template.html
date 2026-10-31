@@ -280,7 +280,7 @@ const D = JSON.parse(document.getElementById('data').textContent);
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const nf = d => new Intl.NumberFormat('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
-const pct = (v,d=1) => v==null||isNaN(v) ? '–' : nf(d).format(v).replace('-','−')+'%';
+const pct = (v,d=1) => v==null||isNaN(v) ? '–' : nf(d).format(Math.abs(v)<0.5*10**-d?0:v).replace('-','−')+'%';
 const num = (v,d=1) => v==null||isNaN(v) ? '–' : nf(d).format(v).replace('-','−');
 const mesLbl = m => { const [a,b]=m.split('-'); return MESES[+b-1]+' '+a; };
 const mesLargo = m => { const n=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; const [a,b]=m.split('-'); return n[+b-1]+' de '+a; };

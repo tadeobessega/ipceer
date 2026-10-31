@@ -67,7 +67,7 @@ def parsear(lineas: list[str]) -> list[dict]:
     continuación (nombres partidos en dos renglones, con los números en el medio o al final).
     En cada bloque busca los seis valores regionales y el resto es el nombre."""
     seis = re.compile(rf"{NUM}\s+{NUM}\s+{NUM}\s+{NUM}\s+{NUM}\s+{NUM}")
-    excluir = ("cuadro", "fuente", "región", "nivel general", "metodología", "en porcentaje")
+    excluir = ("cuadro", "fuente", "región", "nivel general", "metodología", "en porcentaje", "gba pampeana")
     bloques: list[str] = []
     prefijo = ""  # primer renglón del nombre de la apertura siguiente
     for ln in lineas:
@@ -98,7 +98,9 @@ def parsear(lineas: list[str]) -> list[dict]:
         m = seis.search(resto)
         if not m:
             continue
-        nombre = " ".join((resto[:m.start()] + " " + resto[m.end():]).split())
+        nombre = resto[:m.start()] + " " + resto[m.end():]
+        nombre = re.sub(r"GBA Pampeana Noreste Noroeste Cuyo Patagonia|\(contin[uú]a\)|%", " ", nombre)
+        nombre = " ".join(nombre.split())
         filas.append({"codigo": cod, "nombre": nombre,
                       **{r: (None if v == "-" else float(v.replace(",", "."))) for r, v in zip(REGIONES, m.groups())}})
     return filas

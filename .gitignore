@@ -1,0 +1,9 @@
+# datos pesados: quedan en la PC que corre la tarea
+data/
+logs/
+*.parquet
+*.zip
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/

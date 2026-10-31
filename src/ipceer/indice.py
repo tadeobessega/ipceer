@@ -1,0 +1,230 @@
+"""Cálculo del índice (mensual o semanal).
+
+Esquema (el mismo que usa el INDEC, adaptado a la fuente):
+
+1. Agregado elemental (código de ponderador x región): media geométrica no ponderada
+   de los relativos de precio entre dos períodos consecutivos de los productos
+   apareados (mismo producto, cadena, presentación y región en ambos períodos)
+   -> índice de Jevons encadenado. Si en una región hay pocos productos apareados,
+   se usa el relativo nacional de ese código.
+2. Agregación superior: suma ponderada de los índices elementales con los
+   ponderadores de la canasta INDEC (base dic-2016, ENGHo 2004/05) de cada región,
+   tipo Laspeyres.
+3. Índice nacional: suma ponderada de las regiones por su peso en el gasto de
+   consumo (Cuadro 6 de la Metodología INDEC 32) y por el peso cubierto en cada una.
+"""
+
+from __future__ import annotations
+
+import logging
+import math
+from pathlib import Path
+
+import polars as pl
+
+from .clasificador import SIN_CLASIFICAR
+from .config import REGIONES, Config, ponderadores_clase, ponderadores_region
+from .lectura import CLAVE
+
+log = logging.getLogger(__name__)
+
+NACIONAL = "Nacional"
+REZAGO_INTERANUAL = {"mensual": 12, "semanal": 52}
+
+
+def resolver_codigo(clase: str, codigos: set[str], min_niveles: int = 2) -> str | None:
+    """Código con ponderador más específico que contiene a la clase.
+
+    No sube más allá del nivel de grupo (2 niveles, ej. "09.3") para no asignarle a
+    un puñado de productos el peso de una división entera.
+    """
+    partes = clase.split(".")
+    for i in range(len(partes), min_niveles - 1, -1):
+        c = ".".join(partes[:i])
+        if c in codigos:
+            return c
+    return None
+
+
+def _cargar(ruta: Path, col_precio: str, mapa: dict[str, str | None]) -> pl.DataFrame:
+    df = pl.read_parquet(ruta).filter(pl.col("clase") != SIN_CLASIFICAR)
+    return df.select(
+        *CLAVE, "clase", pl.col(col_precio).alias("precio"), "n_dias", "dias_con_datos", "dias_periodo"
+    ).with_columns(
+        pl.col("clase").replace_strict(mapa, default=None, return_dtype=pl.Utf8).alias("codigo")
+    ).filter(pl.col("codigo").is_not_null())
+
+
+def _info(ruta: Path) -> tuple[int, int]:
+    d = pl.read_parquet(ruta, columns=["dias_con_datos", "dias_periodo"]).row(0)
+    return int(d[0]), int(d[1])
+
+
+def _min_dias(dias_con_datos: int, minimo: int) -> int:
+    return max(1, min(minimo, math.ceil(dias_con_datos / 2)))
+
+
+def relativos(previo: pl.DataFrame, actual: pl.DataFrame, min_p: int, min_a: int,
+              cfg: Config) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """Relativos de Jevons por código y región (y nacional por código) entre dos períodos."""
+    lim = cfg["limpieza"]
+    pares = (
+        previo.filter(pl.col("n_dias") >= min_p).select(*CLAVE, pl.col("precio").alias("p0"))
+        .join(actual.filter(pl.col("n_dias") >= min_a).select(*CLAVE, "codigo", pl.col("precio").alias("p1")),
+              on=CLAVE, how="inner")
+        .with_columns((pl.col("p1") / pl.col("p0")).alias("rel"))
+        .filter(pl.col("rel").is_between(lim["relativo_min"], lim["relativo_max"]))
+        .with_columns(pl.col("rel").log().alias("logrel"))
+    )
+    regional = pares.group_by("codigo", "region").agg(
+        pl.col("logrel").mean().alias("logrel_reg"), pl.len().alias("n_reg"))
+    nacional = pares.group_by("codigo").agg(
+        pl.col("logrel").mean().alias("logrel_nac"), pl.len().alias("n_nac"))
+    return regional, nacional
+
+
+def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame]:
+    ic = cfg["indice"]
+    col_precio = "precio_lista" if ic["precio"] == "lista" else "precio_efectivo"
+    min_dias = ic["min_dias_mes"] if frecuencia == "mensual" else ic["min_dias_semana"]
+    pond = ponderadores_clase(cfg)
+    codigos = set(pond["codigo"].unique().to_list())
+    nombres = dict(pond.select("codigo", "nombre").unique("codigo").iter_rows())
+    w_region = ponderadores_region(cfg)
+
+    rutas = sorted(cfg.ruta(f"panel_{frecuencia}").glob("*.parquet"))
+    if len(rutas) < 2:
+        raise ValueError(f"Se necesitan al menos dos períodos ({frecuencia}) consolidados")
+    periodos = [r.stem for r in rutas]
+
+    clases = set()
+    for r in rutas:
+        clases |= set(pl.read_parquet(r, columns=["clase"])["clase"].unique().to_list())
+    clases.discard(SIN_CLASIFICAR)
+    mapa = {c: resolver_codigo(c, codigos) for c in sorted(clases)}
+    sin_pond = sorted(c for c, v in mapa.items() if v is None)
+    if sin_pond:
+        log.warning("Clases sin ponderador (quedan fuera del índice): %s", sin_pond)
+    usados = sorted({v for v in mapa.values() if v})
+    for c in usados:
+        hijos = [d for d in usados if d != c and d.startswith(c + ".")]
+        if hijos:
+            log.warning("El código %s y sus subcódigos %s se usan a la vez: revisar el clasificador", c, hijos)
+
+    # 1. relativos elementales período a período
+    minp = ic["min_productos_clase"]
+    grilla = pl.DataFrame({"codigo": usados}).join(pl.DataFrame({"region": REGIONES}), how="cross")
+    filas = []
+    previo, info_p = _cargar(rutas[0], col_precio, mapa), _info(rutas[0])
+    for ruta, per in zip(rutas[1:], periodos[1:]):
+        actual, info_a = _cargar(ruta, col_precio, mapa), _info(ruta)
+        reg, nac = relativos(previo, actual, _min_dias(info_p[0], min_dias), _min_dias(info_a[0], min_dias), cfg)
+        r = (
+            grilla.join(reg, on=["codigo", "region"], how="left")
+            .join(nac, on="codigo", how="left")
+            .with_columns(
+                pl.when(pl.col("n_reg") >= minp).then(pl.col("logrel_reg"))
+                .when(pl.col("n_nac") >= minp).then(pl.col("logrel_nac"))
+                .otherwise(0.0).alias("logrel"),
+                pl.when(pl.col("n_reg") >= minp).then(pl.lit("regional"))
+                .when(pl.col("n_nac") >= minp).then(pl.lit("nacional"))
+                .otherwise(pl.lit("sin_datos")).alias("origen"),
+                pl.col("n_reg").fill_null(0).cast(pl.UInt32),
+                pl.lit(per).alias("periodo"),
+                pl.lit(info_a[0] < info_a[1]).alias("parcial"),
+            )
+        )
+        filas.append(r.select("periodo", "codigo", "region", "logrel", "origen", "n_reg", "parcial"))
+        previo, info_p = actual, info_a
+
+    info0 = _info(rutas[0])
+    base0 = grilla.with_columns(
+        pl.lit(periodos[0]).alias("periodo"), pl.lit(0.0).alias("logrel"), pl.lit("base").alias("origen"),
+        pl.lit(0, dtype=pl.UInt32).alias("n_reg"), pl.lit(info0[0] < info0[1]).alias("parcial"),
+    ).select(filas[0].columns)
+    elem = (
+        pl.concat([base0, *filas])
+        .sort("codigo", "region", "periodo")
+        .with_columns((pl.col("logrel").cum_sum().over("codigo", "region").exp() * 100).alias("indice"))
+    )
+    base = (ic.get("mes_base") if frecuencia == "mensual" else None) or periodos[0]
+    if base not in periodos:
+        raise ValueError(f"Período base {base} no está entre los períodos con datos")
+    elem = elem.with_columns(
+        pl.col("indice") / pl.col("indice").filter(pl.col("periodo") == base).first().over("codigo", "region") * 100
+    )
+
+    # 2. agregación con ponderadores de la canasta regional
+    elem = elem.join(pond.select("codigo", "region", "ponderacion"), on=["codigo", "region"], how="left").with_columns(
+        pl.col("ponderacion").fill_null(0.0), pl.col("codigo").str.slice(0, 2).alias("division"))
+    parcial = elem.group_by("periodo").agg(pl.col("parcial").any())
+
+    def agregar(df: pl.DataFrame, por: list[str]) -> pl.DataFrame:
+        return df.group_by(por).agg(
+            ((pl.col("indice") * pl.col("ponderacion")).sum() / pl.col("ponderacion").sum()).alias("indice"),
+            pl.col("ponderacion").sum().alias("ponderacion"),
+            pl.col("n_reg").sum().alias("n_productos"),
+        )
+
+    regional = pl.concat([
+        agregar(elem, ["periodo", "region", "codigo"]).with_columns(pl.lit("clase").alias("nivel")),
+        agregar(elem, ["periodo", "region", "division"]).rename({"division": "codigo"})
+        .with_columns(pl.lit("division").alias("nivel")),
+        agregar(elem, ["periodo", "region"]).with_columns(pl.lit("TOTAL").alias("codigo"), pl.lit("total").alias("nivel")),
+    ], how="diagonal")
+
+    # 3. nacional
+    nac = (
+        regional.with_columns(pl.col("region").replace_strict(w_region, return_dtype=pl.Float64).alias("w_region"))
+        .with_columns((pl.col("w_region") * pl.col("ponderacion")).alias("w"))
+        .group_by("periodo", "codigo", "nivel")
+        .agg(((pl.col("indice") * pl.col("w")).sum() / pl.col("w").sum()).alias("indice"),
+             pl.col("w").sum().alias("ponderacion"), pl.col("n_productos").sum())
+        .with_columns(pl.lit(NACIONAL).alias("region"))
+    )
+
+    nombres_div = dict(pl.read_csv(cfg.dir_config / "ponderadores_division.csv", schema_overrides={"codigo": pl.Utf8})
+                       .select("codigo", "nombre").iter_rows())
+    rezago = REZAGO_INTERANUAL[frecuencia]
+    todos = (
+        pl.concat([regional, nac.select(regional.columns)])
+        .join(parcial, on="periodo", how="left")
+        .sort("region", "nivel", "codigo", "periodo")
+        .with_columns(
+            ((pl.col("indice") / pl.col("indice").shift(1).over("region", "nivel", "codigo") - 1) * 100)
+            .alias("var_pct"),
+            ((pl.col("indice") / pl.col("indice").shift(rezago).over("region", "nivel", "codigo") - 1) * 100)
+            .alias("var_interanual_pct"),
+            pl.when(pl.col("nivel") == "total").then(pl.lit("Bienes relevados (total)"))
+            .when(pl.col("nivel") == "division").then(pl.col("codigo").replace_strict(nombres_div, default=""))
+            .otherwise(pl.col("codigo").replace_strict(nombres, default="")).alias("nombre"),
+        )
+        .select("periodo", "region", "nivel", "codigo", "nombre", "indice", "var_pct",
+                "var_interanual_pct", "n_productos", "parcial")
+        .with_columns(pl.col("indice", "var_pct", "var_interanual_pct").round(4))
+    )
+
+    ult = elem.filter(pl.col("periodo") == periodos[-1])
+    cob = ult.group_by("region").agg(pl.col("ponderacion").sum().alias("ponderacion_cubierta_pct")).with_columns(
+        pl.col("region").replace_strict(w_region, return_dtype=pl.Float64).alias("w"))
+    cobertura = pl.concat([
+        cob.select("region", "ponderacion_cubierta_pct"),
+        cob.select(pl.lit(NACIONAL).alias("region"),
+                   ((pl.col("ponderacion_cubierta_pct") * pl.col("w")).sum() / pl.col("w").sum())
+                   .alias("ponderacion_cubierta_pct")),
+    ]).with_columns(pl.col("ponderacion_cubierta_pct").round(2))
+    mapeo = pl.DataFrame({"clase": list(mapa), "codigo_ponderador": list(mapa.values())},
+                         schema={"clase": pl.Utf8, "codigo_ponderador": pl.Utf8})
+    calidad = elem.group_by("periodo", "origen").agg(pl.len().alias("n_agregados")).sort("periodo", "origen")
+
+    return {"indices": todos, "cobertura": cobertura, "mapeo_clases": mapeo, "calidad": calidad}
+
+
+def guardar(res: dict[str, pl.DataFrame], cfg: Config, frecuencia: str) -> list[Path]:
+    dir_res = cfg.ruta("resultados")
+    rutas = []
+    for nombre, df in res.items():
+        p = dir_res / f"{nombre}_{frecuencia}.csv"
+        df.write_csv(p)
+        rutas.append(p)
+    return rutas

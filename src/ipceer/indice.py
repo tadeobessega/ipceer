@@ -43,6 +43,25 @@ def _siguiente(periodo: str, frecuencia: str) -> str:
     return f"{a2}-W{s2:02d}"
 
 
+def _inicio(periodo: str, frecuencia: str) -> date:
+    if frecuencia == "mensual":
+        a, m = map(int, periodo.split("-"))
+        return date(a, m, 1)
+    a, w = periodo.split("-W")
+    return date.fromisocalendar(int(a), int(w), 1)
+
+
+def tramos(periodos: list[str], frecuencia: str, max_meses: float) -> dict[str, int]:
+    """Numera los tramos de la serie: se corta cuando entre dos períodos con datos pasan más
+    de `max_meses` (ej. de 2018 a 2025). Dentro de un tramo se encadena aunque haya huecos."""
+    out, t = {}, 0
+    for i, p in enumerate(periodos):
+        if i and (_inicio(p, frecuencia) - _inicio(periodos[i - 1], frecuencia)).days / 30.4375 > max_meses:
+            t += 1
+        out[p] = t
+    return out
+
+
 def resolver_codigo(clase: str, codigos: set[str], min_niveles: int = 2) -> str | None:
     """Código con ponderador más específico que contiene a la clase.
 
@@ -124,11 +143,19 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
 
     # 1. relativos elementales período a período
     minp = ic["min_productos_clase"]
+    tramo = tramos(periodos, frecuencia, ic.get("max_meses_salto", 24))
     grilla = pl.DataFrame({"codigo": usados}).join(pl.DataFrame({"region": REGIONES}), how="cross")
     filas = []
     previo, info_p = _cargar(rutas[0], col_precio, mapa), _info(rutas[0])
-    for ruta, per in zip(rutas[1:], periodos[1:]):
+    for ruta, per, per_prev in zip(rutas[1:], periodos[1:], periodos[:-1]):
         actual, info_a = _cargar(ruta, col_precio, mapa), _info(ruta)
+        if tramo[per] != tramo[per_prev]:  # comienza un tramo nuevo: no se compara con el anterior
+            filas.append(grilla.with_columns(
+                pl.lit(per).alias("periodo"), pl.lit(0.0).alias("logrel"), pl.lit("inicio_tramo").alias("origen"),
+                pl.lit(0, dtype=pl.UInt32).alias("n_reg"), pl.lit(info_a[0] < info_a[1]).alias("parcial"),
+            ).select("periodo", "codigo", "region", "logrel", "origen", "n_reg", "parcial"))
+            previo, info_p = actual, info_a
+            continue
         reg, nac = relativos(previo, actual, _min_dias(info_p[0], min_dias), _min_dias(info_a[0], min_dias), cfg)
         r = (
             grilla.join(reg, on=["codigo", "region"], how="left")
@@ -152,23 +179,27 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
     base0 = grilla.with_columns(
         pl.lit(periodos[0]).alias("periodo"), pl.lit(0.0).alias("logrel"), pl.lit("base").alias("origen"),
         pl.lit(0, dtype=pl.UInt32).alias("n_reg"), pl.lit(info0[0] < info0[1]).alias("parcial"),
-    ).select(filas[0].columns)
+    ).select("periodo", "codigo", "region", "logrel", "origen", "n_reg", "parcial")
     elem = (
         pl.concat([base0, *filas])
+        .with_columns(pl.col("periodo").replace_strict(tramo, return_dtype=pl.Int32).alias("tramo"))
         .sort("codigo", "region", "periodo")
-        .with_columns((pl.col("logrel").cum_sum().over("codigo", "region").exp() * 100).alias("indice"))
+        .with_columns((pl.col("logrel").cum_sum().over("codigo", "region", "tramo").exp() * 100).alias("indice"))
     )
-    base = (ic.get("mes_base") if frecuencia == "mensual" else None) or periodos[0]
-    if base not in periodos:
+    # base = 100: el mes_base configurado en su tramo; en los demás, el primer período del tramo
+    base = ic.get("mes_base") if frecuencia == "mensual" else None
+    if base and base not in periodos:
         raise ValueError(f"Período base {base} no está entre los períodos con datos")
-    elem = elem.with_columns(
-        pl.col("indice") / pl.col("indice").filter(pl.col("periodo") == base).first().over("codigo", "region") * 100
-    )
+    if base:
+        elem = elem.with_columns(
+            pl.when(pl.col("tramo") == tramo[base])
+            .then(pl.col("indice") / pl.col("indice").filter(pl.col("periodo") == base).first().over("codigo", "region", "tramo") * 100)
+            .otherwise(pl.col("indice")).alias("indice"))
 
     # 2. agregación con ponderadores de la canasta regional
     elem = elem.join(pond.select("codigo", "region", "ponderacion"), on=["codigo", "region"], how="left").with_columns(
         pl.col("ponderacion").fill_null(0.0), pl.col("codigo").str.slice(0, 2).alias("division"))
-    parcial = elem.group_by("periodo").agg(pl.col("parcial").any())
+    parcial = elem.group_by("periodo").agg(pl.col("parcial").any(), pl.col("tramo").first())
 
     def agregar(df: pl.DataFrame, por: list[str]) -> pl.DataFrame:
         return df.group_by(por).agg(
@@ -201,8 +232,8 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
         .join(parcial, on="periodo", how="left")
         .sort("region", "nivel", "codigo", "periodo")
         .with_columns(
-            pl.col("periodo").shift(1).over("region", "nivel", "codigo").alias("periodo_anterior"),
-            ((pl.col("indice") / pl.col("indice").shift(1).over("region", "nivel", "codigo") - 1) * 100)
+            pl.col("periodo").shift(1).over("region", "nivel", "codigo", "tramo").alias("periodo_anterior"),
+            ((pl.col("indice") / pl.col("indice").shift(1).over("region", "nivel", "codigo", "tramo") - 1) * 100)
             .alias("var_pct"),
             (pl.col("periodo").str.slice(0, 4).cast(pl.Int32) - 1).cast(pl.Utf8)
             .add(pl.col("periodo").str.slice(4)).alias("_periodo_ia"),
@@ -211,9 +242,10 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
             .otherwise(pl.col("codigo").replace_strict(nombres, default="")).alias("nombre"),
         )
         .join(
-            regional_y_nac := pl.concat([regional, nac.select(regional.columns)])
-            .select("region", "nivel", "codigo", pl.col("periodo").alias("_periodo_ia"), pl.col("indice").alias("_indice_ia")),
-            on=["region", "nivel", "codigo", "_periodo_ia"], how="left",
+            pl.concat([regional, nac.select(regional.columns)]).join(parcial.select("periodo", "tramo"), on="periodo")
+            .select("region", "nivel", "codigo", "tramo", pl.col("periodo").alias("_periodo_ia"),
+                    pl.col("indice").alias("_indice_ia")),
+            on=["region", "nivel", "codigo", "tramo", "_periodo_ia"], how="left",
         )
         .with_columns(((pl.col("indice") / pl.col("_indice_ia") - 1) * 100).alias("var_interanual_pct"))
         .with_columns(
@@ -228,7 +260,7 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
             pl.when(pl.col("salto")).then(None).otherwise(pl.col("var_pct")).alias("var_pct"),
         )
         .select("periodo", "region", "nivel", "codigo", "nombre", "indice", "var_pct",
-                "var_interanual_pct", "n_productos", "parcial", "salto", "periodo_anterior", "var_salto_pct")
+                "var_interanual_pct", "n_productos", "parcial", "salto", "periodo_anterior", "var_salto_pct", "tramo")
         .with_columns(pl.col("indice", "var_pct", "var_interanual_pct", "var_salto_pct").round(4))
     )
 

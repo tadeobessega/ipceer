@@ -46,3 +46,6 @@ indice:
   min_productos_clase: 8
   # Primer mes del índice (= 100). Si se deja vacío, se usa el primer mes con datos.
   mes_base: null
+  # Si entre dos períodos con datos pasan más meses que esto, la serie se corta en tramos
+  # (ej. la base 2016-2018 de Zenodo y la actual). Por debajo se compara a través del hueco.
+  max_meses_salto: 24

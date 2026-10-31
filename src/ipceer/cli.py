@@ -9,6 +9,8 @@ Comandos:
   diario                 todo lo anterior, en orden (es lo que corre la tarea programada)
   reporte-clasificacion  lista los productos sin clasificar más frecuentes
   validar --indec CSV    compara las divisiones con el IPC del INDEC
+  indec                  baja las series del IPC del INDEC a data/indec
+  historico              procesa la base 2016-2018 de Precios Claros (Zenodo)
 """
 
 from __future__ import annotations
@@ -21,7 +23,7 @@ from pathlib import Path
 
 import polars as pl
 
-from . import descarga, indice, lectura, panel, resumen, sitio, validacion
+from . import descarga, historico, indec, indice, lectura, panel, resumen, sitio, validacion
 from .clasificador import SIN_CLASIFICAR
 from .config import cargar_config
 
@@ -79,6 +81,10 @@ def cmd_sitio(cfg, args):
 
 def cmd_diario(cfg, args):
     try:
+        indec.descargar(cfg)
+    except Exception as e:
+        log.warning("INDEC: %s", e)
+    try:
         cmd_descargar(cfg, args)
     except Exception as e:  # sin red igual se procesa lo que ya está archivado
         log.error("Descarga fallida: %s", e)
@@ -88,6 +94,17 @@ def cmd_diario(cfg, args):
         cmd_calcular(cfg, args)
         if (cfg.ruta("resultados") / "datos.json").exists():
             cmd_sitio(cfg, args)
+
+
+def cmd_indec(cfg, args):
+    indec.descargar(cfg, max_horas=0 if getattr(args, "forzar", False) else 24)
+
+
+def cmd_historico(cfg, args):
+    from datetime import date
+    n = historico.construir(cfg, date.fromisoformat(args.desde) if args.desde else None,
+                            date.fromisoformat(args.hasta) if args.hasta else None)
+    log.info("Zenodo: %d días nuevos", n)
 
 
 def cmd_reporte(cfg, args):
@@ -127,6 +144,13 @@ def main(argv=None):
     c = sub.add_parser("consolidar")
     c.add_argument("--todos", action="store_true", help="rehace todos los períodos (ej. tras cambiar el clasificador)")
     c.set_defaults(fn=cmd_consolidar)
+    i = sub.add_parser("indec")
+    i.add_argument("--forzar", action="store_true")
+    i.set_defaults(fn=cmd_indec)
+    h = sub.add_parser("historico", help="base 2016-2018 de Precios Claros en Zenodo")
+    h.add_argument("--desde")
+    h.add_argument("--hasta")
+    h.set_defaults(fn=cmd_historico)
     r = sub.add_parser("reporte-clasificacion")
     r.add_argument("-n", type=int, default=500)
     r.set_defaults(fn=cmd_reporte)

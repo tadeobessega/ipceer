@@ -139,6 +139,7 @@ def test_salto_wayback(tmp_path):
     shutil.copytree(REPO / "web", raiz / "web")
     ponderadores_ficticios(raiz / "config" / "ponderadores_clase.csv")
     c = cargar_config(raiz)
+    generar_rango(date(2017, 3, 6), date(2017, 3, 19), c.ruta("crudos"))
     generar_rango(date(2025, 4, 21), date(2025, 4, 27), c.ruta("crudos"))
     generar_rango(date(2026, 9, 7), date(2026, 9, 20), c.ruta("crudos"))
     for z in zips_sin_procesar(c):
@@ -146,9 +147,44 @@ def test_salto_wayback(tmp_path):
     panel.actualizar_paneles(c, "semanal")
     s = indice.calcular(c, "semanal")["indices"]
     tot = s.filter(pl.col("region") == "Nacional", pl.col("codigo") == "TOTAL").sort("periodo")
-    assert tot["periodo"].to_list() == ["2025-W17", "2026-W37", "2026-W38"]
-    assert tot["salto"].to_list() == [False, True, False]
-    assert tot["var_pct"][1] is None and tot["var_pct"][2] is not None
-    assert 20 < tot["var_salto_pct"][1] < 60  # ~16,5 meses a ~2,3% mensual
-    sal = resumen.saltos(tot, "semanal")
+    assert tot["periodo"].to_list() == ["2017-W10", "2017-W11", "2025-W17", "2026-W37", "2026-W38"]
+    assert tot["tramo"].to_list() == [0, 0, 1, 1, 1]  # 2017 -> 2025: más de 24 meses, tramo nuevo
+    assert tot["indice"][2] == 100  # el tramo nuevo arranca en 100
+    assert tot["salto"].to_list() == [False, False, False, True, False]
+    assert tot["var_pct"][2] is None and tot["var_pct"][3] is None and tot["var_pct"][4] is not None
+    assert 20 < tot["var_salto_pct"][3] < 60  # ~16,5 meses a ~2,3% mensual
+    sal = resumen.saltos(tot.filter(pl.col("tramo") == 1), "semanal")
     assert len(sal) == 1 and 1.5 < sal[0]["var_mensual"] < 3.5
+
+
+def test_historico_zenodo(tmp_path, monkeypatch):
+    """Un día con el formato de la base de Zenodo se convierte al panel diario."""
+    import gzip
+    from ipceer import historico
+    raiz = tmp_path / "repo"
+    shutil.copytree(REPO / "config", raiz / "config")
+    c = cargar_config(raiz)
+    src = tmp_path / "src"
+    src.mkdir()
+    def gz(nombre, texto):
+        with gzip.open(src / nombre, "wt", encoding="utf-8") as f:
+            f.write(texto)
+    gz("sucursales.csv.gz", "comercio_id,bandera_id,sucursal_id,sucursal_provincia,sucursal_localidad,sucursal_latitud,sucursal_longitud\r\n"
+       "8,1,3,AR-X,CORDOBA,-31.36,-64.16\r\n10,1,1,AR-C,CABA,-34.6,-58.4\r\n")
+    gz("productos.csv.gz", "producto_sepa_id,producto_ean,producto_descripcion,producto_cantidad_presentacion,"
+       "producto_unidad_medida_presentacion,producto_marca,categoria_secom_id,categoria_rubro_id,categoria_rubro_desc,"
+       "categoria_categ_id,categoria_categ_desc,categoria_subcateg_id,categoria_subcateg_desc,categoria_requerido,categoria_ean\r\n"
+       '7790480089390,t,"Yerba Mate La Tranquera 1 Kg",1,KG,"LA TRANQUERA",1,2,Almacén,12,"Infusiones",8,"Yerba",t,t\r\n')
+    gz("precios.csv.gz", "comercio_id,bandera_id,sucursal_id,producto_sepa_id,precio_lista,precio_unitario_promo1,precio_unitario_promo2,precio_fecha\r\n"
+       "8,1,3,7790480089390,40.5,NaN,NaN,736755\r\n10,1,1,7790480089390,42,35.0,NaN,736755\r\n")
+    monkeypatch.setattr(historico, "_bajar", lambda url, destino, *a, **k: shutil.copy(src / f"{url}.csv.gz", destino))
+    d = date(2017, 3, 1)
+    tmp = tmp_path / "tmp"
+    tmp.mkdir()
+    ruta = historico.procesar_dia(d, {t: t for t in ("sucursales", "productos", "precios")}, c, tmp)
+    p = pl.read_parquet(ruta).sort("region")
+    assert p["region"].to_list() == ["GBA", "Pampeana"]
+    assert p["precio_lista"].to_list() == pytest.approx([42.0, 40.5]) and p["precio_efectivo"][0] == pytest.approx(35.0)
+    assert p["es_ean"][0] == "1" and p["cantidad"][0] == "1.0"
+    cl = Clasificador.desde_archivos(REPO / "config" / "clasificador.yaml").clasificar(p)
+    assert cl["clase"][0] == "01.2.1"

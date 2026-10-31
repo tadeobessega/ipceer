@@ -116,3 +116,86 @@ def zips_sin_procesar(cfg: Config) -> list[Path]:
 
 def fecha_de_zip(ruta: Path) -> date:
     return date.fromisoformat(ruta.stem.removeprefix("sepa_"))
+
+
+# --- Copias históricas en la Wayback Machine (Internet Archive) -------------------------
+
+WAYBACK_CDX = "https://web.archive.org/cdx/search/cdx"
+DATASET_ID = "6f47ec76-d1ce-4e34-a7e1-621fe9b1d0b5"  # sepa-precios (minoristas)
+
+
+def listar_wayback(timeout: int = 60) -> list[tuple[str, str, int]]:
+    """Capturas de los zips diarios de SEPA guardadas en la Wayback Machine.
+
+    Devuelve (timestamp, url original, bytes) de las capturas con estado 200.
+    """
+    r = requests.get(WAYBACK_CDX, params={
+        "url": f"datos.produccion.gob.ar/dataset/{DATASET_ID}/resource/*",
+        "output": "json", "fl": "timestamp,original,statuscode,length",
+    }, timeout=timeout)
+    r.raise_for_status()
+    filas = r.json()[1:] if r.text.strip() else []
+    vistas, out = set(), []
+    for ts, orig, estado, largo in filas:
+        if estado != "200" or not orig.lower().endswith(".zip") or "sepa_" not in orig:
+            continue
+        clave = (ts[:8], orig)
+        if clave in vistas:
+            continue
+        vistas.add(clave)
+        out.append((ts, orig, int(largo or 0)))
+    return out
+
+
+def _fecha_dentro_del_zip(ruta: Path) -> date | None:
+    """La fecha real de un zip SEPA es la carpeta AAAA-MM-DD/ de adentro."""
+    with zipfile.ZipFile(ruta) as zf:
+        for n in zf.namelist():
+            m = _FECHA.match(n)
+            if m:
+                return date.fromisoformat(m.group(1))
+    return None
+
+
+def descargar_wayback(cfg: Config) -> list[Path]:
+    """Agrega al archivo los días de SEPA que solo existen en la Wayback Machine.
+
+    Se baja cada captura una vez (se recuerdan en wayback.csv), se lee la fecha de la
+    carpeta interna y se guarda como sepa_AAAA-MM-DD.zip si ese día no estaba archivado.
+    """
+    d = cfg["descarga"]
+    dir_crudos = cfg.ruta("crudos")
+    registro = dir_crudos / "wayback.csv"
+    hechas = set()
+    if registro.exists():
+        hechas = {l.split(",")[0] + "," + l.split(",")[1] for l in registro.read_text(encoding="utf-8").splitlines()[1:]}
+    nuevos = []
+    for ts, orig, largo in listar_wayback(d["timeout_segundos"]):
+        if f"{ts},{orig}" in hechas:
+            continue
+        tmp = dir_crudos / f"wayback_{ts}.zip"
+        log.info("Wayback: bajando captura %s de %s (%.0f MB)", ts, orig.rsplit("/", 1)[-1], largo / 1e6)
+        try:
+            _bajar(f"https://web.archive.org/web/{ts}id_/{orig}", tmp, d["timeout_segundos"] * 5, d["reintentos"])
+        except Exception as e:
+            log.error("Wayback: no se pudo bajar %s: %s", ts, e)
+            continue
+        fecha = _fecha_dentro_del_zip(tmp) if zipfile.is_zipfile(tmp) else None
+        destino = dir_crudos / f"sepa_{fecha.isoformat()}.zip" if fecha else None
+        if destino is None:
+            tmp.rename(tmp.with_suffix(".invalido"))
+            estado = "invalido"
+        elif destino.exists():
+            tmp.unlink()
+            estado = "ya_estaba"
+        else:
+            tmp.rename(destino)
+            _registrar(dir_crudos, Recurso(fecha, f"https://web.archive.org/web/{ts}id_/{orig}", "wayback"), destino)
+            nuevos.append(destino)
+            estado = "agregado"
+        nuevo_registro = not registro.exists()
+        with open(registro, "a", encoding="utf-8") as f:
+            if nuevo_registro:
+                f.write("timestamp,url,fecha,estado\n")
+            f.write(f"{ts},{orig},{fecha or ''},{estado}\n")
+    return nuevos

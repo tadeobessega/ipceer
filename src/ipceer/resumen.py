@@ -42,6 +42,31 @@ def serie_semanal(sem: pl.DataFrame) -> list[dict]:
     return filas
 
 
+def saltos(df: pl.DataFrame, frecuencia: str) -> list[dict]:
+    """Tramos entre períodos no consecutivos (ej. de la copia de la Wayback Machine a hoy):
+    variación acumulada y su equivalente mensual."""
+    out = []
+    if "salto" not in df.columns:
+        return out
+    for r in df.filter(pl.col("salto")).sort("periodo").iter_rows(named=True):
+        if r["var_salto_pct"] is None:
+            continue
+        if frecuencia == "semanal":
+            d0, _ = rango_semana(r["periodo_anterior"])
+            d1, _ = rango_semana(r["periodo"])
+            meses = (d1 - d0).days / DIAS_MES
+            desde, hasta = rango_semana(r["periodo_anterior"]), rango_semana(r["periodo"])
+            desde, hasta = [desde[0].isoformat(), desde[1].isoformat()], [hasta[0].isoformat(), hasta[1].isoformat()]
+        else:
+            a0, m0 = map(int, r["periodo_anterior"].split("-"))
+            a1, m1 = map(int, r["periodo"].split("-"))
+            meses = (a1 - a0) * 12 + (m1 - m0)
+            desde, hasta = r["periodo_anterior"], r["periodo"]
+        out.append({"frecuencia": frecuencia, "desde": desde, "hasta": hasta, "var": r["var_salto_pct"],
+                    "meses": meses, "var_mensual": ((1 + r["var_salto_pct"] / 100) ** (1 / meses) - 1) * 100})
+    return out
+
+
 def proyeccion_mes(semanal: list[dict], mes: str) -> dict | None:
     """Variación del mes `mes` con el índice semanal promedio del mes contra el del mes anterior.
 
@@ -100,13 +125,14 @@ def armar_datos(cfg: Config, mensual: pl.DataFrame | None, semanal: pl.DataFrame
             for niv, cod in [("total", "TOTAL"), *[("division", c) for c in ("01", "02", "05", "09", "12")]]:
                 s = semanal.filter(pl.col("region") == reg, pl.col("nivel") == niv, pl.col("codigo") == cod)
                 if s.height:
-                    series.setdefault(reg, {})[cod] = {"semanal": serie_semanal(s)}
+                    series.setdefault(reg, {})[cod] = {"semanal": serie_semanal(s), "saltos": saltos(s, "semanal")}
     if mensual is not None:
         for reg in regiones:
             for cod in list(series.get(reg, {})) or ["TOTAL"]:
                 s = mensual.filter(pl.col("region") == reg, pl.col("codigo") == cod,
                                    pl.col("nivel") == ("total" if cod == "TOTAL" else "division")).sort("periodo")
                 if s.height:
+                    series.setdefault(reg, {}).setdefault(cod, {})["saltos_mensual"] = saltos(s, "mensual")
                     series.setdefault(reg, {}).setdefault(cod, {})["mensual"] = [
                         {"mes": r["periodo"], "indice": r["indice"], "var": r["var_pct"],
                          "var_ia": r["var_interanual_pct"], "parcial": r["parcial"]}

@@ -130,3 +130,25 @@ def test_mensualizacion_y_proyeccion(cfg):
     # W40 (jueves 1/10), W41 y W42 (en curso) caen en octubre
     assert p["semanas_mes"] == 5 and p["semanas_observadas"] == 3
     assert p["arrastre"] <= p["proyeccion"]
+
+
+def test_salto_wayback(tmp_path):
+    """Una semana suelta de abril de 2025 (como la de la Wayback Machine) y semanas de 2026."""
+    raiz = tmp_path / "repo"
+    shutil.copytree(REPO / "config", raiz / "config")
+    shutil.copytree(REPO / "web", raiz / "web")
+    ponderadores_ficticios(raiz / "config" / "ponderadores_clase.csv")
+    c = cargar_config(raiz)
+    generar_rango(date(2025, 4, 21), date(2025, 4, 27), c.ruta("crudos"))
+    generar_rango(date(2026, 9, 7), date(2026, 9, 20), c.ruta("crudos"))
+    for z in zips_sin_procesar(c):
+        lectura.procesar_zip_diario(z, fecha_de_zip(z), c)
+    panel.actualizar_paneles(c, "semanal")
+    s = indice.calcular(c, "semanal")["indices"]
+    tot = s.filter(pl.col("region") == "Nacional", pl.col("codigo") == "TOTAL").sort("periodo")
+    assert tot["periodo"].to_list() == ["2025-W17", "2026-W37", "2026-W38"]
+    assert tot["salto"].to_list() == [False, True, False]
+    assert tot["var_pct"][1] is None and tot["var_pct"][2] is not None
+    assert 20 < tot["var_salto_pct"][1] < 60  # ~16,5 meses a ~2,3% mensual
+    sal = resumen.saltos(tot, "semanal")
+    assert len(sal) == 1 and 1.5 < sal[0]["var_mensual"] < 3.5

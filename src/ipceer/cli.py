@@ -1,7 +1,7 @@
 """Línea de comandos: `ipceer <comando>`.
 
 Comandos:
-  descargar              archiva en la carpeta local los zips SEPA publicados que falten
+  descargar              archiva los zips SEPA publicados que falten (y las copias de la Wayback Machine)
   procesar               arma el panel diario de los zips archivados sin procesar
   consolidar             arma/actualiza los paneles semanales y mensuales
   calcular               calcula los índices semanal y mensual y escribe resultados/
@@ -29,6 +29,10 @@ log = logging.getLogger("ipceer")
 
 
 def cmd_descargar(cfg, args):
+    try:
+        descarga.descargar_wayback(cfg)
+    except Exception as e:  # la Wayback Machine es un extra: si falla, sigue el día normal
+        log.warning("Wayback Machine no disponible: %s", e)
     pend = descarga.descargar_pendientes(cfg)
     log.info("Zips archivados pendientes de procesar: %d", len(pend))
 

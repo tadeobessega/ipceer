@@ -33,7 +33,7 @@ a{color:var(--accent)}
 .brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
 .logo{display:block;width:102px;height:24px}
 .blogo{display:block;width:128px;height:30px}
-.brand>span:last-child{font-family:var(--font);font-weight:600;font-size:15px;letter-spacing:-.01em;border-left:1px solid var(--line2);padding-left:12px}
+.brand>span:last-child{font-family:var(--mono);font-weight:700;font-size:16px;letter-spacing:0;border-left:1px solid var(--line2);padding-left:12px}
 .tabs{display:flex;flex:1;min-width:0;overflow-x:auto;align-items:stretch}
 .tabs button{font:400 14px var(--font);background:transparent;color:var(--muted);border:0;border-bottom:2px solid transparent;padding:0 12px;cursor:pointer;white-space:nowrap}
 .tabs button:hover{color:var(--fg)}
@@ -53,7 +53,7 @@ h1{font-size:44px;line-height:52px;letter-spacing:-.01em;margin:.25em 0 .3em;fon
 @media (max-width:700px){h1{font-size:34px;line-height:40px}}
 .barra{color:var(--cian);font-family:var(--mono);font-weight:700}
 h1 em{font-style:normal;color:var(--accent)}
-.lead{color:var(--fg2);font-size:16px;max-width:62ch;margin:0;text-align:justify;hyphens:auto}
+.lead{color:var(--fg2);font-size:16px;margin:0;text-align:justify;hyphens:auto}
 .note{font-size:12.5px;color:var(--muted);margin-top:12px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:26px}
 .kpi{background:var(--panel);border-top:3px solid var(--fg);padding:24px;min-height:250px;display:flex;flex-direction:column}
@@ -70,7 +70,7 @@ h1 em{font-style:normal;color:var(--accent)}
 section{padding:40px 0 6px}
 h2{font-size:26px;line-height:32px;letter-spacing:-.01em;margin:0 0 6px;font-weight:700;border-top:2px solid var(--fg);padding-top:14px}
 h2 .tag{display:block;font-family:var(--font);font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0;margin-bottom:2px}
-.sub{color:var(--fg2);margin:0 0 18px;max-width:90ch;text-align:justify;hyphens:auto}
+.sub{color:var(--fg2);margin:0 0 18px;text-align:justify;hyphens:auto}
 .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
 .card{background:var(--panel);border:1px solid var(--line);padding:16px 18px;min-width:0;position:relative}
 .s12{grid-column:span 12}.s8{grid-column:span 8}.s7{grid-column:span 7}.s6{grid-column:span 6}.s5{grid-column:span 5}.s4{grid-column:span 4}
@@ -141,7 +141,7 @@ footer.banner{background:#2840a5;color:#fff;margin-top:56px}
 <body>
 <header class="top">
   <div class="topin">
-    <div class="brand"><span class="logo" style="color:#2840a5;--cursor:#d6810c" role="img" aria-label="CEER"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 469 110" width="100%" height="100%"><path fill="currentColor" d="M60.5 110Q31.6 110 15.8 95.8Q0 81.5 0 54.8Q0 28.8 14.4 14.4Q28.8 0 55.5 0Q71.9 0 83.7 6.4Q95.4 12.8 100.3 24.5L80.7 40.1Q76.3 33.2 69.5 29.4Q62.8 25.7 54.7 25.7Q42 25.7 34.9 33Q27.7 40.3 27.7 53.8Q27.7 68.7 36.9 76.5Q46 84.3 62.9 84.3Q70.1 84.3 77.2 83.6Q84.4 82.9 91.2 81.7L94 107Q85.9 108.8 77.3 109.4Q68.7 110 60.5 110ZM156.5 110Q129 110 114 95.8Q99 81.5 99 54.8Q99 28.8 111.8 14.4Q124.5 0 147.7 0Q170.4 0 182.8 13.3Q195.2 26.6 195.2 52Q195.2 59.2 194.6 65.7H116.8V46.9H168.6Q168.6 36.2 163.1 30.5Q157.7 24.8 147.9 24.8Q137.3 24.8 131.4 32.3Q125.6 39.9 125.6 53.8Q125.6 68.8 134.2 76.6Q142.9 84.4 158.9 84.4Q166.1 84.4 173.1 83.7Q180.1 82.9 187.4 81.6L190 107.2Q179.8 109 171.4 109.5Q163 110 156.5 110ZM255.5 110Q228 110 213 95.8Q198 81.5 198 54.8Q198 28.8 210.8 14.4Q223.5 0 246.7 0Q269.4 0 281.8 13.3Q294.2 26.6 294.2 52Q294.2 59.2 293.6 65.7H215.8V46.9H267.6Q267.6 36.2 262.1 30.5Q256.7 24.8 246.9 24.8Q236.3 24.8 230.4 32.3Q224.6 39.9 224.6 53.8Q224.6 68.8 233.2 76.6Q241.9 84.4 257.9 84.4Q265.1 84.4 272.1 83.7Q279.1 82.9 286.4 81.6L289 107.2Q278.8 109 270.4 109.5Q262 110 255.5 110ZM345.8 62.4 339.6 25.9H348.7Q350.3 0 375.8 0Q390.9 0 399 11.1Q407 22.2 407 43.1H380Q380 33.7 376.6 29.6Q373.1 25.5 365.5 25.5Q355.6 25.5 350.7 35.1Q345.8 44.7 345.8 62.4ZM296.4 108V84.8H370.6V108ZM318.8 108V2H341.8L345.8 32.4V108ZM300.4 25.2V2H340.4L342.4 25.2Z"/><rect fill="var(--cursor,#f7ac4d)" x="417" y="87" width="52" height="21"/></svg></span><span>Índice de precios de bienes</span></div>
+    <div class="brand"><span class="logo" style="color:#2840a5;--cursor:#d6810c" role="img" aria-label="CEER"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 469 110" width="100%" height="100%"><path fill="currentColor" d="M60.5 110Q31.6 110 15.8 95.8Q0 81.5 0 54.8Q0 28.8 14.4 14.4Q28.8 0 55.5 0Q71.9 0 83.7 6.4Q95.4 12.8 100.3 24.5L80.7 40.1Q76.3 33.2 69.5 29.4Q62.8 25.7 54.7 25.7Q42 25.7 34.9 33Q27.7 40.3 27.7 53.8Q27.7 68.7 36.9 76.5Q46 84.3 62.9 84.3Q70.1 84.3 77.2 83.6Q84.4 82.9 91.2 81.7L94 107Q85.9 108.8 77.3 109.4Q68.7 110 60.5 110ZM156.5 110Q129 110 114 95.8Q99 81.5 99 54.8Q99 28.8 111.8 14.4Q124.5 0 147.7 0Q170.4 0 182.8 13.3Q195.2 26.6 195.2 52Q195.2 59.2 194.6 65.7H116.8V46.9H168.6Q168.6 36.2 163.1 30.5Q157.7 24.8 147.9 24.8Q137.3 24.8 131.4 32.3Q125.6 39.9 125.6 53.8Q125.6 68.8 134.2 76.6Q142.9 84.4 158.9 84.4Q166.1 84.4 173.1 83.7Q180.1 82.9 187.4 81.6L190 107.2Q179.8 109 171.4 109.5Q163 110 156.5 110ZM255.5 110Q228 110 213 95.8Q198 81.5 198 54.8Q198 28.8 210.8 14.4Q223.5 0 246.7 0Q269.4 0 281.8 13.3Q294.2 26.6 294.2 52Q294.2 59.2 293.6 65.7H215.8V46.9H267.6Q267.6 36.2 262.1 30.5Q256.7 24.8 246.9 24.8Q236.3 24.8 230.4 32.3Q224.6 39.9 224.6 53.8Q224.6 68.8 233.2 76.6Q241.9 84.4 257.9 84.4Q265.1 84.4 272.1 83.7Q279.1 82.9 286.4 81.6L289 107.2Q278.8 109 270.4 109.5Q262 110 255.5 110ZM345.8 62.4 339.6 25.9H348.7Q350.3 0 375.8 0Q390.9 0 399 11.1Q407 22.2 407 43.1H380Q380 33.7 376.6 29.6Q373.1 25.5 365.5 25.5Q355.6 25.5 350.7 35.1Q345.8 44.7 345.8 62.4ZM296.4 108V84.8H370.6V108ZM318.8 108V2H341.8L345.8 32.4V108ZM300.4 25.2V2H340.4L342.4 25.2Z"/><rect fill="var(--cursor,#f7ac4d)" x="417" y="87" width="52" height="21"/></svg></span><span>IPCEER</span></div>
     <nav class="tabs" role="tablist" aria-label="Secciones">
       <button role="tab" data-tab="res" aria-selected="true">Resumen</button>
       <button role="tab" data-tab="sem" aria-selected="false">Semanal</button>
@@ -336,6 +336,10 @@ function renderKpis(){
     k.push(`<div class="kpi"><span>${ultC.parcial?'Semana en curso':'Última semana completa'} · ${semLbl(ultC)}</span><b>${pct(ultC.var,2)}</b><small>Mensualizada: <span class="mono">${pct(ultC.var_mensualizada)}</span></small></div>`);
     k.push(`<div class="kpi"><span>Promedio últimas 4 semanas</span><b class="ac">${pct(ultC.prom4_mensualizada)}</b><small>${ultC.prom4==null?'<span style="font-family:var(--font)">Hacen falta 4 semanas con datos</span>':'mensualizado · semanal <span class="mono">'+pct(ultC.prom4,2)+'</span>'}</small></div>`);
   }
+  const sal=(s.saltos||[]).slice(-1)[0];
+  if(sal){
+    k.push(`<div class="kpi"><span>Acumulado desde ${diaLbl(sal.desde[0])}–${diaLbl(sal.desde[1])} ${sal.desde[0].slice(0,4)}</span><b>${pct(sal.var,1)}</b><small>Promedio mensual: <span class="mono">${pct(sal.var_mensual,1)}</span> en ${num(sal.meses,1)} meses</small><small style="font-family:var(--font);margin-top:6px">Punto de partida: copia de SEPA guardada en la Wayback Machine.</small></div>`);
+  }
   if(p){
     k.push(`<div class="kpi"><span>${mesLargo(p.mes)} · relevado</span><b>${pct(p.relevado)}</b><small><span class="mono">${p.semanas_observadas}</span> de <span class="mono">${p.semanas_mes}</span> semanas con datos</small></div>`);
     k.push(`<div class="kpi"><span>${mesLargo(p.mes)} · proyección</span><b class="am">${pct(p.proyeccion)}</b><small>Piso por arrastre: <span class="mono">${pct(p.arrastre)}</span></small></div>`);
@@ -433,7 +437,8 @@ function renderMetodo(){
     <p><b>Qué no cubre.</b> Solo informan los comercios grandes; quedan afuera almacenes, autoservicios chicos, verdulerías y carnicerías de barrio, que en algunos rubros (frutas, verduras, carne) son una parte importante de las compras. Tampoco hay servicios. El índice mide la evolución de precios de los bienes que se venden en grandes cadenas.</p>`],
   ['archivo','Archivo y frecuencia',`
     <p>El portal publica un archivo por día de la semana y lo pisa a la semana siguiente: solo están disponibles los últimos días. Por eso una tarea programada descarga todos los días hábiles los archivos publicados que todavía no están archivados y los guarda sin modificar, con un manifiesto (fecha, tamaño, hash SHA-256, URL y momento de descarga). Bajar solo en días hábiles no pierde fines de semana: el lunes todavía están publicados los archivos del sábado y el domingo.</p>
-    <p>El índice arranca el primer día archivado. No hay serie hacia atrás salvo que se consigan archivos históricos.</p>`],
+    <p><b>Copias históricas.</b> El portal no guarda historia, pero la Wayback Machine (Internet Archive) guardó algunos de esos archivos cuando estaban publicados; la única semana completa encontrada es la del 21 al 27 de abril de 2025. El proceso consulta todos los días el índice de capturas de la Wayback Machine y agrega al archivo cualquier día que no tenga, con el mismo formato y registrado en el manifiesto. Esos días entran al índice como un período más.</p>
+    <p><b>Saltos.</b> Cuando entre dos períodos con datos hay un hueco (por ejemplo, de abril de 2025 a octubre de 2026), la variación de ese tramo se calcula igual, comparando los mismos productos en las dos puntas, pero no se presenta como variación semanal ni mensual: se informa como acumulado del tramo y su equivalente mensual compuesto. Con más tiempo entre las puntas hay menos productos que siguen existiendo con el mismo código y presentación, así que ese número es menos preciso que una variación semanal.</p>`],
   ['unidad','Unidad de observación y precio',`
     <p>La unidad comparada es el <b>producto-cadena-región</b>: mismo código de producto, misma presentación (cantidad y unidad), misma cadena (comercio y bandera) y misma región. Comparar dentro de la misma cadena evita que la entrada o salida de cadenas de la base (que pasa seguido) se lea como un cambio de precios.</p>
     <p>El precio diario de cada unidad es la media geométrica del precio entre las sucursales de esa cadena en la región. El precio de un período (semana o mes) es la media geométrica de los precios diarios.</p>

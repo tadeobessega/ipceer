@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import math
+from datetime import date, timedelta
 from pathlib import Path
 
 import polars as pl
@@ -30,6 +31,16 @@ log = logging.getLogger(__name__)
 
 NACIONAL = "Nacional"
 REZAGO_INTERANUAL = {"mensual": 12, "semanal": 52}
+
+
+def _siguiente(periodo: str, frecuencia: str) -> str:
+    if frecuencia == "mensual":
+        a, m = map(int, periodo.split("-"))
+        return f"{a + (m == 12)}-{1 if m == 12 else m + 1:02d}"
+    a, s = periodo.split("-W")
+    lunes = date.fromisocalendar(int(a), int(s), 1) + timedelta(days=7)
+    a2, s2, _ = lunes.isocalendar()
+    return f"{a2}-W{s2:02d}"
 
 
 def resolver_codigo(clase: str, codigos: set[str], min_niveles: int = 2) -> str | None:
@@ -185,23 +196,40 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
 
     nombres_div = dict(pl.read_csv(cfg.dir_config / "ponderadores_division.csv", schema_overrides={"codigo": pl.Utf8})
                        .select("codigo", "nombre").iter_rows())
-    rezago = REZAGO_INTERANUAL[frecuencia]
     todos = (
         pl.concat([regional, nac.select(regional.columns)])
         .join(parcial, on="periodo", how="left")
         .sort("region", "nivel", "codigo", "periodo")
         .with_columns(
+            pl.col("periodo").shift(1).over("region", "nivel", "codigo").alias("periodo_anterior"),
             ((pl.col("indice") / pl.col("indice").shift(1).over("region", "nivel", "codigo") - 1) * 100)
             .alias("var_pct"),
-            ((pl.col("indice") / pl.col("indice").shift(rezago).over("region", "nivel", "codigo") - 1) * 100)
-            .alias("var_interanual_pct"),
+            (pl.col("periodo").str.slice(0, 4).cast(pl.Int32) - 1).cast(pl.Utf8)
+            .add(pl.col("periodo").str.slice(4)).alias("_periodo_ia"),
             pl.when(pl.col("nivel") == "total").then(pl.lit("Bienes relevados (total)"))
             .when(pl.col("nivel") == "division").then(pl.col("codigo").replace_strict(nombres_div, default=""))
             .otherwise(pl.col("codigo").replace_strict(nombres, default="")).alias("nombre"),
         )
+        .join(
+            regional_y_nac := pl.concat([regional, nac.select(regional.columns)])
+            .select("region", "nivel", "codigo", pl.col("periodo").alias("_periodo_ia"), pl.col("indice").alias("_indice_ia")),
+            on=["region", "nivel", "codigo", "_periodo_ia"], how="left",
+        )
+        .with_columns(((pl.col("indice") / pl.col("_indice_ia") - 1) * 100).alias("var_interanual_pct"))
+        .with_columns(
+            # salto: el período anterior con datos no es el inmediato anterior (ej. la copia de la
+            # Wayback Machine de abril de 2025). La variación de ese tramo no es mensual ni semanal.
+            (pl.col("periodo_anterior").is_not_null()
+             & (pl.col("periodo_anterior").map_elements(lambda p: _siguiente(p, frecuencia), return_dtype=pl.Utf8)
+                != pl.col("periodo"))).alias("salto"),
+        )
+        .with_columns(
+            pl.when(pl.col("salto")).then(pl.col("var_pct")).otherwise(None).alias("var_salto_pct"),
+            pl.when(pl.col("salto")).then(None).otherwise(pl.col("var_pct")).alias("var_pct"),
+        )
         .select("periodo", "region", "nivel", "codigo", "nombre", "indice", "var_pct",
-                "var_interanual_pct", "n_productos", "parcial")
-        .with_columns(pl.col("indice", "var_pct", "var_interanual_pct").round(4))
+                "var_interanual_pct", "n_productos", "parcial", "salto", "periodo_anterior", "var_salto_pct")
+        .with_columns(pl.col("indice", "var_pct", "var_interanual_pct", "var_salto_pct").round(4))
     )
 
     ult = elem.filter(pl.col("periodo") == periodos[-1])

@@ -36,21 +36,40 @@ log = logging.getLogger(__name__)
 CLAVE = ["id_comercio", "id_bandera", "id_producto", "cantidad", "unidad", "region"]
 
 
-def _leer_csv(contenido: bytes) -> pl.DataFrame:
-    df = pl.read_csv(
-        io.BytesIO(contenido),
-        separator="|",
-        infer_schema=False,
-        quote_char=None,
-        truncate_ragged_lines=True,
-        ignore_errors=True,
-        encoding="utf8-lossy",
-    )
-    df = df.rename({c: c.replace("﻿", "").strip().lower() for c in df.columns})
-    if "id_comercio" in df.columns:
-        # descarta pie de archivo ("Última actualización: ...") y filas basura
-        df = df.filter(pl.col("id_comercio").str.strip_chars().str.contains(r"^\d+$"))
-    return df.with_columns(pl.col(c).str.strip_chars() for c in df.columns)
+COLUMNAS_PRODUCTOS = [
+    "id_comercio", "id_bandera", "id_sucursal", "id_producto", "productos_ean", "productos_descripcion",
+    "productos_cantidad_presentacion", "productos_unidad_medida_presentacion", "productos_marca",
+    "productos_precio_lista", "productos_precio_unitario_promo1",
+]
+
+
+def _leer_csv(contenido: bytes, columnas: list[str] | None = None) -> pl.DataFrame:
+    """Lee un CSV de SEPA ("|", BOM, pie de archivo, espacios de relleno).
+
+    Los productos de una cadena grande pueden ser millones de filas: se escriben a un
+    archivo temporal y se leen en modo lazy solo las columnas necesarias.
+    """
+    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
+        tmp.write(contenido)
+        ruta = tmp.name
+    try:
+        lf = pl.scan_csv(
+            ruta, separator="|", infer_schema=False, quote_char=None,
+            truncate_ragged_lines=True, ignore_errors=True, encoding="utf8-lossy",
+        )
+        nombres = lf.collect_schema().names()
+        limpio = {c: c.replace("\ufeff", "").strip().lower() for c in nombres}
+        lf = lf.rename(limpio)
+        if columnas:
+            lf = lf.select([c for c in columnas if c in limpio.values()])
+        cols = lf.collect_schema().names()
+        lf = lf.with_columns(pl.col(c).str.strip_chars() for c in cols)
+        if "id_comercio" in cols:
+            # descarta pie de archivo ("Última actualización: ...") y filas basura
+            lf = lf.filter(pl.col("id_comercio").str.contains(r"^\d+$"))
+        return lf.collect()
+    finally:
+        Path(ruta).unlink(missing_ok=True)
 
 
 def _numero(col: str) -> pl.Expr:

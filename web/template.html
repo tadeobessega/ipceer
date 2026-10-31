@@ -15,7 +15,7 @@
   --accent:#2840a5; --accentbg:rgba(40,64,165,.10); --accent2:#c0d0f9;
   --ambar:#d6810c; --ambar-t:#915c08; --cian:#138282; --neg:#af3e30;
   --bar:#2840a5; --bar2:#c0d0f9; --resto:#9c9ea5; --warn:#915c08;
-  --title:"Cascadia Code","Cascadia Mono",Consolas,"SFMono-Regular",Menlo,monospace;
+  --title:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
   --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
   --mono:"Cascadia Code","Cascadia Mono",Consolas,"SFMono-Regular",Menlo,monospace;
   color-scheme:light;
@@ -29,15 +29,15 @@ a{color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 .top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
-.topin{max-width:1280px;margin:0 auto;padding:10px 20px 0;display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:12px;padding-bottom:10px}
-.logo{display:block;width:111px;height:26px}
+.topin{max-width:1280px;margin:0 auto;padding:0 20px;height:56px;display:flex;align-items:stretch;gap:22px}
+.brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.logo{display:block;width:77px;height:18px}
 .blogo{display:block;width:128px;height:30px}
 .brand>span:last-child{font-family:var(--font);font-weight:600;font-size:15px;letter-spacing:-.01em;border-left:1px solid var(--line2);padding-left:12px}
-.tabs{display:flex;flex:1;min-width:0;overflow-x:auto}
-.tabs button{font:600 14px var(--font);background:transparent;color:var(--muted);border:0;border-bottom:2px solid transparent;padding:10px 14px 12px;cursor:pointer;white-space:nowrap}
+.tabs{display:flex;flex:1;min-width:0;overflow-x:auto;align-items:stretch}
+.tabs button{font:400 14px var(--font);background:transparent;color:var(--muted);border:0;border-bottom:2px solid transparent;padding:0 12px;cursor:pointer;white-space:nowrap}
 .tabs button:hover{color:var(--fg)}
-.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.tabs button[aria-selected="true"]{color:var(--fg);font-weight:600;border-bottom-color:var(--accent)}
 .subbar{border-top:1px solid var(--line)}
 .subin{max-width:1280px;margin:0 auto;padding:8px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
 .subin label{display:flex;gap:8px;align-items:center}
@@ -46,30 +46,29 @@ select{font:500 13px var(--font);background:var(--panel);color:var(--fg);border:
 
 main{max-width:1280px;margin:0 auto;padding:0 20px 80px}
 .demo{margin-top:18px;border:1px solid var(--ambar);color:var(--ambar-t);background:#fff;padding:10px 14px;font-size:13.5px}
-.hero{padding:40px 0 26px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:40px;align-items:start;border-bottom:1px solid var(--line)}
+.hero{padding:40px 0 30px;border-bottom:1px solid var(--line)}
+.hero .lead{margin-top:6px}
 .eyebrow{font-size:13px;color:var(--muted);font-weight:500}
-h1{font-size:clamp(28px,3.6vw,46px);line-height:1.08;letter-spacing:-.01em;margin:.2em 0 .1em;font-weight:700;text-wrap:balance}
-.signos{font-family:var(--mono);font-weight:700;color:var(--cian);font-size:26px;margin:0 0 .5em;letter-spacing:.02em}
+h1{font-size:44px;line-height:50px;letter-spacing:-.025em;margin:.25em 0 .3em;font-weight:700;text-wrap:balance}
+@media (max-width:700px){h1{font-size:34px;line-height:40px}}
 .barra{color:var(--cian);font-family:var(--mono);font-weight:700}
 h1 em{font-style:normal;color:var(--accent)}
 .lead{color:var(--fg2);font-size:16px;max-width:62ch;margin:0;text-align:justify;hyphens:auto}
 .note{font-size:12.5px;color:var(--muted);margin-top:12px}
-.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:2px solid var(--fg)}
-.kpi{padding:14px 4px 14px 0;border-bottom:1px solid var(--line2)}
-.kpi:nth-child(odd){border-right:1px solid var(--line2);padding-right:16px}
-.kpi:nth-child(even){padding-left:16px}
-.kpi>span{display:block;font-size:13px;color:var(--muted)}
-.kpi b{display:block;font-size:30px;font-weight:700;margin:2px 0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:26px}
+.kpi{background:var(--panel);border-top:3px solid var(--fg);padding:24px;min-height:250px;display:flex;flex-direction:column}
+.kpi>span{display:block;font-size:15px;color:var(--muted);line-height:1.35}
+.kpi b{display:block;font-family:var(--mono);font-size:72px;line-height:76px;font-weight:600;letter-spacing:-.03em;margin:18px 0 8px;color:var(--fg)}
 .kpi b.ac{color:var(--accent)}
 .kpi b.am{color:var(--ambar-t)}
-.kpi b.nd,.minik b.nd{color:var(--resto);font-weight:400;font-size:18px;line-height:36px}
-.vacio{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13.5px;text-align:center;padding:0 20px}
-.neg{color:var(--neg)}
-.kpi small{font-size:12.5px;color:var(--fg2);line-height:1.4;display:block}
+.kpi b.nd{color:var(--resto);font-family:var(--font);font-weight:400;font-size:28px;line-height:76px;letter-spacing:0}
+.minik b.nd{color:var(--resto);font-weight:400;font-size:18px}
+.kpi small{font-family:var(--mono);font-size:15px;color:var(--fg2);line-height:1.4;display:block}
 .kpi small .mono{color:var(--fg)}
+.kpi .kfuente{margin-top:auto;padding-top:14px;font-size:12px;color:var(--muted)}
 
 section{padding:40px 0 6px}
-h2{font-size:clamp(20px,2.2vw,27px);letter-spacing:-.01em;margin:0 0 6px;font-weight:600;border-top:2px solid var(--fg);padding-top:14px}
+h2{font-size:26px;line-height:32px;letter-spacing:-.025em;margin:0 0 6px;font-weight:700;border-top:2px solid var(--fg);padding-top:14px}
 h2 .tag{display:block;font-family:var(--font);font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0;margin-bottom:2px}
 .sub{color:var(--fg2);margin:0 0 18px;max-width:90ch;text-align:justify;hyphens:auto}
 .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
@@ -168,8 +167,7 @@ footer.banner{background:#2840a5;color:#fff;margin-top:56px}
       <div>
         <div class="eyebrow">Precios de supermercados de todo el país (SEPA) <span id="fecha-hero"></span></div>
         <h1>Inflación de bienes, <em>semana a semana</em></h1>
-        <div class="signos" aria-hidden="true">&gt;&gt;</div>
-        <p class="lead">Medimos todos los días los precios que los grandes supermercados informan a la Secretaría de Comercio (base SEPA, más de 70.000 productos) y los agregamos con la canasta del IPC del INDEC. Es un indicador de alta frecuencia de los bienes que se venden en góndola, no un IPC completo: no incluye servicios, tarifas ni alquileres.</p>
+                <p class="lead">Medimos todos los días los precios que los grandes supermercados informan a la Secretaría de Comercio (base SEPA, más de 70.000 productos) y los agregamos con la canasta del IPC del INDEC. Es un indicador de alta frecuencia de los bienes que se venden en góndola, no un IPC completo: no incluye servicios, tarifas ni alquileres.</p>
         <p class="note" id="hero-note"></p>
       </div>
       <div class="kpis" id="kpis"></div>
@@ -336,13 +334,13 @@ function renderKpis(){
   const k=[];
   if(ultC){
     k.push(`<div class="kpi"><span>${ultC.parcial?'Semana en curso':'Última semana completa'} · ${semLbl(ultC)}</span><b>${pct(ultC.var,2)}</b><small>Mensualizada: <span class="mono">${pct(ultC.var_mensualizada)}</span></small></div>`);
-    k.push(`<div class="kpi"><span>Promedio últimas 4 semanas</span><b class="ac">${pct(ultC.prom4_mensualizada)}</b><small>mensualizado · semanal <span class="mono">${pct(ultC.prom4,2)}</span></small></div>`);
+    k.push(`<div class="kpi"><span>Promedio últimas 4 semanas</span><b class="ac">${pct(ultC.prom4_mensualizada)}</b><small>${ultC.prom4==null?'<span style="font-family:var(--font)">Hacen falta 4 semanas con datos</span>':'mensualizado · semanal <span class="mono">'+pct(ultC.prom4,2)+'</span>'}</small></div>`);
   }
   if(p){
     k.push(`<div class="kpi"><span>${mesLargo(p.mes)} · relevado</span><b>${pct(p.relevado)}</b><small><span class="mono">${p.semanas_observadas}</span> de <span class="mono">${p.semanas_mes}</span> semanas con datos</small></div>`);
     k.push(`<div class="kpi"><span>${mesLargo(p.mes)} · proyección</span><b class="am">${pct(p.proyeccion)}</b><small>Piso por arrastre: <span class="mono">${pct(p.arrastre)}</span></small></div>`);
   }
-  k.forEach((h,i)=>{ k[i]=h.replace(/<b class="(ac|am)">–<\/b>/,'<b class="nd">sin datos aún</b>').replace(/<b>–<\/b>/,'<b class="nd">sin datos aún</b>'); });
+  k.forEach((h,i)=>{ k[i]=h.replace(/<\/div>$/,'<div class="kfuente">Fuente: CEER en base a SEPA.</div></div>').replace(/<b class="(ac|am)">–<\/b>/,'<b class="nd">sin datos aún</b>').replace(/<b>–<\/b>/,'<b class="nd">sin datos aún</b>'); });
   document.getElementById('kpis').innerHTML = k.join('') || '<div class="kpi"><span>Sin datos todavía</span><b>–</b></div>';
   const cob=(D.cobertura||[]).find(c=>c.region===st.reg);
   document.getElementById('hero-note').innerHTML = `${esc(st.reg)} · ${esc(SERIES[st.ser]||st.ser)}`+(cob&&st.ser==='TOTAL'?` · cubre el <span class="mono">${num(cob.ponderacion_cubierta_pct,1)}%</span> de la canasta del IPC de la región`:'')+'.';

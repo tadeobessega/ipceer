@@ -130,11 +130,32 @@ reglas:
     excluir:
       - '\b(chocolate|chicle|golosina|caramelo|confites)\b'
 
-  - clase: "02.1.1"
-    nombre: Bebidas alcohólicas
+  # El INDEC pondera por separado espirituosas (02.1.1), vinos (02.1.2) y cerveza (02.1.3).
+  - clase: "02.1.3"
+    nombre: Cerveza
     incluir:
-      - '\b(cerveza|cervezas|vino|vinos|espumante|espumantes|champagne|champana|sidra|fernet|vodka|whisky|whiskey|gin|ron|licor|licores|aperitivo|vermouth|vermut|grappa|tequila|cognac|conac|brandy|anis|amaretto|caipirinha|cachaza|chopp)\b'
+      - '\b(cerveza|cervezas|chopp|ipa|lager|stout)\b'
+    excluir:
+      - '\bsin alcohol\b'
+      - '\b0 0\b'
+      - '\bvinagre\b'
+      - '\b(bombon|bombones|chocolate|caramelo|caramelos|helado|torta)\b'
+
+  - clase: "02.1.2"
+    nombre: Vinos (incluye espumantes, sidras y vermut)
+    incluir:
+      - '\b(vino|vinos|espumante|espumantes|champagne|champana|sidra|vermouth|vermut|moscato|frizzante)\b'
       - '\b(malbec|cabernet|sauvignon|chardonnay|torrontes|merlot|syrah|bonarda|pinot|tempranillo|moscatel|blend|tinto|rosado)\b'
+    excluir:
+      - '\bsin alcohol\b'
+      - '\b0 0\b'
+      - '\bvinagre\b'
+      - '\b(bombon|bombones|chocolate|caramelo|caramelos|helado|torta)\b'
+
+  - clase: "02.1.1"
+    nombre: Bebidas espirituosas, destiladas y licores
+    incluir:
+      - '\b(fernet|vodka|whisky|whiskey|gin|ron|licor|licores|aperitivo|grappa|tequila|cognac|conac|brandy|anis|amaretto|caipirinha|cachaza|aguardiente|bitter)\b'
     excluir:
       - '\bsin alcohol\b'
       - '\b0 0\b'

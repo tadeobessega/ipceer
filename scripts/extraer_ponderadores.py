@@ -63,19 +63,32 @@ def lineas_cuadro7(pdf: Path) -> list[str]:
 
 
 def parsear(lineas: list[str]) -> list[dict]:
-    filas, pendiente = [], ""
+    """Arma bloques que empiezan en una línea con código y siguen con las líneas de
+    continuación (nombres partidos en dos renglones, con los números en el medio o al final).
+    En cada bloque busca los seis valores regionales y el resto es el nombre."""
+    bloques: list[str] = []
     for ln in lineas:
         ln = " ".join(ln.split())
-        if pendiente:
-            ln = f"{pendiente} {ln}"
-            pendiente = ""
-        m = FILA.match(ln)
-        if m:
-            cod, nombre, *vals = m.groups()
-            filas.append({"codigo": cod, "nombre": nombre.strip(),
-                          **{r: (None if v == "-" else float(v.replace(",", "."))) for r, v in zip(REGIONES, vals)}})
-        elif CODIGO.match(ln) and len(ln) < 160:
-            pendiente = ln  # nombre partido en dos líneas
+        if not ln:
+            continue
+        # código en medio del renglón: "Nombre de la apertura 12.1.3 1,97 2,40 ..."
+        medio = re.search(rf"\s(\d{{2}}(?:\.\d{{1,2}}){{1,3}})\s+{NUM}\s", ln)
+        if CODIGO.match(ln):
+            bloques.append(ln)
+        elif medio:
+            bloques.append(f"{medio.group(1)} {ln[:medio.start()]} {ln[medio.end(1):]}")
+        elif bloques and len(ln) < 120 and not ln.lower().startswith(("cuadro", "fuente", "región", "nivel general", "metodología")):
+            bloques[-1] += " " + ln
+    seis = re.compile(rf"{NUM}\s+{NUM}\s+{NUM}\s+{NUM}\s+{NUM}\s+{NUM}")
+    filas = []
+    for b in bloques:
+        cod, resto = b.split(" ", 1)
+        m = seis.search(resto)
+        if not m:
+            continue
+        nombre = " ".join((resto[:m.start()] + " " + resto[m.end():]).split())
+        filas.append({"codigo": cod, "nombre": nombre,
+                      **{r: (None if v == "-" else float(v.replace(",", "."))) for r, v in zip(REGIONES, m.groups())}})
     return filas
 
 

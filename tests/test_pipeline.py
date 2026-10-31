@@ -47,7 +47,9 @@ def test_clasificador_casos_dificiles():
         "Agua Mineral sin Gas 2 lt": "01.2.2",
         "Cerveza sin Alcohol 473 ml": "01.2.2",
         "Vinagre de Vino 500 ml": "01.1.9",
-        "Vino Tinto Malbec 750 ml": "02.1.1",
+        "Vino Tinto Malbec 750 ml": "02.1.2",
+        "Fernet Branca 750 ml": "02.1.1",
+        "Cerveza Rubia Lata 473 ml": "02.1.3",
         "Alimento para Perros Adultos 3 kg": "09.3.4",
         "Aceite de Girasol 1.5 lt": "01.1.5",
         "Crema Dental Colgate 90 gr": "12.1.3",
@@ -64,7 +66,7 @@ def test_clasificador_casos_dificiles():
         "AXE DEO BS MUSK 150M": "12.1.3",
         "YERBA L.TRANQUERA X1KG.ESPECIAL": "01.2.1",
         "SAL FINA CELUSAL X250G.SALERO": "01.1.9",
-        "VINO UVITA X1L.BLANCO": "02.1.1",
+        "VINO UVITA X1L.BLANCO": "02.1.2",
         "MAYONESA CADA DIA X2.900ML": "01.1.9",
     }
     errores = {d: (cl.clasificar_texto(d), c) for d, c in casos.items() if cl.clasificar_texto(d) != c}

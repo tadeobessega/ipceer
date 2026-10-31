@@ -1,0 +1,115 @@
+codigo,nombre,GBA,Pampeana,Noreste,Noroeste,Cuyo,Patagonia
+01,Alimentos y bebidas no alcohólicas,23.44,28.65,35.3,34.67,28.42,27.43
+01.1,Alimentos,20.33,25.73,31.66,30.31,25.47,24.77
+01.1.1,Pan y cereales,4.05,5.02,6.59,6.49,5.21,4.61
+01.1.2,Carnes y derivados,6.98,9.81,13.27,12.5,10.32,9.92
+01.1.3,Pescados y Mariscos,0.51,0.47,0.29,0.34,0.45,0.48
+01.1.4,"Leche, productos lácteos y huevos",3.45,3.73,4.1,3.69,3.55,3.68
+01.1.5,"Aceites, grasas y manteca",0.55,0.76,0.9,0.64,0.66,0.63
+01.1.6,Frutas,1.27,1.46,1.46,1.45,1.1,1.28
+01.1.7,"Verduras, tubérculos y legumbres",2.23,2.9,3.59,3.58,2.79,2.68
+01.1.8,"Azúcar, dulces, chocolate, golosinas, etc.",1.01,1.21,1.12,1.24,1.03,1.02
+01.1.9,Otros alimentos,0.29,0.37,0.36,0.36,0.36,0.48
+01.2,Bebidas no alcohólicas,3.11,2.92,3.64,4.36,2.95,2.66
+01.2.1,"Café, té, yerba y cacao",0.68,0.82,0.93,0.64,0.66,0.69
+01.2.2,"Aguas minerales, bebidas gaseosas y jugos",2.43,2.1,2.71,3.72,2.29,1.97
+02,Bebidas alcohólicas y tabaco,3.27,3.8,3.64,3.13,3.57,3.5
+02.1,Bebidas alcohólicas,1.42,1.79,2.04,1.37,1.42,1.4
+02.1.1,"Bebidas espirituosas, destiladas y licores",0.06,0.06,0.03,0.07,0.05,0.09
+02.1.2,Vinos,1.07,1.39,1.45,1.02,1.11,1.0
+02.1.3,Cerveza,0.29,0.34,0.56,0.29,0.26,0.31
+02.2,Tabaco,1.85,2.01,1.6,1.76,2.15,2.1
+03,Prendas de vestir y calzado,8.49,10.43,11.6,12.37,11.38,12.82
+03.1,Prendas de vestir y materiales,6.33,7.68,7.97,8.38,8.26,8.96
+03.1.1,"Materiales textiles, telas e hilados",0.09,0.09,0.06,0.09,0.1,0.11
+03.1.2,Prendas de vestir,5.76,7.26,7.62,7.95,7.82,8.5
+03.1.3,Otros artículos y accesorios para el vestir,0.25,0.22,0.23,0.25,0.23,0.25
+03.1.4,"Limpieza, reparación, alquiler de ropa",0.25,0.11,0.06,0.08,0.11,0.09
+03.2,Calzado,2.15,2.75,3.63,4.0,3.12,3.86
+03.2.1,Zapatos y otros calzados,2.09,2.71,3.55,3.92,3.02,3.81
+03.2.2,"Limpieza, reparación, alquiler de calzados",0.06,0.04,0.08,0.08,0.1,0.05
+04,"Vivienda, agua, electricidad, gas y otros combustibles",10.46,8.67,8.11,7.0,8.88,10.06
+04.1,Alquiler de la vivienda y gastos conexos,5.8,3.91,2.36,1.98,3.8,5.11
+04.1.1,Alquiler de la vivienda,3.48,3.59,2.22,1.87,3.67,4.99
+04.1.3,Gastos comunes por la vivienda y/o cochera y otros gastos,2.32,0.32,0.14,0.12,0.14,0.13
+04.3,Mantenimiento y reparación de la vivienda,1.23,1.16,1.12,0.71,1.17,1.03
+04.3.1,Materiales para la reparación de la vivienda,0.52,0.5,0.57,0.38,0.74,0.69
+04.3.2,Servicios para la reparación de la vivienda,0.7,0.67,0.55,0.33,0.43,0.34
+04.4,Suministro de agua,0.89,0.62,0.89,0.67,0.6,0.98
+04.5,"Electricidad, gas y otros combustibles",2.54,2.98,3.74,3.64,3.32,2.94
+04.5.1,Electricidad,1.03,1.08,2.76,1.78,1.28,1.81
+04.5.2,Gas,1.51,1.9,0.98,1.86,2.03,1.13
+05,Equipamiento y mantenimiento del hogar,6.27,6.34,7.78,6.12,6.28,6.55
+05.1,"Muebles, accesorios, alfombras y otros materiales para pisos",0.6,0.53,0.75,0.57,0.62,0.9
+05.2,Artículos textiles para el hogar,0.26,0.25,0.28,0.28,0.32,0.35
+05.3,Artefactos para el hogar,1.14,1.22,2.53,1.02,1.04,1.59
+05.4,"Vajilla, utensilios, loza y cristalería",0.27,0.26,0.35,0.29,0.28,0.39
+05.5,Herramientas y equipos para el hogar y el jardín,0.33,0.27,0.31,0.26,0.34,0.3
+05.6,Bienes y servicios para la conservación del hogar,3.66,3.81,3.55,3.69,3.68,3.03
+05.6.1,Bienes para el hogar no durables,1.67,2.12,2.09,2.04,2.05,1.79
+05.6.2,Servicios domésticos y para el hogar,1.99,1.69,1.47,1.66,1.64,1.23
+06,Salud,8.8,8.16,5.26,6.33,7.4,4.95
+06.1,"Productos medicinales, artefactos y equipos para la salud",3.95,4.76,3.38,4.01,4.98,2.63
+06.1.1,Productos farmacéuticos,3.53,4.26,2.93,3.6,4.55,2.16
+06.1.2,Otros productos medicinales,0.16,0.18,0.21,0.18,0.18,0.11
+06.1.3,Artefactos y equipos terapéuticos y sus reparaciones,0.25,0.31,0.24,0.23,0.24,0.36
+06.2,Servicios para pacientes externos,1.68,1.61,1.19,1.57,1.42,1.49
+06.2.1,Servicios médicos para pacientes externos,1.08,0.85,0.49,0.79,0.91,0.78
+06.2.2,Servicios y tratamientos odontológicos,0.46,0.48,0.5,0.57,0.24,0.49
+06.2.3,Servicios auxiliares para pacientes externos,0.14,0.28,0.19,0.21,0.27,0.23
+06.4,Gastos de prepagas y obras sociales,3.18,1.79,0.7,0.75,1.0,0.82
+07,Transporte,11.59,10.41,9.63,8.41,12.1,13.42
+07.1,Adquisición de vehículos,2.48,2.89,2.76,1.58,2.95,4.92
+07.1.1,Vehículos a motor,2.45,2.71,2.35,1.35,2.84,4.77
+07.1.2,Motocicletas,0.02,0.15,0.33,0.18,0.09,0.08
+07.1.3,Bicicletas,0.01,0.03,0.08,0.05,0.03,0.07
+07.2,Funcionamiento de equipos de transporte personal,5.08,5.54,4.91,4.48,6.9,6.07
+07.2.1,Funcionamiento de equipos de transporte de uso del hogar,0.56,0.52,0.41,0.41,0.87,0.66
+07.2.2,Combustibles y lubricantes para vehículos de uso del hogar,3.78,4.59,4.26,3.8,5.63,5.12
+07.2.3,Conservación y reparación de vehículos de uso del hogar,0.15,0.14,0.1,0.07,0.22,0.16
+07.2.4,Otros servicios relativos al equipo de vehículos de uso del hogar,0.59,0.29,0.15,0.2,0.18,0.13
+07.3,Transporte público,4.02,1.98,1.96,2.35,2.25,2.44
+07.3.1,Servicios de transporte automotor,3.32,1.93,1.91,2.33,2.1,2.17
+07.3.3,Servicios de transporte aéreo,0.26,0.03,0.02,0.01,0.11,0.21
+07.3.6,Otros servicios de transporte,0.04,0.02,0.02,0.01,0.05,0.06
+08,Comunicación,2.81,2.86,2.82,2.59,2.53,3.19
+08.1.1,Servicios postales,0.02,0.02,0.03,0.03,0.02,0.03
+08.2,Equipos telefónicos,0.08,0.05,0.05,0.08,0.07,0.03
+08.2.1,Equipos teléfonicos fijos,0.02,0.0,0.0,0.0,0.0,0.0
+08.2.2,Equipos telefónicos móviles,0.06,0.05,0.05,0.08,0.06,0.02
+08.3,Servicios de telefonía e internet,2.72,2.79,2.74,2.48,2.45,3.13
+08.3.1,Servicio de teléfonos fijos,0.58,0.61,0.6,0.53,0.54,0.67
+08.3.2,Servicio de telefonía móvil,1.39,1.47,1.43,1.28,1.31,1.61
+08.3.3,Servicio de conexión a internet,0.76,0.71,0.71,0.67,0.6,0.85
+09,Recreación y cultura,7.46,7.39,6.23,5.95,6.72,7.77
+09.1,"Equipos audiovisuales, fotográficos y de procesamiento de la información",1.34,1.19,1.34,1.06,1.08,1.72
+09.1.1,sonidos e imágenes,0.42,0.46,0.83,0.52,0.47,0.73
+09.1.2,Equipo fotográfico y cinematográfico e instrumentos ópticos,0.19,0.13,0.03,0.05,0.05,0.19
+09.1.3,Equipos de procesamiento e información,0.44,0.39,0.33,0.31,0.3,0.51
+09.1.4,Medios para grabación,0.29,0.21,0.16,0.18,0.27,0.3
+09.3,"Otros artículos para la recreación, jardines y animales",1.07,0.97,0.59,0.83,1.14,1.04
+09.3.1,"Juegos, juguetes y hobbies",0.36,0.4,0.27,0.44,0.44,0.41
+09.3.2,"Equipo para el deporte, campamento y recreación al aire libre",0.07,0.09,0.03,0.04,0.04,0.1
+09.3.4,Mascotas y productos conexos,0.65,0.48,0.3,0.36,0.66,0.53
+09.4,Servicios recreativos y culturales,3.05,2.88,2.28,2.27,2.68,3.02
+09.4.1,Servicios recreativos y deportivos,0.86,0.47,0.37,0.4,0.52,0.42
+09.4.2,Servicios culturales,2.19,2.41,1.9,1.88,2.16,2.61
+09.5,"Periódicos, diarios, revistas, libros y artículos de papelería",1.49,1.62,1.84,1.58,1.52,1.83
+09.5.1,Libros,0.69,0.6,0.86,0.64,0.8,0.91
+09.5.2,Diarios y publicaciones periódicas,0.51,0.58,0.5,0.48,0.41,0.41
+09.5.4,Papel y útiles de oficina y materiales de dibujo,0.3,0.44,0.48,0.45,0.31,0.51
+09.6,Paquete turístico,0.5,0.74,0.18,0.21,0.3,0.16
+10,Educación,3.02,1.61,1.36,2.04,2.24,2.09
+10.1,Educación preescolar y primaria,1.3,0.66,0.34,0.89,0.7,0.76
+10.2,Educación secundaria,0.48,0.15,0.14,0.3,0.2,0.29
+10.3,"Educacioón postsecundaria, no terciaria",0.63,0.38,0.52,0.47,0.92,0.39
+10.5,Educación no atribuible a ningun nivel,0.61,0.42,0.36,0.39,0.41,0.65
+11,Restaurantes y hoteles,10.84,8.1,4.96,7.99,6.85,5.08
+11.1,Restaurantes y comidas fuera del hogar,10.31,7.84,4.84,7.82,6.52,4.91
+11.2,Hoteles,0.53,0.26,0.11,0.16,0.32,0.16
+12,Bienes y servicios varios,3.55,3.58,3.3,3.4,3.63,3.14
+12.1,Cuidado personal,2.82,3.07,3.07,3.18,3.11,2.66
+12.1.1,Salones de peluquería y establecimientos de cuidados personales,0.85,0.67,0.55,0.55,0.7,0.53
+12.1.3,"Otros aparatos, artículos y productos para la atención personal",1.97,2.4,2.52,2.63,2.4,2.13
+12.5,Seguros,0.47,0.32,0.1,0.08,0.33,0.35
+12.7,Otros servicios,0.26,0.19,0.13,0.14,0.19,0.13

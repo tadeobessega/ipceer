@@ -64,11 +64,19 @@ def cmd_calcular(cfg, args):
         res[f] = r
     if not res:
         return
+    val = {}
+    if "mensual" in res:
+        try:
+            val = validacion.construir(cfg, res["mensual"]["indices"], res.get("semanal", {}).get("indices"),
+                                       indec.directorio(cfg))
+        except Exception as e:
+            log.warning("Validación INDEC: %s", e)
     datos = resumen.armar_datos(
         cfg,
         res.get("mensual", {}).get("indices"),
         res.get("semanal", {}).get("indices"),
         (res.get("semanal") or res.get("mensual"))["cobertura"],
+        validacion=val,
     )
     (cfg.ruta("resultados") / "datos.json").write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
 

@@ -198,7 +198,8 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
 
     # 2. agregación con ponderadores de la canasta regional
     elem = elem.join(pond.select("codigo", "region", "ponderacion"), on=["codigo", "region"], how="left").with_columns(
-        pl.col("ponderacion").fill_null(0.0), pl.col("codigo").str.slice(0, 2).alias("division"))
+        pl.col("ponderacion").fill_null(0.0), pl.col("codigo").str.slice(0, 2).alias("division"),
+        pl.col("codigo").str.slice(0, 4).alias("grupo"))
     parcial = elem.group_by("periodo").agg(pl.col("parcial").any(), pl.col("tramo").first())
 
     def agregar(df: pl.DataFrame, por: list[str]) -> pl.DataFrame:
@@ -212,6 +213,8 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
         agregar(elem, ["periodo", "region", "codigo"]).with_columns(pl.lit("clase").alias("nivel")),
         agregar(elem, ["periodo", "region", "division"]).rename({"division": "codigo"})
         .with_columns(pl.lit("division").alias("nivel")),
+        agregar(elem, ["periodo", "region", "grupo"]).rename({"grupo": "codigo"})
+        .with_columns(pl.lit("grupo").alias("nivel")),
         agregar(elem, ["periodo", "region"]).with_columns(pl.lit("TOTAL").alias("codigo"), pl.lit("total").alias("nivel")),
     ], how="diagonal")
 
@@ -239,6 +242,7 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
             .add(pl.col("periodo").str.slice(4)).alias("_periodo_ia"),
             pl.when(pl.col("nivel") == "total").then(pl.lit("Bienes relevados (total)"))
             .when(pl.col("nivel") == "division").then(pl.col("codigo").replace_strict(nombres_div, default=""))
+            .when(pl.col("nivel") == "grupo").then(pl.col("codigo").replace_strict(nombres, default=""))
             .otherwise(pl.col("codigo").replace_strict(nombres, default="")).alias("nombre"),
         )
         .join(

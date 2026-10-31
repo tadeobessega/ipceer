@@ -148,6 +148,7 @@ footer.banner{background:#2840a5;color:#fff;margin-top:56px}
       <button role="tab" data-tab="men" aria-selected="false">Mensual</button>
       <button role="tab" data-tab="rub" aria-selected="false">Rubros</button>
       <button role="tab" data-tab="reg" aria-selected="false">Regiones</button>
+      <button role="tab" data-tab="val" aria-selected="false">Validación</button>
       <button role="tab" data-tab="met" aria-selected="false">Metodología</button>
     </nav>
   </div>
@@ -244,6 +245,34 @@ footer.banner{background:#2840a5;color:#fff;margin-top:56px}
       <div class="grid">
         <div class="card s6"><h3>Promedio 4 semanas, mensualizado</h3><div class="chart short"><canvas id="c-reg"></canvas></div></div>
         <div class="card s6"><h3>Resumen por región</h3><div class="tablewrap"><table id="t-reg"></table></div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- VALIDACIÓN -->
+  <div data-panel="val" hidden>
+    <section>
+      <h2><span class="tag">Contra el IPC del INDEC</span>¿La estamos pegando?</h2>
+      <p class="sub" id="val-sub">Comparamos el IPCEER con el IPC oficial del INDEC en el mismo mes, la misma región y el mismo rubro. Para el total usamos dos referencias: los <b>bienes</b> del INDEC (que incluyen ropa, combustibles, medicamentos y otros que acá no están) y una <b>réplica del INDEC con nuestra misma canasta</b>: los índices oficiales de los mismos rubros, ponderados igual. La réplica es la comparación justa: si difiere, es por la fuente de precios y no por la cobertura.</p>
+      <div class="filters" style="display:flex;gap:14px;flex-wrap:wrap;margin:0 0 16px">
+        <label class="f">Comparación <select id="v-par"></select></label>
+        <label class="f">Período <select id="v-tramo"></select></label>
+      </div>
+      <div class="grid">
+        <div class="card s12"><h3><span id="v-t1">Nivel del índice</span><span class="seg" id="seg-v"><button data-v="n" aria-pressed="true">Nivel</button><button data-v="v" aria-pressed="false">Variación mensual</button></span></h3>
+          <div class="legend"><span><i style="background:var(--accent);height:3px;vertical-align:3px"></i>IPCEER</span><span><i style="background:var(--ambar);height:3px;vertical-align:3px"></i>INDEC</span><span id="v-leg-dif" hidden><i style="background:var(--bar2)"></i>Diferencia (pp)</span></div>
+          <div class="chart tall"><canvas id="c-v1"></canvas></div>
+          <div class="src">Fuente: CEER en base a SEPA y a INDEC (IPC, base dic-2016 = 100). Ambos índices llevados a 100 en el primer mes en común.</div></div>
+        <div class="card s4"><h3>Veredicto</h3><div id="v-veredicto"></div></div>
+        <div class="card s8"><h3>Estadísticos de la comparación</h3><div id="v-est"></div></div>
+        <div class="card s6"><h3>Dispersión: IPCEER contra INDEC</h3><p class="cap">Cada punto es un mes. Sobre la diagonal, coinciden. La línea ámbar es la recta de regresión.</p><div class="chart"><canvas id="c-v2"></canvas></div></div>
+        <div class="card s6"><h3>Bland-Altman</h3><p class="cap">Diferencia (IPCEER − INDEC) contra el promedio de ambos. La línea del medio es el sesgo; las punteadas, los límites de acuerdo (±1,96 desvíos).</p><div class="chart"><canvas id="c-v3"></canvas></div></div>
+        <div class="card s6"><h3>Desvío acumulado del nivel</h3><p class="cap">Diferencia porcentual entre el nivel del IPCEER y el del INDEC desde el primer mes en común.</p><div class="chart short"><canvas id="c-v4"></canvas></div></div>
+        <div class="card s6"><h3>Anticipación: ¿cuánto sabemos antes?</h3><p class="cap">Error (raíz del error cuadrático medio, pp) al estimar la variación mensual de la réplica del INDEC con las primeras 1, 2, 3 o 4 semanas del mes. Nacional, total.</p><div class="chart short"><canvas id="c-v5"></canvas></div></div>
+        <div class="card s12"><h3><span>Mapa de desvíos por rubro y región</span><span class="seg" id="seg-hm"><button data-v="rmse" aria-pressed="true">Error (RMSE)</button><button data-v="sesgo" aria-pressed="false">Sesgo</button><button data-v="pearson" aria-pressed="false">Correlación</button></span></h3>
+          <p class="cap" id="hm-cap"></p><div class="tablewrap"><table id="t-hm"></table></div></div>
+        <div class="card s12" id="v-saltos-card"><h3>Del punto histórico de abril de 2025 a hoy</h3><p class="cap">Variación acumulada entre la semana guardada en la Wayback Machine y la última semana relevada, contra la del INDEC entre los mismos meses (o el último mes publicado). Promedio mensual compuesto.</p><div class="tablewrap"><table id="t-saltos"></table></div></div>
+        <div class="card s12"><h3>Todas las comparaciones</h3><p class="cap">Para la región elegida arriba. A nivel nacional el INDEC solo publica el total y las divisiones; para ver grupos y clases, elegí una región.</p><div class="tablewrap"><table id="t-pares"></table></div></div>
       </div>
     </section>
   </div>
@@ -510,6 +539,104 @@ prom. 4 mens.  = (1 + prom. 4 sem.)^(30,44 / 7) − 1</div>
   document.getElementById('metodo').innerHTML = secs.map((s,i)=>`<h3 id="m-${s[0]}"><span class="k">${String(i+1).padStart(2,'0')}</span>${s[1]}</h3>${s[2]}`).join('');
 }
 
+
+/* ---------- validación ---------- */
+const vst={par:null,tramo:null,modo:'n',hm:'rmse'};
+const etiquetaPar = p => (p.codigo==='TOTAL'?'Total relevado':p.codigo+' '+p.nombre)+' vs '+(p.codigo_indec==='REPLICA'?'INDEC misma canasta':p.codigo_indec==='B'?'Bienes INDEC':'INDEC');
+function paresVal(){ return (D.validacion&&D.validacion.pares)||[]; }
+function renderVal(){
+  const P=paresVal();
+  if(!P.length){ document.getElementById('val-sub').insertAdjacentHTML('afterend','<div class="card"><p class="cap">Todavía no hay meses en común con el INDEC. Aparecen cuando esté procesada la base 2016-2018 o cuando haya meses completos nuevos.</p></div>'); return; }
+  const fp=document.getElementById('v-par'), ft=document.getElementById('v-tramo');
+  const claves=[...new Map(P.map(p=>[p.codigo+'|'+p.codigo_indec,p])).values()];
+  if(!fp.options.length){
+    fp.innerHTML=claves.map(p=>`<option value="${p.codigo}|${p.codigo_indec}">${esc(etiquetaPar(p))}</option>`).join('');
+    fp.onchange=e=>{vst.par=e.target.value; renderVal();};
+    ft.onchange=e=>{vst.tramo=+e.target.value; renderVal();};
+    document.querySelectorAll('#seg-v button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#seg-v button').forEach(x=>x.setAttribute('aria-pressed',x===b)); vst.modo=b.dataset.v; renderVal();});
+    document.querySelectorAll('#seg-hm button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#seg-hm button').forEach(x=>x.setAttribute('aria-pressed',x===b)); vst.hm=b.dataset.v; renderVal();});
+  }
+  vst.par=vst.par||fp.value;
+  const [cod,ci]=vst.par.split('|');
+  const tramos=[...new Set(P.filter(p=>p.codigo===cod&&p.codigo_indec===ci).map(p=>p.tramo))].sort();
+  ft.innerHTML=tramos.map(t=>{const x=P.find(p=>p.tramo===t&&p.codigo===cod); return `<option value="${t}">${mesLbl(x.desde)} – ${mesLbl(x.hasta)}</option>`}).join('');
+  if(vst.tramo==null||!tramos.includes(vst.tramo)) vst.tramo=tramos[0];
+  ft.value=vst.tramo;
+  const reg=st.reg, p=P.find(x=>x.codigo===cod&&x.codigo_indec===ci&&x.tramo===vst.tramo&&x.region===reg)||P.find(x=>x.codigo===cod&&x.codigo_indec===ci&&x.tramo===vst.tramo);
+  if(!p) return;
+  const S=p.serie, e=p.est, az=css('--accent'), am=css('--ambar');
+  // 1. nivel o variación
+  document.getElementById('v-t1').textContent=(vst.modo==='n'?'Nivel del índice':'Variación mensual')+' · '+p.region;
+  document.getElementById('v-leg-dif').hidden = vst.modo==='n';
+  const lab=S.map(x=>mesLbl(x.mes));
+  if(vst.modo==='n') draw('c-v1',{type:'line',data:{labels:lab,datasets:[
+      {label:'IPCEER',data:S.map(x=>x.propio),borderColor:az,backgroundColor:az,borderWidth:2.5,pointRadius:2,tension:.15},
+      {label:'INDEC',data:S.map(x=>x.indec),borderColor:am,backgroundColor:am,borderWidth:2.5,pointRadius:2,tension:.15}]},
+    options:baseOpts({plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+c.dataset.label+': '+num(c.parsed.y,2)}}},
+      scales:{x:{grid:{display:false},ticks:{color:css('--muted'),maxRotation:0,autoSkipPadding:14}},y:{grid:{color:css('--line')},border:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>num(v,0)}}}})});
+  else draw('c-v1',{type:'bar',data:{labels:lab,datasets:[
+      {type:'line',label:'IPCEER',data:S.map(x=>x.var_propio),borderColor:az,backgroundColor:az,borderWidth:2.5,pointRadius:2,tension:.15,spanGaps:false,order:0},
+      {type:'line',label:'INDEC',data:S.map(x=>x.var_indec),borderColor:am,backgroundColor:am,borderWidth:2.5,pointRadius:2,tension:.15,order:0},
+      {label:'Diferencia (pp)',data:S.map(x=>x.var_propio==null?null:x.var_propio-x.var_indec),backgroundColor:css('--bar2'),order:1}]},options:baseOpts()});
+  // veredicto
+  const ok=[], mal=[];
+  if(e.n>=3){
+    (e.sesgo_p>=0.05?ok:mal).push(e.sesgo_p>=0.05?`Sin sesgo significativo: la diferencia media es de <span class="mono">${num(e.sesgo,2)} pp</span> por mes (p = <span class="mono">${num(e.sesgo_p,2)}</span>).`:`Sesgo significativo de <span class="mono">${num(e.sesgo,2)} pp</span> por mes (p = <span class="mono">${num(e.sesgo_p,3)}</span>): el IPCEER ${e.sesgo>0?'sobrestima':'subestima'}.`);
+    (e.pearson>=0.7?ok:mal).push(`Correlación de <span class="mono">${num(e.pearson,2)}</span> entre las variaciones mensuales.`);
+    (e.theil_u<1?ok:mal).push(`U de Theil <span class="mono">${num(e.theil_u,2)}</span>: ${e.theil_u<1?'mejor':'peor'} que suponer que el mes repite al anterior.`);
+    (e.direccion>=0.6?ok:mal).push(`Acierta si la inflación acelera o desacelera en el <span class="mono">${num(e.direccion*100,0)}%</span> de los meses.`);
+  }
+  const nota = e.n<3?'<p class="cap">Hacen falta al menos 3 meses en común.</p>':
+    `<p class="cap"><span class="mono">${e.n}</span> meses en común (${mesLbl(p.desde)} a ${mesLbl(p.hasta)}). ${esc(p.region)}.</p><ul style="margin:0;padding-left:18px;font-size:14px">${ok.map(x=>`<li>${x}</li>`).join('')}${mal.map(x=>`<li style="color:var(--neg)">${x}</li>`).join('')}</ul>`;
+  document.getElementById('v-veredicto').innerHTML=nota;
+  const fila=(k,v,d,u='')=>`<div><span>${k}</span><b>${v==null?'–':num(v,d)+u}</b></div>`;
+  document.getElementById('v-est').innerHTML=`<div class="minik" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+    ${fila('Sesgo medio',e.sesgo,2,' pp')}${fila('Error abs. medio',e.mae,2,' pp')}${fila('RMSE',e.rmse,2,' pp')}${fila('Correlación',e.pearson,2)}
+    ${fila('Spearman',e.spearman,2)}${fila('R²',e.r2,2)}${fila('Pendiente',e.pendiente,2)}${fila('U de Theil',e.theil_u,2)}
+    ${fila('Acumulado IPCEER',e.acum_propio,1,'%')}${fila('Acumulado INDEC',e.acum_indec,1,'%')}${fila('Diferencia acumulada',e.acum_dif,1,' pp')}${fila('t del sesgo (p)',e.sesgo_t,2,e.sesgo_p!=null?' ('+num(e.sesgo_p,2)+')':'')}</div>
+    <p class="src">Pendiente y R² de la regresión INDEC = a + b · IPCEER (una pendiente de 1 y ordenada 0 es acuerdo perfecto). U de Theil: error del IPCEER dividido por el error de repetir la variación del mes anterior. Prueba t de Student pareada para el sesgo.</p>`;
+  // 2. dispersión
+  const pts=S.filter(x=>x.var_propio!=null).map(x=>({x:x.var_propio,y:x.var_indec,m:x.mes}));
+  const xs=pts.map(q=>q.x).concat(pts.map(q=>q.y)), lo=Math.min(...xs,0), hi=Math.max(...xs,1);
+  draw('c-v2',{type:'scatter',data:{datasets:[
+    {label:'Mes',data:pts,backgroundColor:az,pointRadius:5},
+    {type:'line',label:'Diagonal',data:[{x:lo,y:lo},{x:hi,y:hi}],borderColor:css('--resto'),borderDash:[4,4],borderWidth:1.5,pointRadius:0},
+    {type:'line',label:'Regresión',data:[{x:lo,y:e.ordenada+e.pendiente*lo},{x:hi,y:e.ordenada+e.pendiente*hi}],borderColor:am,borderWidth:2,pointRadius:0}]},
+    options:baseOpts({interaction:{mode:'nearest',intersect:true},plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>c.raw.m?` ${mesLbl(c.raw.m)}: IPCEER ${pct(c.raw.x,2)} · INDEC ${pct(c.raw.y,2)}`:''}}},
+      scales:{x:{type:'linear',title:{display:true,text:'IPCEER (% mensual)',color:css('--muted')},grid:{color:css('--line')},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>num(v,1)}},y:{title:{display:true,text:'INDEC (% mensual)',color:css('--muted')},grid:{color:css('--line')},border:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>num(v,1)}}}})});
+  // 3. Bland-Altman
+  const ba=pts.map(q=>({x:(q.x+q.y)/2,y:q.x-q.y,m:q.m})), bx=ba.map(q=>q.x), x0=Math.min(...bx), x1=Math.max(...bx);
+  const lim=1.96*(e.desvio_dif||0), hl=(v,dash,col)=>({type:'line',data:[{x:x0,y:v},{x:x1,y:v}],borderColor:col,borderDash:dash,borderWidth:1.5,pointRadius:0});
+  draw('c-v3',{type:'scatter',data:{datasets:[{data:ba,backgroundColor:az,pointRadius:5},hl(e.sesgo||0,[],am),hl((e.sesgo||0)+lim,[4,4],css('--resto')),hl((e.sesgo||0)-lim,[4,4],css('--resto')),hl(0,[1,3],css('--fg2'))]},
+    options:baseOpts({interaction:{mode:'nearest',intersect:true},plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>c.raw.m?` ${mesLbl(c.raw.m)}: dif. ${num(c.raw.y,2)} pp`:''}}},
+      scales:{x:{type:'linear',title:{display:true,text:'Promedio de ambos (% mensual)',color:css('--muted')},grid:{color:css('--line')},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>num(v,1)}},y:{title:{display:true,text:'IPCEER − INDEC (pp)',color:css('--muted')},grid:{color:css('--line')},border:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>num(v,1)}}}})});
+  // 4. desvío acumulado
+  draw('c-v4',{type:'bar',data:{labels:lab,datasets:[{label:'Desvío',data:S.map(x=>(x.propio/x.indec-1)*100),backgroundColor:S.map(x=>x.propio>=x.indec?az:css('--neg'))}]},options:baseOpts()});
+  // 5. nowcast
+  const nc=(D.validacion.nowcast||[]).filter(x=>x.rmse!=null);
+  draw('c-v5',{type:'bar',data:{labels:nc.map(x=>x.semanas+(x.semanas===1?' semana':' semanas')),datasets:[{label:'RMSE',data:nc.map(x=>x.rmse),backgroundColor:nc.map((x,i)=>i===nc.length-1?am:az)}]},
+    options:baseOpts({plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>` RMSE: ${num(c.parsed.y,2)} pp · sesgo ${num(nc[c.dataIndex].sesgo,2)} pp · ${nc[c.dataIndex].n} meses`}}},scales:{x:{grid:{display:false},ticks:{color:css('--muted')}},y:{grid:{color:css('--line')},border:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>num(v,1)+' pp'}}}})});
+  // 6. mapa de calor
+  const regs=['Nacional','GBA','Pampeana','Noreste','Noroeste','Cuyo','Patagonia'];
+  const filasHm=[...new Map(P.filter(x=>x.tramo===vst.tramo).map(x=>[x.codigo+'|'+x.codigo_indec,x])).values()];
+  const vals=P.filter(x=>x.tramo===vst.tramo).map(x=>x.est[vst.hm]).filter(v=>v!=null), vmax=Math.max(...vals.map(Math.abs),0.01);
+  const color=v=>{ if(v==null) return ''; let t; if(vst.hm==='pearson') t=Math.max(0,1-v); else t=Math.abs(v)/vmax;
+    const c= vst.hm==='sesgo'&&v<0 ? '175,62,48' : vst.hm==='pearson' ? '175,62,48' : '40,64,165'; return `background:rgba(${c},${(0.08+0.6*Math.min(1,t)).toFixed(2)});${t>0.6?'color:#fff':''}`; };
+  document.getElementById('hm-cap').textContent = vst.hm==='rmse'?'Error típico de la variación mensual, en puntos porcentuales: más oscuro, más error.':vst.hm==='sesgo'?'Diferencia media mensual (IPCEER − INDEC), en pp: azul = el IPCEER da más, rojo = da menos.':'Correlación entre las variaciones mensuales: más rojo, menos correlación.';
+  document.getElementById('hm-cap').textContent += ' El INDEC publica grupos y clases solo por región, no a nivel nacional.';
+  document.getElementById('t-hm').innerHTML=`<thead><tr><th>Comparación</th>${regs.map(r=>`<th class="n">${r}</th>`).join('')}</tr></thead><tbody>`+
+    filasHm.map(f=>`<tr><td>${esc(etiquetaPar(f))}</td>${regs.map(r=>{const x=P.find(q=>q.tramo===vst.tramo&&q.codigo===f.codigo&&q.codigo_indec===f.codigo_indec&&q.region===r); const v=x?x.est[vst.hm]:null; return `<td class="n" style="${color(v)}">${v==null?'–':num(v,2)}</td>`}).join('')}</tr>`).join('')+'</tbody>';
+  // 7. saltos
+  const SA=(D.validacion.saltos||[]);
+  document.getElementById('v-saltos-card').hidden=!SA.length;
+  document.getElementById('t-saltos').innerHTML=`<thead><tr><th>Región</th><th>Serie</th><th>Desde</th><th>Hasta</th><th class="n">IPCEER acum.</th><th class="n">INDEC acum.</th><th class="n">IPCEER mensual</th><th class="n">INDEC mensual</th><th class="n">Dif. mensual</th></tr></thead><tbody>`+
+    SA.sort((a,b)=>a.codigo.localeCompare(b.codigo)||regs.indexOf(a.region)-regs.indexOf(b.region)).map(x=>`<tr class="${x.region==='Nacional'?'hl':''}"><td>${x.region}</td><td>${x.codigo==='TOTAL'?'Total (vs misma canasta)':'Alimentos y bebidas'}</td><td>${mesLbl(x.mes_desde)}</td><td>${mesLbl(x.mes_hasta)}${x.mes_hasta_indec!==x.mes_hasta?' <span class="tagp">INDEC a '+mesLbl(x.mes_hasta_indec)+'</span>':''}</td><td class="n">${pct(x.acum_propio,1)}</td><td class="n">${pct(x.acum_indec,1)}</td><td class="n">${pct(x.mensual_propio,2)}</td><td class="n">${pct(x.mensual_indec,2)}</td><td class="n">${num(x.mensual_propio-x.mensual_indec,2)} pp</td></tr>`).join('')+'</tbody>';
+  // 8. todas
+  const T=P.filter(x=>x.tramo===vst.tramo&&x.region===reg);
+  document.getElementById('t-pares').innerHTML=`<thead><tr><th>Comparación</th><th class="n">Meses</th><th class="n">Sesgo</th><th class="n">p</th><th class="n">MAE</th><th class="n">RMSE</th><th class="n">Correl.</th><th class="n">Pendiente</th><th class="n">U Theil</th><th class="n">Dirección</th><th class="n">Dif. acum.</th></tr></thead><tbody>`+
+    T.map(x=>{const e=x.est;return `<tr><td>${esc(etiquetaPar(x))}</td><td class="n">${e.n}</td><td class="n">${num(e.sesgo,2)}</td><td class="n" ${e.sesgo_p<0.05?'style="color:var(--neg)"':''}>${num(e.sesgo_p,2)}</td><td class="n">${num(e.mae,2)}</td><td class="n">${num(e.rmse,2)}</td><td class="n">${num(e.pearson,2)}</td><td class="n">${num(e.pendiente,2)}</td><td class="n">${num(e.theil_u,2)}</td><td class="n">${e.direccion==null?'–':num(e.direccion*100,0)+'%'}</td><td class="n">${num(e.acum_dif,1)} pp</td></tr>`}).join('')+'</tbody>';
+}
+
 function render(){
   const tab=document.querySelector('.tabs button[aria-selected="true"]').dataset.tab;
   renderKpis();
@@ -519,6 +646,7 @@ function render(){
   if(tab==='rub') renderRubros();
   if(tab==='reg') renderRegiones();
   if(tab==='met') renderMetodo();
+  if(tab==='val') renderVal();
 }
 if(window.Chart){ Chart.defaults.font.family=css('--font'); Chart.defaults.color=css('--muted'); }
 initControles(); render();

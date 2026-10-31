@@ -66,20 +66,32 @@ def parsear(lineas: list[str]) -> list[dict]:
     """Arma bloques que empiezan en una línea con código y siguen con las líneas de
     continuación (nombres partidos en dos renglones, con los números en el medio o al final).
     En cada bloque busca los seis valores regionales y el resto es el nombre."""
+    seis = re.compile(rf"{NUM}\s+{NUM}\s+{NUM}\s+{NUM}\s+{NUM}\s+{NUM}")
+    excluir = ("cuadro", "fuente", "región", "nivel general", "metodología", "en porcentaje")
     bloques: list[str] = []
+    prefijo = ""  # primer renglón del nombre de la apertura siguiente
     for ln in lineas:
         ln = " ".join(ln.split())
-        if not ln:
+        if not ln or ln.lower().startswith(excluir):
             continue
         # código en medio del renglón: "Nombre de la apertura 12.1.3 1,97 2,40 ..."
         medio = re.search(rf"\s(\d{{2}}(?:\.\d{{1,2}}){{1,3}})\s+{NUM}\s", ln)
         if CODIGO.match(ln):
-            bloques.append(ln)
+            cod, resto = ln.split(" ", 1)
+            bloques.append(f"{cod} {prefijo} {resto}")
+            prefijo = ""
         elif medio:
-            bloques.append(f"{medio.group(1)} {ln[:medio.start()]} {ln[medio.end(1):]}")
-        elif bloques and len(ln) < 120 and not ln.lower().startswith(("cuadro", "fuente", "región", "nivel general", "metodología")):
-            bloques[-1] += " " + ln
-    seis = re.compile(rf"{NUM}\s+{NUM}\s+{NUM}\s+{NUM}\s+{NUM}\s+{NUM}")
+            bloques.append(f"{medio.group(1)} {prefijo} {ln[:medio.start()]} {ln[medio.end(1):]}")
+            prefijo = ""
+        elif bloques and len(ln) < 120:
+            completo = bool(seis.search(bloques[-1]))
+            # en el PDF, un nombre partido queda como: renglón 1 / código y valores / renglón 2.
+            # Si el bloque anterior ya tiene sus valores, un renglón que empieza en mayúscula es
+            # el comienzo del nombre siguiente; uno en minúscula es el final del anterior.
+            if completo and not re.search(r"\d", ln) and ln[0].isupper():
+                prefijo = ln
+            else:
+                bloques[-1] += " " + ln
     filas = []
     for b in bloques:
         cod, resto = b.split(" ", 1)

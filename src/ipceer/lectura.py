@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import io
 import logging
+import tempfile
 import zipfile
 from collections import defaultdict
 from datetime import date
@@ -66,7 +67,12 @@ def _iterar_comercios(ruta_zip: Path):
                 continue
             pp = PurePosixPath(nombre)
             if pp.suffix.lower() == ".zip":
-                with zipfile.ZipFile(io.BytesIO(zf.read(nombre))) as interno:
+                try:
+                    interno = zipfile.ZipFile(io.BytesIO(zf.read(nombre)))
+                except zipfile.BadZipFile:
+                    log.warning("Zip interno vacío o dañado, se omite: %s", nombre)
+                    continue
+                with interno:
                     yield from recorrer(interno, f"{prefijo}{pp.stem}/")
             elif pp.name.lower() in ("comercio.csv", "sucursales.csv", "productos.csv"):
                 grupos[str(pp.parent)][pp.name.lower()] = zf.read(nombre)
@@ -80,7 +86,7 @@ def _iterar_comercios(ruta_zip: Path):
 def procesar_comercio(archivos: dict[str, bytes], cfg: Config) -> pl.DataFrame | None:
     if "productos.csv" not in archivos or "sucursales.csv" not in archivos:
         return None
-    prod = _leer_csv(archivos["productos.csv"])
+    prod = _leer_csv(archivos["productos.csv"], COLUMNAS_PRODUCTOS)
     suc = _leer_csv(archivos["sucursales.csv"])
     req = {"id_comercio", "id_bandera", "id_sucursal", "id_producto", "productos_precio_lista"}
     if prod.is_empty() or not req.issubset(prod.columns):

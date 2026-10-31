@@ -57,9 +57,25 @@ def test_clasificador_casos_dificiles():
         "Caldo de Gallina 6 cubos": "01.1.9",
         "Papel Higienico Doble Hoja 4 un": "12.1.3",
         "Rollo de Cocina 3 un": "05.6.1",
+        # descripciones reales de SEPA (oct-2026), con abreviaturas
+        "ARBANIT ALF DDL 50G": "01.1.8",
+        "ILOLAY YOG NAT 350GR": "01.1.4",
+        "VACALIN DDL LIGH400G": "01.1.4",
+        "AXE DEO BS MUSK 150M": "12.1.3",
+        "YERBA L.TRANQUERA X1KG.ESPECIAL": "01.2.1",
+        "SAL FINA CELUSAL X250G.SALERO": "01.1.9",
+        "VINO UVITA X1L.BLANCO": "02.1.1",
+        "MAYONESA CADA DIA X2.900ML": "01.1.9",
     }
     errores = {d: (cl.clasificar_texto(d), c) for d, c in casos.items() if cl.clasificar_texto(d) != c}
     assert not errores, errores
+
+
+def test_propagacion_por_ean():
+    cl = Clasificador.desde_archivos(REPO / "config" / "clasificador.yaml")
+    df = pl.DataFrame({"id_producto": ["779001", "779001", "779002"], "es_ean": ["1", "1", "0"],
+                       "descripcion": ["Galletitas Dulces Vainilla 300 g", "XYZ VAI 300G", "XYZ VAI 300G"]})
+    assert cl.clasificar(df)["clase"].to_list() == ["01.1.1", "01.1.1", "sin_clasificar"]
 
 
 def test_regiones(cfg):

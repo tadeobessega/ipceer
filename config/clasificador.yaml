@@ -14,6 +14,54 @@
 # "jabón en polvo" no caiga en otra clase, y las golosinas van antes que los lácteos
 # para que "chocolate con leche" no termine en lácteos.
 
+# Abreviaturas que usan las cadenas en las descripciones (ej. "ALF CHO 60G", "QSO CREMA").
+# Se expanden palabra por palabra antes de aplicar las reglas. Solo agregar las que no
+# sean ambiguas: "AC" puede ser aceite o acondicionador, así que no está.
+abreviaturas:
+  ddl: dulce de leche
+  alf: alfajor
+  cho: chocolate
+  choc: chocolate
+  choco: chocolate
+  yog: yogur
+  yogh: yogur
+  qso: queso
+  deo: desodorante
+  sh: shampoo
+  shamp: shampoo
+  acond: acondicionador
+  rav: ravioles
+  mila: milanesa
+  milan: milanesas
+  gall: galletitas
+  galle: galletitas
+  gallet: galletitas
+  gllt: galletitas
+  tost: tostadas
+  merm: mermelada
+  mayon: mayonesa
+  gaseos: gaseosa
+  deterg: detergente
+  jab: jabon
+  suav: suavizante
+  bomb: bombones
+  gom: gomitas
+  azuc: azucar
+  yerb: yerba
+  caf: cafe
+  lche: leche
+  cerv: cerveza
+  harin: harina
+  fid: fideos
+  salch: salchichas
+  hamb: hamburguesas
+  hig: higienico
+  lavand: lavandina
+  liq: liquido
+  mant: manteca
+  marg: margarina
+  galletit: galletitas
+
 reglas:
 
   - clase: "09.3.4"

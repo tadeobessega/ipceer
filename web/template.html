@@ -920,7 +920,13 @@ const DIBUJOS={portada:imgPortada,semanal:imgSemanal,rotacion:imgRotacion,cadena
 
 function copiar(t){ if(navigator.clipboard&&window.isSecureContext) return navigator.clipboard.writeText(t).catch(()=>copiar2(t)); copiar2(t); }
 function copiar2(t){ const a=document.createElement('textarea'); a.value=t; a.style.position='fixed'; a.style.opacity='0'; document.body.appendChild(a); a.select(); try{document.execCommand('copy');}catch(e){} a.remove(); }
-function bajar(nombre,blob){ const u=URL.createObjectURL(blob), a=document.createElement('a'); a.href=u; a.download=nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),2000); }
+let _dl;
+async function descargas(){ if(_dl===undefined){ try{ _dl = (window.claude&&typeof window.claude.use==='function') ? await window.claude.use('downloads') : null; }catch(e){ _dl=null; } } return _dl; }
+async function bajar(nombre,blob){
+  const d=await descargas();
+  if(d){ for(let i=0;i<3;i++){ try{ await d.save({filename:nombre,data:blob}); return true; }catch(e){ if(e&&e.code==='rate_limited'){ await new Promise(r=>setTimeout(r,1500)); continue; } return false; } } return false; }
+  const u=URL.createObjectURL(blob), a=document.createElement('a'); a.href=u; a.download=nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),2000); return true; }
+const aBlob = c => new Promise(r=>c.toBlob(r,'image/png'));
 let _fuentes=null;
 function fuentes(){ return _fuentes||(_fuentes=Promise.all(["700 54px 'Cascadia Code'","600 54px 'Cascadia Code'","400 22px 'Cascadia Code'","400 30px Inter","500 30px Inter","600 30px Inter"].map(f=>document.fonts.load(f).catch(()=>null))).then(()=>document.fonts.ready)); }
 async function renderHilo(){
@@ -934,11 +940,11 @@ async function renderHilo(){
   await fuentes();
   L.querySelectorAll('canvas[data-img]').forEach(c=>{ const f=DIBUJOS[c.dataset.img]; if(f){ try{ f(c.getContext('2d'),h); }catch(e){ console.error(e); } } });
   L.querySelectorAll('[data-copiar]').forEach(b=>b.onclick=()=>{ copiar(h.tuits[+b.dataset.copiar-1].texto); b.textContent='Copiado'; setTimeout(()=>b.textContent='Copiar',1500); });
-  L.querySelectorAll('[data-png]').forEach(b=>b.onclick=()=>{ const c=L.querySelector(`canvas[data-n="${b.dataset.png}"]`); c.toBlob(bl=>bajar(nombre(b.dataset.png)+'-'+c.dataset.img+'.png',bl),'image/png'); });
+  L.querySelectorAll('[data-png]').forEach(b=>b.onclick=async()=>{ const c=L.querySelector(`canvas[data-n="${b.dataset.png}"]`); await bajar(nombre(b.dataset.png)+'-'+c.dataset.img+'.png',await aBlob(c)); });
   const todo=h.tuits.map(t=>`${t.n}/${tot}\n${t.texto}`).join('\n\n---\n\n');
   document.getElementById('hilo-copiar').onclick=e=>{ copiar(todo); e.target.textContent='Copiado'; setTimeout(()=>e.target.textContent='Copiar el hilo completo',1500); };
   document.getElementById('hilo-txt').onclick=()=>bajar(`ipceer-${h.semana}-hilo.txt`,new Blob([todo+'\n'],{type:'text/plain;charset=utf-8'}));
-  document.getElementById('hilo-png').onclick=async()=>{ for(const c of L.querySelectorAll('canvas[data-img]')){ await new Promise(r=>c.toBlob(bl=>{bajar(nombre(c.dataset.n)+'-'+c.dataset.img+'.png',bl); r();},'image/png')); await new Promise(r=>setTimeout(r,350)); } };
+  document.getElementById('hilo-png').onclick=async()=>{ for(const c of L.querySelectorAll('canvas[data-img]')){ const ok=await bajar(nombre(c.dataset.n)+'-'+c.dataset.img+'.png',await aBlob(c)); if(!ok) break; await new Promise(r=>setTimeout(r,300)); } };
 }
 
 function render(){

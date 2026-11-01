@@ -146,6 +146,48 @@ def cmd_diario(cfg, args):
             cmd_sitio(cfg, args)
 
 
+def cmd_cadenas(cfg, args):
+    log.info("Cadenas con nombre: %d", lectura.catalogo_cadenas(cfg))
+
+
+def cmd_estado(cfg, args):
+    """Resumen de qué datos hay y qué salió del último cálculo (resultados/estado.json)."""
+    from datetime import datetime
+    res = cfg.ruta("resultados")
+    e = {"generado": datetime.now().isoformat(timespec="seconds")}
+    dias = panel.dias_disponibles(cfg)
+    e["sepa_dias"] = len(dias)
+    e["sepa_desde"], e["sepa_hasta"] = (dias[0].isoformat(), dias[-1].isoformat()) if dias else (None, None)
+    e["semanas"] = len(list(cfg.ruta("panel_semanal").glob("*.parquet")))
+    e["meses"] = len(list(cfg.ruta("panel_mensual").glob("*.parquet")))
+    e["zips_archivados"] = len(list(cfg.ruta("crudos").glob("sepa_*.zip")))
+    cad = cfg.ruta("panel_diario").parent / "cadenas.csv"
+    e["cadenas_con_nombre"] = pl.read_csv(cad).height if cad.exists() else 0
+    try:
+        e["cba_indec_meses"] = indec.leer_cba(indec.directorio(cfg)).height
+    except Exception as x:
+        e["cba_indec_meses"] = f"error: {x}"
+    pc = combustibles.directorio(cfg) / "panel.parquet"
+    if pc.exists():
+        p = pl.read_parquet(pc)
+        e["combustibles"] = {"filas": p.height, "estaciones": p["est"].n_unique(), "desde": p["mes_id"].min(),
+                             "hasta": p["mes_id"].max(), "sin_departamento_pct": round(100 * p["depto_id"].null_count() / max(p.height, 1), 2)}
+    else:
+        e["combustibles"] = "sin datos"
+    e["surtidor_copias"] = len(list((combustibles.directorio(cfg) / "surtidor").glob("*.csv.gz")))
+    dj = res / "datos.json"
+    if dj.exists():
+        d = json.loads(dj.read_text(encoding="utf-8"))
+        ind = d.get("indicadores", {})
+        e["indicadores"] = {k: len(v) if isinstance(v, list) else bool(v) for k, v in ind.items() if k != "parametros"}
+        e["hilo_semana"] = (d.get("hilo") or {}).get("semana")
+        e["validacion_pares"] = len((d.get("validacion") or {}).get("pares", []))
+        e["validacion_cba"] = any(p.get("codigo") == "CBA" for p in (d.get("validacion") or {}).get("pares", []))
+        e["combustibles_en_tablero"] = bool(d.get("combustibles"))
+    (res / "estado.json").write_text(json.dumps(e, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(e, ensure_ascii=False, indent=2))
+
+
 def cmd_indec(cfg, args):
     indec.descargar(cfg, max_horas=0 if getattr(args, "forzar", False) else 24)
 
@@ -196,6 +238,8 @@ def main(argv=None):
     c.set_defaults(fn=cmd_consolidar)
     sub.add_parser("combustibles", help="baja y procesa los precios de combustibles de Energía").set_defaults(
         fn=lambda cfg, args: combustibles.actualizar(cfg))
+    sub.add_parser("cadenas", help="nombres de las cadenas desde los últimos zips").set_defaults(fn=cmd_cadenas)
+    sub.add_parser("estado", help="resumen de datos y resultados").set_defaults(fn=cmd_estado)
     i = sub.add_parser("indec")
     i.add_argument("--forzar", action="store_true")
     i.set_defaults(fn=cmd_indec)

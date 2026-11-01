@@ -75,13 +75,17 @@ h2{font-size:26px;line-height:32px;letter-spacing:-.01em;margin:0 0 6px;font-wei
 h2 .tag{display:block;font-family:var(--font);font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0;margin-bottom:2px}
 .sub{color:var(--fg2);margin:0 0 18px;text-align:justify;hyphens:manual}
 .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
-.card{background:var(--panel);border:1px solid var(--line);padding:16px 18px;min-width:0;position:relative}
+.card{background:var(--panel);border:1px solid var(--line);padding:16px 18px;min-width:0;position:relative;display:flex;flex-direction:column}
+.card>.src{margin-top:auto;padding-top:10px}
+.card>.tablewrap{flex:0 1 auto}
 .s12{grid-column:span 12}.s8{grid-column:span 8}.s7{grid-column:span 7}.s6{grid-column:span 6}.s5{grid-column:span 5}.s4{grid-column:span 4}
 .card h3{font-size:15px;margin:0 0 8px;font-weight:700;padding-bottom:8px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}
 .card .cap{font-size:12.5px;color:var(--muted);margin:0 0 10px}
-.card .src{font-size:12px;color:var(--muted);margin-top:10px;display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.card .src{font-size:12px;color:var(--muted);margin-top:auto;padding-top:10px;display:flex;justify-content:space-between;align-items:baseline;gap:16px}
 .glogo{display:inline-block;flex-shrink:0;width:38px;height:9px;color:#2840a5;--cursor:#d6810c}
-.chart{position:relative;height:320px}.chart.tall{height:400px}.chart.short{height:230px}
+/* los gráficos ocupan todo el alto libre de su tarjeta (la fila se estira a la tarjeta más alta) */
+.chart{position:relative;flex:1 1 auto;min-height:320px}.chart.tall{min-height:400px}.chart.short{min-height:230px}
+.chart>canvas{position:absolute;inset:0}
 .seg{display:inline-flex;border:1px solid var(--line2);flex-shrink:0}
 .seg button{font:500 12px var(--font);background:transparent;color:var(--fg2);border:0;border-right:1px solid var(--line2);padding:4px 9px;cursor:pointer}
 .seg button:last-child{border-right:0}
@@ -137,6 +141,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
 .btn{font:600 13px var(--font);background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:8px 14px;cursor:pointer}
 .btn:hover{background:var(--accent);color:#fff}
 .btn.sm{font-size:12px;padding:5px 10px}
+.tuit:last-child{margin-bottom:0}
 .tuit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;background:var(--panel);border:1px solid var(--line);padding:18px;margin-bottom:16px}
 .tuit .n{font-family:var(--mono);font-weight:700;color:var(--muted);font-size:13px;margin-bottom:8px}
 .tuit .tx{white-space:pre-wrap;font-size:16px;line-height:1.5;color:var(--fg);margin:0 0 12px}
@@ -851,7 +856,7 @@ function renderCad(){
   const ci=(D.validacion&&D.validacion.cba_indec)||[]; const ui=ci.length?ci[ci.length-1]:null;
   document.getElementById('cad-t1').textContent='La canasta básica en cada cadena · '+reg;
   document.getElementById('cad-c1').innerHTML = s ? `Costo mensual de la CBA del INDEC para un adulto equivalente, semana del ${semCorta(s)}. Mediana de las cadenas: <span class="mono">${pesos(med&&med.costo)}</span>.`+(ui?` CBA oficial del INDEC (GBA, ${mesLbl(ui.mes)}): <span class="mono">${pesos(ui.cba)}</span>.`:'')+' Las barras claras tienen menos del '+num(100*((I.parametros||{}).cobertura_min_cba??0.6),0)+'% del costo con precios propios de la cadena y no entran en el ranking.' : 'Sin datos todavía.';
-  document.getElementById('cad-ch1').style.height=Math.max(220,fila.length*30+60)+'px';
+  document.getElementById('cad-ch1').style.minHeight=Math.max(220,fila.length*30+60)+'px';
   if(fila.length) draw('c-cad1',{type:'bar',data:{labels:fila.map(f=>f.cadena),datasets:[{label:'CBA',data:fila.map(f=>f.costo),
       backgroundColor:fila.map((f,i)=>!f.en_ranking?css('--bar2'):i===0?css('--ambar'):css('--accent'))}]},
     options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+pesos(c.parsed.x)+' · cobertura '+pct(100*fila[c.dataIndex].cobertura,0)}}},
@@ -864,7 +869,7 @@ function renderCad(){
   document.getElementById('t-cad').innerHTML=`<thead><tr><th class="n">Puesto</th><th class="n">Cambio</th><th>Cadena</th><th class="n">CBA</th><th class="n">Var. semanal</th><th class="n">Vs. mediana</th><th class="n">Nivel mismos productos</th><th class="n">Inflación semanal</th><th class="n">Cobertura CBA</th></tr></thead><tbody>`+
     fila.map(f=>`<tr><td class="n">${f.puesto??'–'}</td><td class="n">${flecha(f.cambio_puesto)}</td><td>${esc(f.cadena)}</td><td class="n">${pesos(f.costo)}</td><td class="n">${pct(f.var,2)}</td><td class="n">${med?pct((f.costo/med.costo-1)*100,1):'–'}</td><td class="n">${niv[f.cadena_id]?num(niv[f.cadena_id].nivel,1):'–'}</td><td class="n">${infl[f.cadena_id]?pct(infl[f.cadena_id].var,2):'–'}</td><td class="n">${pct(100*f.cobertura,0)}</td></tr>`).join('')+'</tbody>';
   const Ns=[...N].sort((a,b)=>a.nivel-b.nivel);
-  document.getElementById('cad-ch2').style.height=Math.max(220,Ns.length*28+60)+'px';
+  document.getElementById('cad-ch2').style.minHeight=Math.max(220,Ns.length*28+60)+'px';
   if(Ns.length) draw('c-cad2',{type:'bar',data:{labels:Ns.map(n=>n.cadena),datasets:[{label:'Nivel',data:Ns.map(n=>n.nivel-100),backgroundColor:Ns.map(n=>n.nivel<100?css('--accent'):css('--neg'))}]},
     options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+pct(c.parsed.x,1)+' contra el promedio · '+num(Ns[c.dataIndex].n,0)+' productos'}}},
       scales:{x:axY(v=>num(v,0)+'%'),y:{grid:{display:false},ticks:{color:css('--fg2'),font:{size:12}}}}})});
@@ -876,7 +881,7 @@ function renderCad(){
     {label:'Desvío',data:Dp.map(d=>d.desvio),borderColor:css('--cian'),backgroundColor:css('--cian'),borderWidth:2.5,pointRadius:2}]},options:o3});
   else sinDatos('c-cad3');
   const If=Object.values(infl).sort((a,b)=>a.var-b.var);
-  document.getElementById('cad-ch4').style.height=Math.max(220,If.length*28+60)+'px';
+  document.getElementById('cad-ch4').style.minHeight=Math.max(220,If.length*28+60)+'px';
   const ipc=((D.series.Nacional||{}).TOTAL||{}).semanal||[]; const vi=(ipc.find(x=>x.semana===s)||{}).var;
   if(If.length) draw('c-cad4',{type:'bar',data:{labels:If.map(c=>c.cadena),datasets:[{label:'Variación',data:If.map(c=>c.var),backgroundColor:If.map(c=>c.var<0?css('--neg'):css('--accent'))}]},
     options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+pct(c.parsed.x,2)+(vi!=null?' · IPCEER '+pct(vi,2):'')}}},

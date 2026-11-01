@@ -214,3 +214,27 @@ def procesar_zip_diario(ruta_zip: Path, fecha: date, cfg: Config) -> Path:
     log.info("%s: %d productos-cadena-región, %d cadenas", fecha, panel.height,
              panel.select("id_comercio", "id_bandera").n_unique())
     return destino
+
+
+def catalogo_cadenas(cfg: Config, ultimos: int = 3) -> int:
+    """Arma data/panel/cadenas.csv leyendo solo comercio.csv de los últimos zips archivados
+    (para tener los nombres de las cadenas sin reprocesar todo)."""
+    zips = sorted(cfg.ruta("crudos").glob("sepa_*.zip"))[-ultimos:]
+    filas = []
+    for ruta in zips:
+        try:
+            with zipfile.ZipFile(ruta) as z:
+                for nombre in z.namelist():
+                    if not nombre.lower().endswith(".zip"):
+                        continue
+                    try:
+                        with zipfile.ZipFile(io.BytesIO(z.read(nombre))) as zi:
+                            for n in zi.namelist():
+                                if PurePosixPath(n).name.lower() == "comercio.csv":
+                                    filas += _nombres_cadenas({"comercio.csv": zi.read(n)})
+                    except zipfile.BadZipFile:
+                        continue
+        except zipfile.BadZipFile:
+            log.warning("Zip dañado: %s", ruta)
+    actualizar_cadenas(cfg, filas)
+    return len({(f["id_comercio"], f["id_bandera"]) for f in filas})

@@ -117,7 +117,8 @@ def _limpio(x):
 
 
 def armar_datos(cfg: Config, mensual: pl.DataFrame | None, semanal: pl.DataFrame | None,
-                cobertura: pl.DataFrame | None, demo: bool = False, validacion: dict | None = None) -> dict:
+                cobertura: pl.DataFrame | None, demo: bool = False, validacion: dict | None = None,
+                indicadores: dict | None = None) -> dict:
     series = {}
     # El tablero principal muestra el tramo actual; los tramos anteriores (ej. 2016-2018) van a validación.
     if semanal is not None and "tramo" in semanal.columns:
@@ -185,6 +186,7 @@ def armar_datos(cfg: Config, mensual: pl.DataFrame | None, semanal: pl.DataFrame
             "clase": pond_cl,
         },
         "validacion": validacion or {},
+        "indicadores": indicadores or {},
         "parametros": {k: cfg["indice"][k] for k in cfg["indice"]} | {
             "factor_atipico_sucursal": cfg["limpieza"]["factor_atipico_sucursal"],
             "relativo_min": cfg["limpieza"]["relativo_min"], "relativo_max": cfg["limpieza"]["relativo_max"],

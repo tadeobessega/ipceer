@@ -13,6 +13,7 @@ dependencies = [
     "pyarrow>=14",
     "pyyaml>=6",
     "requests>=2.31",
+    "fastexcel>=0.11",
 ]
 
 [project.optional-dependencies]

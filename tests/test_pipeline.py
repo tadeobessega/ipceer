@@ -112,7 +112,7 @@ def test_indices(cfg):
     m = indice.calcular(cfg, "mensual")["indices"]
     tot = m.filter(pl.col("region") == "Nacional", pl.col("codigo") == "TOTAL").sort("periodo")
     sep = tot.filter(pl.col("periodo") == "2026-09")["var_pct"][0]
-    assert 1.5 < sep < 3.5  # tendencias sintéticas entre 1,2% y 4% mensual
+    assert 1.0 < sep < 3.5  # tendencias sintéticas entre 1,2% y 4% mensual (precios pegajosos)
     carnes = m.filter(pl.col("region") == "Nacional", pl.col("codigo") == "01.1.2", pl.col("periodo") == "2026-10")
     frutas = m.filter(pl.col("region") == "Nacional", pl.col("codigo") == "01.1.6", pl.col("periodo") == "2026-10")
     assert carnes["var_pct"][0] > frutas["var_pct"][0]
@@ -188,3 +188,32 @@ def test_historico_zenodo(tmp_path, monkeypatch):
     assert p["es_ean"][0] == "1" and p["cantidad"][0] == "1.0"
     cl = Clasificador.desde_archivos(REPO / "config" / "clasificador.yaml").clasificar(p)
     assert cl["clase"][0] == "01.2.1"
+
+
+def test_indicadores_y_hilo(cfg):
+    from ipceer import hilo, indicadores, resumen
+    sem = indice.calcular(cfg, "semanal")
+    ind = indicadores.calcular(cfg)
+    # rotación: porcentajes coherentes y con precios pegajosos no cambia todo
+    rot = [r for r in ind["rotacion"] if r["region"] == "Nacional" and r["codigo"] == "TOTAL"]
+    assert rot
+    for r in rot:
+        assert r["sube"] + r["baja"] + r["igual"] == pytest.approx(100)
+        assert 0 < r["cambia"] < 100
+    # cadenas: en GBA la más barata es la mayorista sintética (nivel 0,91) y la más cara Express Tres (1,09)
+    ult = ind["semanas"][-1]
+    gba = sorted([c for c in ind["cadenas"] if c["region"] == "GBA" and c["semana"] == ult], key=lambda c: c["nivel"])
+    assert gba[0]["cadena"] == "Mayorista Cinco" and gba[-1]["cadena"] == "Express Tres"
+    assert gba[-1]["nivel"] / gba[0]["nivel"] == pytest.approx(1.09 / 0.91, rel=0.03)
+    # regiones: Patagonia es la más cara
+    reg = sorted([r for r in ind["regiones"] if r["semana"] == ult], key=lambda r: r["nivel"])
+    assert reg[-1]["region"] == "Patagonia"
+    # CBA: costo positivo, ranking con la mayorista primero
+    cba = [c for c in ind["cba"]["cadenas"] if c["region"] == "GBA" and c["semana"] == ult and c["en_ranking"]]
+    assert cba and min(cba, key=lambda c: c["costo"])["cadena"] == "Mayorista Cinco"
+    # hilo
+    datos = resumen.armar_datos(cfg, None, sem["indices"], sem["cobertura"], indicadores=ind)
+    h = hilo.armar(cfg, datos, sem["indices"], datos["indicadores"])
+    assert h["tuits"][0]["texto"].startswith("El IPCEER midió una inflación semanal de bienes del ")
+    assert "—" not in "".join(t["texto"] for t in h["tuits"])
+    assert any(t["imagen"] == "cadenas" for t in h["tuits"])

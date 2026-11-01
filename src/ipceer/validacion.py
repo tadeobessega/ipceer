@@ -31,7 +31,7 @@ from pathlib import Path
 import polars as pl
 
 from .config import REGIONES, Config, ponderadores_clase
-from .indice import NACIONAL
+from .indice import tramos, NACIONAL
 
 # códigos propios -> código INDEC (cuando no coinciden)
 EQUIVALENCIAS = {"02.1.1": "02.1", "02.1.2": "02.1", "02.1.3": "02.1"}
@@ -211,7 +211,8 @@ def _limpio(x):
     return x
 
 
-def construir(cfg: Config, mensual: pl.DataFrame, semanal: pl.DataFrame | None, dir_indec: Path) -> dict:
+def construir(cfg: Config, mensual: pl.DataFrame, semanal: pl.DataFrame | None, dir_indec: Path,
+              cba_propia: pl.DataFrame | None = None) -> dict:
     indec = leer_indec(dir_indec)
     if indec.is_empty() or mensual is None or mensual.is_empty():
         return {}
@@ -281,10 +282,47 @@ def construir(cfg: Config, mensual: pl.DataFrame, semanal: pl.DataFrame | None, 
                 filas_tabla.append({k: item[k] for k in ("codigo", "codigo_indec", "region", "tramo", "nombre", "nombre_indec",
                                                          "desde", "hasta")} | est)
 
-    out = {"pares": resultados, "nowcast": nowcast(semanal, indec_todo) if semanal is not None else [],
+    # canasta básica alimentaria: costo propio (mediana de las cadenas, GBA) contra la CBA oficial
+    from .indec import leer_cba
+    cba_o = leer_cba(dir_indec)
+    if cba_propia is not None and not cba_propia.is_empty() and not cba_o.is_empty():
+        oficial = dict(cba_o.iter_rows())
+        cp = cba_propia.filter(pl.col("region") == "GBA", pl.col("dias") >= 10).sort("mes")
+        meses = [m for m in cp["mes"].to_list() if m in oficial]
+        tr = tramos(meses, "mensual", cfg["indice"]["max_meses_salto"])
+        costo = dict(cp.select("mes", "costo").iter_rows())
+        comp = dict(cp.select("mes", "componentes").iter_rows())
+        for t in sorted(set(tr.values())):
+            ms = [m for m in meses if tr[m] == t]
+            if len(ms) < 2:
+                continue
+            serie = []
+            for i, m in enumerate(ms):
+                f = {"mes": m, "propio": costo[m], "indec": oficial[m], "var_propio": None, "var_indec": None,
+                     "componentes": comp[m]}
+                if i:
+                    a0, m0 = map(int, ms[i - 1].split("-"))
+                    a1, m1 = map(int, m.split("-"))
+                    if (a1 * 12 + m1) - (a0 * 12 + m0) == 1:
+                        f["var_propio"] = (costo[m] / costo[ms[i - 1]] - 1) * 100
+                        f["var_indec"] = (oficial[m] / oficial[ms[i - 1]] - 1) * 100
+                serie.append(f)
+            vp = [x["var_propio"] for x in serie if x["var_propio"] is not None]
+            vo = [x["var_indec"] for x in serie if x["var_propio"] is not None]
+            est = estadisticos(vp, vo) | {"nivel_dif_pct": 100 * (_media([x["propio"] / x["indec"] for x in serie]) - 1)}
+            item = {"codigo": "CBA", "nivel": "cba", "codigo_indec": "CBA", "region": "GBA", "tramo": t,
+                    "nombre": "Canasta básica alimentaria", "nombre_indec": "CBA del INDEC (adulto equivalente)",
+                    "unidad": "pesos", "desde": serie[0]["mes"], "hasta": serie[-1]["mes"], "serie": serie, "est": est}
+            resultados.append(item)
+            filas_tabla.append({k: item[k] for k in ("codigo", "codigo_indec", "region", "tramo", "nombre",
+                                                     "nombre_indec", "desde", "hasta")} | est)
+    cba_oficial = cba_o.to_dicts() if not cba_o.is_empty() else []
+
+    out = {"pares": resultados, "cba_indec": cba_oficial,
+           "nowcast": nowcast(semanal, indec_todo) if semanal is not None else [],
            "saltos": saltos_vs_indec(mensual, semanal, indec_todo)}
     if filas_tabla:
-        pl.DataFrame(_limpio(filas_tabla)).write_csv(cfg.ruta("resultados") / "validacion_indec.csv")
+        pl.from_dicts(_limpio(filas_tabla), infer_schema_length=None).write_csv(cfg.ruta("resultados") / "validacion_indec.csv")
     return _limpio(out)
 
 

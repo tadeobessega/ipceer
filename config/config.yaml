@@ -49,3 +49,21 @@ indice:
   # Si entre dos períodos con datos pasan más meses que esto, la serie se corta en tramos
   # (ej. la base 2016-2018 de Zenodo y la actual). Por debajo se compara a través del hueco.
   max_meses_salto: 24
+
+indicadores:
+  # Semanas que se muestran en los indicadores complementarios (rotación, cadenas, CBA).
+  semanas: 13
+  # Un precio "cambió" de una semana a otra si se movió más que este porcentaje.
+  umbral_cambio_pct: 0.5
+  # Un producto (código de barras) entra en la comparación entre cadenas si lo venden al
+  # menos estas cadenas en la región; una cadena entra si tiene al menos estos productos.
+  min_cadenas_producto: 3
+  min_productos_cadena: 30
+  # Una cadena entra en el ranking de la CBA si tiene precio propio para esta parte del costo.
+  cobertura_min_cba: 0.6
+
+hilo:
+  # Enlace que va en el último tuit del hilo.
+  url: https://claude.ai/artifact/C3tPXgBGkjWig3PiRWFDs9
+  # Región de referencia para el tuit de cadenas y la CBA (la CBA del INDEC es la de GBA).
+  region_cadenas: GBA

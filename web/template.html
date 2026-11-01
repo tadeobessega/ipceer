@@ -134,6 +134,17 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
 .social a{color:#fff;text-decoration:none;border:1px solid #3c59c0;padding:8px 13px;font-size:13px}
 .social a:hover{border-color:#fff}
 .bl .sep{color:#57d4d4;font-family:var(--mono);font-weight:700}
+.btn{font:600 13px var(--font);background:var(--panel);color:var(--accent);border:1px solid var(--accent);padding:8px 14px;cursor:pointer}
+.btn:hover{background:var(--accent);color:#fff}
+.btn.sm{font-size:12px;padding:5px 10px}
+.tuit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;background:var(--panel);border:1px solid var(--line);padding:18px;margin-bottom:16px}
+.tuit .n{font-family:var(--mono);font-weight:700;color:var(--muted);font-size:13px;margin-bottom:8px}
+.tuit .tx{white-space:pre-wrap;font-size:16px;line-height:1.5;color:var(--fg);margin:0 0 12px}
+.tuit .pie{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--muted)}
+.tuit .pie .mono.exc{color:var(--neg);font-weight:600}
+.tuit canvas{width:100%;height:auto;display:block;border:1px solid var(--line)}
+.tuit .sinimg{color:var(--muted);font-size:13px;border:1px dashed var(--line2);display:flex;align-items:center;justify-content:center;min-height:120px}
+@media (max-width:900px){.tuit{grid-template-columns:1fr}}
 [hidden]{display:none!important}
 @media (max-width:900px){
   .hero,.met{grid-template-columns:1fr}
@@ -153,7 +164,10 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <button role="tab" data-tab="men" aria-selected="false">Mensual</button>
       <button role="tab" data-tab="rub" aria-selected="false">Rubros</button>
       <button role="tab" data-tab="reg" aria-selected="false">Regiones</button>
+      <button role="tab" data-tab="rot" aria-selected="false">Rotación</button>
+      <button role="tab" data-tab="cad" aria-selected="false">Cadenas</button>
       <button role="tab" data-tab="val" aria-selected="false">Validación</button>
+      <button role="tab" data-tab="hilo" aria-selected="false">Hilo</button>
       <button role="tab" data-tab="met" aria-selected="false">Metodología</button>
     </nav>
   </div>
@@ -250,6 +264,39 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <div class="grid">
         <div class="card s6"><h3>Promedio 4 semanas, mensualizado</h3><div class="chart short"><canvas id="c-reg"></canvas></div></div>
         <div class="card s6"><h3>Resumen por región</h3><div class="tablewrap"><table id="t-reg"></table></div></div>
+        <div class="card s6"><h3>Nivel de precios por región</h3><p class="cap">Diferencia con el promedio del país, con el mismo producto de la misma cadena en distintas regiones. Última semana.</p><div class="chart short"><canvas id="c-nreg"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
+        <div class="card s6"><h3>Nivel de precios por región, semana a semana</h3><p class="cap">Índice, promedio del país = 100.</p><div class="chart short"><canvas id="c-nreg2"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ROTACIÓN -->
+  <div data-panel="rot" hidden>
+    <section>
+      <h2><span class="tag">Cómo se mueven los precios</span>Rotación de precios</h2>
+      <p class="sub" id="rot-sub">Cuántos precios cambian de una semana a la otra, cuántos suben y cuántos bajan, y de cuánto son los cambios. La inflación de la semana es, aproximadamente, la parte de precios que sube por el tamaño de las subas menos la parte que baja por el tamaño de las bajas: el mismo número puede salir de pocos aumentos grandes o de muchos aumentos chicos, y eso dice cosas distintas sobre la dinámica de precios.</p>
+      <div class="kpis" id="rot-kpis" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))"></div>
+      <div class="grid" style="margin-top:16px">
+        <div class="card s12"><h3 id="rot-t1">Precios que subieron y bajaron</h3><p class="cap">Parte de los precios relevados que subió (arriba) y bajó (abajo) más de <span class="mono" id="rot-umbral"></span> respecto de la semana previa.</p><div class="legend"><span><i style="background:var(--accent)"></i>Subieron</span><span><i style="background:var(--neg)"></i>Bajaron</span></div><div class="chart"><canvas id="c-rot1"></canvas></div><div class="src">Fuente: CEER en base a SEPA. Ponderado con los ponderadores del IPC de cada rubro.</div></div>
+        <div class="card s6"><h3>Tamaño de los cambios</h3><p class="cap">Variación promedio de los precios que subieron y de los que bajaron.</p><div class="chart short"><canvas id="c-rot2"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
+        <div class="card s6"><h3>Difusión y promociones</h3><p class="cap">Parte de la canasta (por ponderación) cuyos rubros subieron en la semana, y parte de los precios con alguna promoción.</p><div class="chart short"><canvas id="c-rot3"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
+        <div class="card s12"><h3>Por división, última semana (nacional)</h3><div class="tablewrap"><table id="t-rot"></table></div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- CADENAS -->
+  <div data-panel="cad" hidden>
+    <section>
+      <h2><span class="tag">Supermercados</span>Cadenas</h2>
+      <p class="sub" id="cad-sub">Qué tan caras son las cadenas entre sí. Usamos dos medidas: el costo de la canasta básica alimentaria (CBA) del INDEC en cada cadena, y un nivel de precios que compara exactamente los mismos productos (mismo código de barras) en la misma región. La región se elige arriba; la CBA es la de un adulto equivalente de Gran Buenos Aires.</p>
+      <div class="grid">
+        <div class="card s12"><h3 id="cad-t1">La canasta básica en cada cadena</h3><p class="cap" id="cad-c1"></p><div class="chart tall" id="cad-ch1"><canvas id="c-cad1"></canvas></div><div class="src">Fuente: CEER en base a SEPA e INDEC (composición de la CBA de Gran Buenos Aires).</div></div>
+        <div class="card s12"><h3>Ranking de la semana</h3><div class="tablewrap"><table id="t-cad"></table></div></div>
+        <div class="card s6"><h3>Nivel de precios con los mismos productos</h3><p class="cap">100 = promedio de las cadenas. Compara cada producto (código de barras) entre cadenas de la misma región.</p><div class="chart" id="cad-ch2"><canvas id="c-cad2"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
+        <div class="card s6"><h3>¿Se acercan o se alejan?</h3><p class="cap">Brecha: cuánto más cara es la cadena más cara que la más barata. Desvío: desvío estándar de los niveles de las cadenas. Semana a semana, en %.</p><div class="chart"><canvas id="c-cad3"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
+        <div class="card s6"><h3>Inflación semanal por cadena</h3><p class="cap">Última semana, todo el país, con la misma canasta y ponderación que el IPCEER.</p><div class="chart" id="cad-ch4"><canvas id="c-cad4"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
+        <div class="card s6"><h3>Qué hay en la CBA</h3><p class="cap" id="cad-c5"></p><div class="tablewrap"><table id="t-cba"></table></div></div>
       </div>
     </section>
   </div>
@@ -279,6 +326,20 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
         <div class="card s12" id="v-saltos-card"><h3>Del punto histórico de abril de 2025 a hoy</h3><p class="cap">Variación acumulada entre la semana guardada en la Wayback Machine y la última semana relevada, contra la del INDEC entre los mismos meses (o el último mes publicado). Promedio mensual compuesto.</p><div class="tablewrap"><table id="t-saltos"></table></div></div>
         <div class="card s12"><h3>Todas las comparaciones</h3><p class="cap">Para la región elegida arriba. A nivel nacional el INDEC solo publica el total y las divisiones; para ver grupos y clases, elegí una región.</p><div class="tablewrap"><table id="t-pares"></table></div></div>
       </div>
+    </section>
+  </div>
+
+  <!-- HILO -->
+  <div data-panel="hilo" hidden>
+    <section>
+      <h2><span class="tag">Para publicar</span>Hilo de la semana</h2>
+      <p class="sub" id="hilo-sub"></p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px">
+        <button class="btn" id="hilo-copiar">Copiar el hilo completo</button>
+        <button class="btn" id="hilo-txt">Descargar texto</button>
+        <button class="btn" id="hilo-png">Descargar todas las imágenes</button>
+      </div>
+      <div id="hilo-lista"></div>
     </section>
   </div>
 
@@ -312,7 +373,7 @@ const D = JSON.parse(document.getElementById('data').textContent);
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 const nf = d => new Intl.NumberFormat('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
-const pct = (v,d=1) => v==null||isNaN(v) ? '–' : nf(d).format(Math.abs(v)<0.5*10**-d?0:v).replace('-','−')+'%';
+const pct = (v,d=1,sg=false) => v==null||isNaN(v) ? '–' : (sg&&v>=0.5*10**-d?'+':'')+nf(d).format(Math.abs(v)<0.5*10**-d?0:v).replace('-','−')+'%';
 const num = (v,d=1) => v==null||isNaN(v) ? '–' : nf(d).format(v).replace('-','−');
 const mesLbl = m => { const [a,b]=m.split('-'); return MESES[+b-1]+' '+a; };
 const mesLargo = m => { const n=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; const [a,b]=m.split('-'); return n[+b-1]+' de '+a; };
@@ -539,6 +600,25 @@ prom. 4 mens.  = (1 + prom. 4 sem.)^(30,44 / 7) − 1</div>
     <li><b>Proyección:</b> completa las semanas que faltan haciendo crecer el nivel al ritmo del promedio de las últimas 4 semanas.</li></ul>
     <div class="formula">var. mes = media( I(sem) : sem ∈ mes ) / media( I(sem) : sem ∈ mes−1 ) − 1</div>
     <p>Por la estacionalidad dentro del mes, la proyección hecha a fin de mes tiende a sobrestimar (supone que las últimas semanas suben tanto como el promedio, que incluye el salto de la primera). La tabla mensual cerrada usa los precios diarios del mes completo, no las semanas.</p>`],
+  ['rotacion','Rotación de precios',`
+    <p>Para cada producto de cada cadena y región se compara el precio del último día con datos de la semana con el del último día con datos de la semana anterior. Un precio <b>cambió</b> si se movió más de <span class="f">${pct(((D.indicadores||{}).parametros||{}).umbral_cambio_pct??0.5)}</span>: como el precio de una cadena en una región es el promedio entre sus sucursales, por debajo de ese umbral el movimiento suele ser una sucursal sola y no una remarcación.</p>
+    <p>Las proporciones se calculan dentro de cada rubro y región y se agregan con los mismos ponderadores del IPCEER, para que un rubro con muchos productos (por ejemplo, perfumería) no pese más que uno con pocos y mucho gasto (por ejemplo, carnes). Con eso se obtiene una descomposición útil de la inflación semanal:</p>
+    <div class="formula">inflación ≈ (parte que sube × suba promedio) + (parte que baja × baja promedio)</div>
+    <p>Un mismo número puede venir de pocos aumentos grandes (típico de un salto de costos) o de muchos aumentos chicos (típico de una inercia generalizada). La <b>difusión</b> es la parte de la canasta, por ponderación, cuyos rubros subieron en la semana. La parte <b>con promoción</b> cuenta los precios cuyo precio promocional por unidad es menor al de lista.</p>`],
+  ['cadenas','Precios por cadena y por región',`
+    <p>Para comparar cadenas no alcanza con promediar sus precios, porque cada una vende productos distintos. Se usa el modelo de efectos fijos que emplean las comparaciones internacionales de precios (<i>country product dummy</i>):</p>
+    <div class="formula">log p(producto, cadena) = a(producto) + b(cadena)</div>
+    <p><span class="f">b(cadena)</span> es el nivel de precios de la cadena con el producto fijo: si dos cadenas venden el mismo código de barras, la diferencia de precio va al nivel de la cadena; si una vende un producto más caro que la otra no vende, no la perjudica. Entran los productos identificados por código de barras que venden al menos <span class="f">${((D.indicadores||{}).parametros||{}).min_cadenas_producto??3}</span> cadenas en la región, y las cadenas con al menos <span class="f">${((D.indicadores||{}).parametros||{}).min_productos_cadena??30}</span> de esos productos. Cada producto pondera según el peso de su rubro en el IPC de la región, repartido entre los productos del rubro. El resultado se expresa con 100 = promedio de las cadenas.</p>
+    <p>Las regiones se comparan igual, con el mismo producto de la misma cadena vendido en distintas regiones: <span class="f">log p(producto de la cadena, región) = a(producto de la cadena) + b(región)</span>, con 100 = promedio ponderado del país. Mide diferencias de precios, no de costo de vida (no incluye servicios ni alquileres).</p>
+    <p>La <b>inflación por cadena</b> repite el cálculo del IPCEER con los productos de cada cadena. La <b>brecha</b> es la diferencia entre la cadena más cara y la más barata; si crece de una semana a otra, las cadenas se están alejando.</p>`],
+  ['cba','Canasta básica alimentaria',`
+    <p>La canasta básica alimentaria (CBA) del INDEC define, para un adulto equivalente, las cantidades mensuales de 30 componentes (pan, galletitas, arroz, harinas, fideos, papa, batata, azúcar, dulces, legumbres, hortalizas, frutas, carnes, menudencias, fiambres, huevos, leche, queso, yogur, manteca, aceite, bebidas, sal, condimentos, vinagre, café y yerba). Su valor es la línea de indigencia. Se usa la composición de Gran Buenos Aires, vigente desde 2016.</p>
+    <p>Cada componente se identifica en SEPA con reglas sobre la descripción del producto (archivo <span class="f">config/cba.yaml</span>), se lleva a precio por kilo o por litro con el contenido neto, y se valoriza:</p>
+    <ul><li><b>En cada cadena:</b> con la mediana del precio por kilo de los productos de la cadena en la región. Si una cadena no vende un componente, se imputa el precio mediano de la región ajustado por el nivel de precios de la cadena; entran al ranking las cadenas con al menos el ${num(100*(((D.indicadores||{}).parametros||{}).cobertura_min_cba??0.6),0)}% del costo con precios propios.</li>
+    <li><b>Para comparar con el INDEC:</b> con la mediana entre cadenas, todos los meses, en Gran Buenos Aires. Si un mes falta un componente, se arrastra su precio del mes anterior. La pestaña Validación compara ese costo con la CBA oficial, en pesos y en variación mensual.</li></ul>
+    <p>Diferencias esperables con el INDEC: el INDEC valoriza con los precios promedio que releva para el IPC en todo tipo de comercios (incluidos almacenes, verdulerías y carnicerías), y para algunos componentes (pan francés, carne, verduras) los supermercados informan pocos productos o ninguno. Por eso el nivel puede diferir y lo más informativo es la variación.</p>`],
+  ['hilo','Hilo semanal',`
+    <p>Con cada cálculo se arma solo un hilo para X con el dato de la última semana completa: la inflación semanal y su efecto en la proyección del mes, los datos clave (comparación con la semana previa, media de 4 semanas, rubros con mayor y menor variación), la rotación de precios, la comparación entre cadenas y entre regiones. Los rubros extremos se eligen entre los que tienen al menos 20 productos comparados. El texto se guarda en <span class="f">resultados/hilos/</span> y las imágenes (1600 × 900 px) se dibujan en la pestaña Hilo con los mismos datos.</p>`],
   ['limites','Limitaciones',`
     <ul>
     <li><b>No es un IPC.</b> Cubre solo bienes de grandes cadenas y una parte de la canasta (ver cobertura). No se puede comparar el nivel general con el IPC del INDEC; sí las divisiones de alimentos y bebidas.</li>
@@ -559,7 +639,7 @@ prom. 4 mens.  = (1 + prom. 4 sem.)^(30,44 / 7) − 1</div>
 
 /* ---------- validación ---------- */
 const vst={par:null,tramo:null,modo:'n',hm:'rmse'};
-const etiquetaPar = p => (p.codigo==='TOTAL'?'Total relevado':p.codigo+' '+p.nombre)+' vs '+(p.codigo_indec==='REPLICA'?'INDEC misma canasta':p.codigo_indec==='B'?'Bienes INDEC':'INDEC');
+const etiquetaPar = p => p.codigo==='CBA' ? 'Canasta básica alimentaria (GBA) vs CBA del INDEC' : (p.codigo==='TOTAL'?'Total relevado':p.codigo+' '+p.nombre)+' vs '+(p.codigo_indec==='REPLICA'?'INDEC misma canasta':p.codigo_indec==='B'?'Bienes INDEC':'INDEC');
 function paresVal(){ return (D.validacion&&D.validacion.pares)||[]; }
 function renderVal(){
   const P=paresVal();
@@ -583,14 +663,16 @@ function renderVal(){
   if(!p) return;
   const S=p.serie, e=p.est, az=css('--accent'), am=css('--ambar');
   // 1. nivel o variación
-  document.getElementById('v-t1').textContent=(vst.modo==='n'?'Nivel del índice':'Variación mensual')+' · '+p.region;
+  const esP=p.unidad==='pesos';
+  document.getElementById('v-t1').textContent=(vst.modo==='n'?(esP?'Costo mensual por adulto equivalente':'Nivel del índice'):'Variación mensual')+' · '+p.region;
+  document.querySelector('#c-v1').closest('.card').querySelector('.src span').textContent = esP ? 'Fuente: CEER en base a SEPA e INDEC (valorización mensual de la CBA, Gran Buenos Aires). La CBA propia valoriza la misma composición con la mediana de precios de las cadenas.' : 'Fuente: CEER en base a SEPA y a INDEC (IPC, base dic-2016 = 100). Ambos índices llevados a 100 en el primer mes en común.';
   document.getElementById('v-leg-dif').hidden = vst.modo==='n';
   const lab=S.map(x=>mesLbl(x.mes));
   if(vst.modo==='n') draw('c-v1',{type:'line',data:{labels:lab,datasets:[
       {label:'IPCEER',data:S.map(x=>x.propio),borderColor:az,backgroundColor:az,borderWidth:2.5,pointRadius:2,tension:.15},
       {label:'INDEC',data:S.map(x=>x.indec),borderColor:am,backgroundColor:am,borderWidth:2.5,pointRadius:2,tension:.15}]},
-    options:baseOpts({layout:{padding:{right:58}},plugins:{etiquetasFinales:{on:true},legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+c.dataset.label+': '+num(c.parsed.y,2)}}},
-      scales:{x:{grid:{display:false},ticks:{color:css('--muted'),maxRotation:0,autoSkipPadding:14}},y:{grid:{color:css('--line')},border:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>num(v,0)}}}})});
+    options:baseOpts({layout:{padding:{right:58}},plugins:{etiquetasFinales:{on:true},legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+c.dataset.label+': '+(esP?pesos(c.parsed.y):num(c.parsed.y,2))}}},
+      scales:{x:{grid:{display:false},ticks:{color:css('--muted'),maxRotation:0,autoSkipPadding:14}},y:{grid:{color:css('--line')},border:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>esP?'$'+num(v/1000,0)+' mil':num(v,0)}}}})});
   else draw('c-v1',{type:'bar',data:{labels:lab,datasets:[
       {type:'line',label:'IPCEER',data:S.map(x=>x.var_propio),borderColor:az,backgroundColor:az,borderWidth:2.5,pointRadius:2,tension:.15,spanGaps:false,order:0},
       {type:'line',label:'INDEC',data:S.map(x=>x.var_indec),borderColor:am,backgroundColor:am,borderWidth:2.5,pointRadius:2,tension:.15,order:0},
@@ -601,6 +683,7 @@ function renderVal(){
     (e.sesgo_p>=0.05?ok:mal).push(e.sesgo_p>=0.05?`Sin sesgo significativo: la diferencia media es de <span class="mono">${num(e.sesgo,2)} pp</span> por mes (p = <span class="mono">${num(e.sesgo_p,2)}</span>).`:`Sesgo significativo de <span class="mono">${num(e.sesgo,2)} pp</span> por mes (p = <span class="mono">${num(e.sesgo_p,3)}</span>): el IPCEER ${e.sesgo>0?'sobrestima':'subestima'}.`);
     (e.pearson>=0.7?ok:mal).push(`Correlación de <span class="mono">${num(e.pearson,2)}</span> entre las variaciones mensuales.`);
     (e.theil_u<1?ok:mal).push(`U de Theil <span class="mono">${num(e.theil_u,2)}</span>: ${e.theil_u<1?'mejor':'peor'} que suponer que el mes repite al anterior.`);
+    if(e.nivel_dif_pct!=null) (Math.abs(e.nivel_dif_pct)<=10?ok:mal).push(`En nivel, nuestra CBA queda <span class="mono">${pct(Math.abs(e.nivel_dif_pct),1)}</span> ${e.nivel_dif_pct<0?'por debajo':'por encima'} de la del INDEC en promedio (${S[S.length-1].componentes??'–'} de 30 componentes con precio en el último mes).`);
     (e.direccion>=0.6?ok:mal).push(`Acierta si la inflación acelera o desacelera en el <span class="mono">${num(e.direccion*100,0)}%</span> de los meses.`);
   }
   const nota = e.n<3?'<p class="cap">Hacen falta al menos 3 meses en común.</p>':
@@ -654,6 +737,210 @@ function renderVal(){
     T.map(x=>{const e=x.est;return `<tr><td>${esc(etiquetaPar(x))}</td><td class="n">${e.n}</td><td class="n">${num(e.sesgo,2)}</td><td class="n" ${e.sesgo_p<0.05?'style="color:var(--neg)"':''}>${num(e.sesgo_p,2)}</td><td class="n">${num(e.mae,2)}</td><td class="n">${num(e.rmse,2)}</td><td class="n">${num(e.pearson,2)}</td><td class="n">${num(e.pendiente,2)}</td><td class="n">${num(e.theil_u,2)}</td><td class="n">${e.direccion==null?'–':num(e.direccion*100,0)+'%'}</td><td class="n">${num(e.acum_dif,1)} pp</td></tr>`}).join('')+'</tbody>';
 }
 
+/* ---------- indicadores complementarios ---------- */
+const IND = () => D.indicadores||{};
+const ultSem = arr => arr.length ? arr.map(x=>x.semana).sort().slice(-1)[0] : null;
+function lunesISO(s){ const [a,w]=s.split('-W').map(Number); const d=new Date(Date.UTC(a,0,4)); const dow=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-dow+(w-1)*7); return d; }
+const semCorta = s => { const d=lunesISO(s); return String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0'); };
+const pesos = v => v==null?'–':'$ '+num(v,0);
+const axY = (cb)=>({grid:{color:css('--line')},border:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:cb}});
+const axX = ()=>({grid:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),maxRotation:0,autoSkipPadding:10}});
+function sinDatos(id,txt){ const c=document.getElementById(id); if(charts[id]){charts[id].destroy(); delete charts[id];} const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); c.parentElement.dataset.vacio=txt||'Sin datos todavía.'; }
+
+function renderRot(){
+  const R=(IND().rotacion||[]).filter(r=>r.region===st.reg&&r.codigo==='TOTAL').sort((a,b)=>a.semana<b.semana?-1:1);
+  document.getElementById('rot-umbral').textContent=pct((IND().parametros||{}).umbral_cambio_pct??0.5);
+  const k=document.getElementById('rot-kpis');
+  if(!R.length){ k.innerHTML='<div class="kpi"><span>Rotación de precios</span><b class="nd">sin datos aún</b><small>Hacen falta dos semanas seguidas con datos.</small></div>'; ['c-rot1','c-rot2','c-rot3'].forEach(i=>sinDatos(i)); document.getElementById('t-rot').innerHTML=''; return; }
+  const u=R[R.length-1], a=R.length>1?R[R.length-2]:null;
+  const dv=(x,y,d=1)=>y==null?'':` <span class="mono">${x>=y?'▲':'▼'} ${num(Math.abs(x-y),d)} pp</span> contra la semana previa`;
+  k.innerHTML=[
+    `<div class="kpi"><span>Precios que cambiaron · ${esc(st.reg)}<br>semana del ${semCorta(u.semana)}</span><b class="ac">${pct(u.cambia)}</b><small>${dv(u.cambia,a&&a.cambia)}</small><div class="kfuente">Más de ${pct((IND().parametros||{}).umbral_cambio_pct??0.5)} de diferencia con la semana previa.</div></div>`,
+    `<div class="kpi"><span>Subieron</span><b>${pct(u.sube)}</b><small>Suba promedio <span class="mono">${pct(u.tam_sube,1)}</span></small><div class="kfuente">${a?'Semana previa: '+pct(a.sube):''}</div></div>`,
+    `<div class="kpi"><span>Bajaron</span><b>${pct(u.baja)}</b><small>Baja promedio <span class="mono">${pct(u.tam_baja,1)}</span></small><div class="kfuente">${a?'Semana previa: '+pct(a.baja):''}</div></div>`,
+    `<div class="kpi"><span>Con promoción</span><b>${pct(u.promo)}</b><small>Descuento promedio <span class="mono">${pct(u.desc_promo,0)}</span></small><div class="kfuente">Precio de promoción menor al de lista.</div></div>`].join('');
+  const lab=R.map(r=>semCorta(r.semana));
+  draw('c-rot1',{type:'bar',data:{labels:lab,datasets:[
+    {label:'Subieron',data:R.map(r=>r.sube),backgroundColor:css('--accent'),stack:'a'},
+    {label:'Bajaron',data:R.map(r=>-r.baja),backgroundColor:css('--neg'),stack:'a'}]},
+    options:baseOpts({plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+c.dataset.label+': '+pct(Math.abs(c.parsed.y))}}},
+      scales:{x:{...axX(),stacked:true},y:{...axY(v=>num(Math.abs(v),0)+'%'),stacked:true}}})});
+  const o2=baseOpts({layout:{padding:{right:70}},scales:{x:axX(),y:axY(v=>num(v,1)+'%')}}); o2.plugins.etiquetasFinales={on:true};
+  draw('c-rot2',{type:'line',data:{labels:lab,datasets:[
+    {label:'Subas',data:R.map(r=>r.tam_sube),borderColor:css('--accent'),backgroundColor:css('--accent'),borderWidth:2.5,pointRadius:2},
+    {label:'Bajas',data:R.map(r=>r.tam_baja),borderColor:css('--neg'),backgroundColor:css('--neg'),borderWidth:2.5,pointRadius:2}]},options:o2});
+  const o3=baseOpts({layout:{padding:{right:90}},scales:{x:axX(),y:{...axY(v=>num(v,0)+'%'),min:0,max:100}}}); o3.plugins.etiquetasFinales={on:true};
+  draw('c-rot3',{type:'line',data:{labels:lab,datasets:[
+    {label:'Difusión',data:R.map(r=>r.difusion??null),borderColor:css('--accent'),backgroundColor:css('--accent'),borderWidth:2.5,pointRadius:2},
+    {label:'Promociones',data:R.map(r=>r.promo),borderColor:css('--cian'),backgroundColor:css('--cian'),borderWidth:2.5,pointRadius:2}]},options:o3});
+  const DV=(IND().rotacion||[]).filter(r=>r.region==='Nacional'&&r.semana===u.semana);
+  const nom={TOTAL:'Total',...SERIES};
+  document.getElementById('t-rot').innerHTML=`<thead><tr><th>División</th><th class="n">Precios</th><th class="n">Cambiaron</th><th class="n">Subieron</th><th class="n">Bajaron</th><th class="n">Suba prom.</th><th class="n">Baja prom.</th><th class="n">Variación</th><th class="n">Con promo</th></tr></thead><tbody>`+
+    DV.map(r=>`<tr class="${r.codigo==='TOTAL'?'hl':''}"><td>${esc(r.codigo==='TOTAL'?'Total':(D.nombres[r.codigo]||nom[r.codigo]||r.codigo))}</td><td class="n">${num(r.n,0)}</td><td class="n">${pct(r.cambia)}</td><td class="n">${pct(r.sube)}</td><td class="n">${pct(r.baja)}</td><td class="n">${pct(r.tam_sube)}</td><td class="n">${pct(r.tam_baja)}</td><td class="n">${pct(r.var,2)}</td><td class="n">${pct(r.promo)}</td></tr>`).join('')+'</tbody>';
+}
+
+function regCad(){ return st.reg; }
+function renderCad(){
+  const reg=regCad(), I=IND(), C=(I.cba&&I.cba.cadenas)||[];
+  const sems=[...new Set(C.map(c=>c.semana))].sort(), s=sems[sems.length-1];
+  const fila=C.filter(c=>c.region===reg&&c.semana===s&&c.cadena_id!=='MEDIANA').sort((a,b)=>a.costo-b.costo);
+  const med=C.find(c=>c.region===reg&&c.semana===s&&c.cadena_id==='MEDIANA');
+  const ci=(D.validacion&&D.validacion.cba_indec)||[]; const ui=ci.length?ci[ci.length-1]:null;
+  document.getElementById('cad-t1').textContent='La canasta básica en cada cadena · '+reg;
+  document.getElementById('cad-c1').innerHTML = s ? `Costo mensual de la CBA del INDEC para un adulto equivalente, semana del ${semCorta(s)}. Mediana de las cadenas: <span class="mono">${pesos(med&&med.costo)}</span>.`+(ui?` CBA oficial del INDEC (GBA, ${mesLbl(ui.mes)}): <span class="mono">${pesos(ui.cba)}</span>.`:'')+' Las barras claras tienen menos del '+num(100*((I.parametros||{}).cobertura_min_cba??0.6),0)+'% del costo con precios propios de la cadena y no entran en el ranking.' : 'Sin datos todavía.';
+  document.getElementById('cad-ch1').style.height=Math.max(220,fila.length*30+60)+'px';
+  if(fila.length) draw('c-cad1',{type:'bar',data:{labels:fila.map(f=>f.cadena),datasets:[{label:'CBA',data:fila.map(f=>f.costo),
+      backgroundColor:fila.map((f,i)=>!f.en_ranking?css('--bar2'):i===0?css('--ambar'):css('--accent'))}]},
+    options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+pesos(c.parsed.x)+' · cobertura '+pct(100*fila[c.dataIndex].cobertura,0)}}},
+      scales:{x:{...axY(v=>'$'+num(v/1000,0)+' mil'),beginAtZero:true},y:{grid:{display:false},ticks:{color:css('--fg2'),font:{size:12}}}}})});
+  else sinDatos('c-cad1');
+  const N=(I.cadenas||[]).filter(c=>c.region===reg&&c.semana===s);
+  const niv=Object.fromEntries(N.map(n=>[n.cadena_id,n]));
+  const infl=Object.fromEntries((I.inflacion_cadenas||[]).filter(c=>c.semana===s).map(c=>[c.cadena_id,c]));
+  const flecha=v=>v==null?'–':v>0?`<span style="color:var(--cian)">▲ ${v}</span>`:v<0?`<span style="color:var(--neg)">▼ ${-v}</span>`:'=';
+  document.getElementById('t-cad').innerHTML=`<thead><tr><th class="n">Puesto</th><th class="n">Cambio</th><th>Cadena</th><th class="n">CBA</th><th class="n">Var. semanal</th><th class="n">Vs. mediana</th><th class="n">Nivel mismos productos</th><th class="n">Inflación semanal</th><th class="n">Cobertura CBA</th></tr></thead><tbody>`+
+    fila.map(f=>`<tr><td class="n">${f.puesto??'–'}</td><td class="n">${flecha(f.cambio_puesto)}</td><td>${esc(f.cadena)}</td><td class="n">${pesos(f.costo)}</td><td class="n">${pct(f.var,2)}</td><td class="n">${med?pct((f.costo/med.costo-1)*100,1):'–'}</td><td class="n">${niv[f.cadena_id]?num(niv[f.cadena_id].nivel,1):'–'}</td><td class="n">${infl[f.cadena_id]?pct(infl[f.cadena_id].var,2):'–'}</td><td class="n">${pct(100*f.cobertura,0)}</td></tr>`).join('')+'</tbody>';
+  const Ns=[...N].sort((a,b)=>a.nivel-b.nivel);
+  document.getElementById('cad-ch2').style.height=Math.max(220,Ns.length*28+60)+'px';
+  if(Ns.length) draw('c-cad2',{type:'bar',data:{labels:Ns.map(n=>n.cadena),datasets:[{label:'Nivel',data:Ns.map(n=>n.nivel-100),backgroundColor:Ns.map(n=>n.nivel<100?css('--accent'):css('--neg'))}]},
+    options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+pct(c.parsed.x,1)+' contra el promedio · '+num(Ns[c.dataIndex].n,0)+' productos'}}},
+      scales:{x:axY(v=>num(v,0)+'%'),y:{grid:{display:false},ticks:{color:css('--fg2'),font:{size:12}}}}})});
+  else sinDatos('c-cad2');
+  const Dp=(I.dispersion||[]).filter(d=>d.region===reg).sort((a,b)=>a.semana<b.semana?-1:1);
+  const o3=baseOpts({layout:{padding:{right:60}},scales:{x:axX(),y:{...axY(v=>num(v,0)+'%'),beginAtZero:true}}}); o3.plugins.etiquetasFinales={on:true};
+  if(Dp.length) draw('c-cad3',{type:'line',data:{labels:Dp.map(d=>semCorta(d.semana)),datasets:[
+    {label:'Brecha',data:Dp.map(d=>d.brecha),borderColor:css('--accent'),backgroundColor:css('--accent'),borderWidth:2.5,pointRadius:2},
+    {label:'Desvío',data:Dp.map(d=>d.desvio),borderColor:css('--cian'),backgroundColor:css('--cian'),borderWidth:2.5,pointRadius:2}]},options:o3});
+  else sinDatos('c-cad3');
+  const If=Object.values(infl).sort((a,b)=>a.var-b.var);
+  document.getElementById('cad-ch4').style.height=Math.max(220,If.length*28+60)+'px';
+  const ipc=((D.series.Nacional||{}).TOTAL||{}).semanal||[]; const vi=(ipc.find(x=>x.semana===s)||{}).var;
+  if(If.length) draw('c-cad4',{type:'bar',data:{labels:If.map(c=>c.cadena),datasets:[{label:'Variación',data:If.map(c=>c.var),backgroundColor:If.map(c=>c.var<0?css('--neg'):css('--accent'))}]},
+    options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+pct(c.parsed.x,2)+(vi!=null?' · IPCEER '+pct(vi,2):'')}}},
+      scales:{x:axY(v=>num(v,1)+'%'),y:{grid:{display:false},ticks:{color:css('--fg2'),font:{size:12}}}}})});
+  else sinDatos('c-cad4');
+  const K=((I.cba&&I.cba.componentes)||[]).filter(c=>c.region===reg&&c.semana===s).sort((a,b)=>b.costo-a.costo);
+  const tot=K.reduce((a,c)=>a+c.costo,0);
+  document.getElementById('cad-c5').innerHTML=`Componentes de la CBA de un adulto equivalente por mes, valorizados con la mediana de las cadenas (${esc(reg)}). Fuente de la composición: ${esc((I.cba&&I.cba.fuente)||'INDEC')}.`;
+  document.getElementById('t-cba').innerHTML=`<thead><tr><th>Componente</th><th class="n">Cantidad</th><th class="n">Precio por kg/l</th><th class="n">Costo</th><th class="n">Peso</th></tr></thead><tbody>`+
+    K.map(c=>`<tr><td>${esc(c.nombre)}</td><td class="n">${num(c.cantidad,0)} ${c.base==='l'?'cm³':'g'}</td><td class="n">${pesos(c.precio)}</td><td class="n">${pesos(c.costo)}</td><td class="n">${pct(100*c.costo/tot,1)}</td></tr>`).join('')+`<tr class="hl"><td>Total con precio</td><td class="n">${K.length} de 30</td><td></td><td class="n">${pesos(tot)}</td><td></td></tr></tbody>`;
+}
+
+function renderNivReg(){
+  const R=(IND().regiones||[]); const s=ultSem(R);
+  const u=R.filter(r=>r.semana===s).sort((a,b)=>a.nivel-b.nivel);
+  if(u.length) draw('c-nreg',{type:'bar',data:{labels:u.map(r=>r.region),datasets:[{label:'Nivel',data:u.map(r=>r.nivel-100),backgroundColor:u.map(r=>r.nivel>=100?css('--neg'):css('--accent'))}]},
+    options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+pct(c.parsed.x,1,true)+' contra el promedio del país'}}},
+      scales:{x:axY(v=>num(v,0)+'%'),y:{grid:{display:false},ticks:{color:css('--fg2')}}}})});
+  else sinDatos('c-nreg');
+  const sems=[...new Set(R.map(r=>r.semana))].sort();
+  const cols=[css('--accent'),css('--ambar'),css('--cian'),'#473a9a',css('--resto'),css('--neg')];
+  const regs=['GBA','Pampeana','Noreste','Noroeste','Cuyo','Patagonia'];
+  const o=baseOpts({layout:{padding:{right:80}},scales:{x:axX(),y:axY(v=>num(v,0))}}); o.plugins.etiquetasFinales={on:true}; o.plugins.tooltip.callbacks={label:c=>' '+c.dataset.label+': '+num(c.parsed.y,1)};
+  if(sems.length) draw('c-nreg2',{type:'line',data:{labels:sems.map(semCorta),datasets:regs.map((r,i)=>({label:r,data:sems.map(s2=>{const x=R.find(y=>y.semana===s2&&y.region===r);return x?x.nivel:null;}),borderColor:cols[i],backgroundColor:cols[i],borderWidth:2,pointRadius:0}))},options:o});
+  else sinDatos('c-nreg2');
+}
+
+/* ---------- hilo e imágenes (1600 × 900, estética CEER sobre azul) ---------- */
+const IMG={W:1600,H:900,M:72}, AZ='#2840a5', AZ2='#c0d0f9', AZ5='#3c59c0', AM='#f7ac4d', CI='#57d4d4';
+const FT=(w,px,f)=>`${w} ${px}px ${f==='m'?"'Cascadia Code','Cascadia Mono',monospace":"Inter,system-ui,sans-serif"}`;
+let _ruido=null;
+function ruido(){ if(_ruido) return _ruido; const c=document.createElement('canvas'); c.width=c.height=320; const x=c.getContext('2d'); const im=x.createImageData(320,320);
+  for(let i=0;i<im.data.length;i+=4){ const v=Math.random(); im.data[i]=im.data[i+1]=im.data[i+2]=255; im.data[i+3]=v>0.5?Math.round((v-0.5)*2*255):0; } x.putImageData(im,0,0); return _ruido=c; }
+function fondo(x,lado){ const {W,H}=IMG; x.fillStyle=AZ; x.fillRect(0,0,W,H);
+  const d=1120, top=-110, left= lado==='der' ? W-d*0.6 : lado==='izq' ? -d*0.62 : -d*0.8;
+  const cx=left+d/2, cy=top+d/2, r=d/2, gx=left+d*0.64;
+  const g=x.createRadialGradient(gx,cy,0,cx,cy,r); g.addColorStop(0,'#0b1438'); g.addColorStop(.45,'#132058'); g.addColorStop(.85,'#22378f'); g.addColorStop(1,'#25399a');
+  x.save(); x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.fillStyle=g; x.fill(); x.restore();
+  x.save(); x.globalAlpha=.10; x.fillStyle=x.createPattern(ruido(),'repeat'); x.fillRect(0,0,W,H); x.restore(); }
+function logoC(x,X,Y,w){ const sc=w/469; x.save(); x.translate(X,Y); x.scale(sc,sc); x.fillStyle='#fff'; x.fill(new Path2D(document.querySelector('.logo svg path').getAttribute('d'))); x.fillStyle=AM; x.fillRect(417,87,52,21); x.restore(); }
+function pieC(x,izq,der){ const {W,H,M}=IMG, y=H-54; x.textBaseline='alphabetic'; x.font=FT(400,24); x.fillStyle=AZ2; x.textAlign='left'; x.fillText(izq,M,y);
+  x.textAlign='right'; x.fillText(der,W-M,y); x.textAlign='center'; x.font=FT(700,24,'m'); x.fillStyle=CI; x.fillText('//',W/2,y); x.textAlign='left'; }
+function encabezado(x,titulo,unidad){ const {M}=IMG; logoC(x,M,M,190); x.textBaseline='alphabetic'; x.fillStyle='#fff'; x.font=FT(700,54,'m'); x.fillText(titulo,M,218); x.font=FT(400,28); x.fillStyle=AZ2; x.fillText(unidad,M,262); }
+function envolver(x,t,maxw){ const ps=t.split(' '), ls=[]; let l=''; for(const p of ps){ const n=l?l+' '+p:p; if(x.measureText(n).width>maxw&&l){ls.push(l);l=p;} else l=n; } if(l) ls.push(l); return ls; }
+const cifra=(v,d=2)=>v==null?'s/d':nf(d).format(v).replace('-','−')+'%';
+
+function imgPortada(x,h){ const {W,H,M}=IMG; fondo(x,'der'); logoC(x,M,M,190);
+  x.textBaseline='alphabetic'; x.font=FT(400,34); x.fillStyle=CI; x.fillText('/',M,312); x.fillStyle=AZ2; x.fillText(' semana '+h.rango+' de '+h.semana.slice(0,4),M+12,312);
+  x.font=FT(700,76,'m'); x.fillStyle='#fff'; x.fillText('Inflación semanal',M,410); x.fillText('de bienes',M,494);
+  x.font=FT(600,210,'m'); x.fillStyle=AM; x.fillText(cifra(h.var,2),M-8,690);
+  x.font=FT(400,34); x.fillStyle='#fff';
+  const p = h.proyeccion==null ? '' : h.proyeccion_previa!=null ? `Proyección de ${h.mes_nombre}: ${cifra(h.proyeccion,1)} (antes ${cifra(h.proyeccion_previa,1)})` : `Proyección de ${h.mes_nombre}: ${cifra(h.proyeccion,1)}`;
+  x.fillText(p,M,790); pieC(x,'IPCEER · índice de precios de bienes','Fuente: CEER en base a SEPA'); }
+
+function ejesV(x,X0,Y0,X1,Y1,lo,hi,paso,fmt){ x.font=FT(400,22,'m'); x.textAlign='right'; x.textBaseline='middle';
+  for(let v=Math.ceil(lo/paso)*paso; v<=hi+1e-9; v+=paso){ const y=Y1-(v-lo)/(hi-lo)*(Y1-Y0); x.strokeStyle=Math.abs(v)<1e-9?AZ2:AZ5; x.lineWidth=Math.abs(v)<1e-9?2:1; x.beginPath(); x.moveTo(X0,y); x.lineTo(X1,y); x.stroke(); x.fillStyle=AZ2; x.fillText(fmt(v),X0-14,y); }
+  x.textAlign='left'; x.textBaseline='alphabetic'; }
+function pasoLindo(r){ const c=r/5, p=10**Math.floor(Math.log10(c)); return [1,2,2.5,5,10].map(k=>k*p).find(k=>k>=c); }
+
+function imgSemanal(x,h){ const {W,H,M}=IMG; fondo(x,'esq'); encabezado(x,'Semana a semana','Variación semanal de precios de bienes, %');
+  const S=(((D.series.Nacional||{}).TOTAL||{}).semanal||[]).filter(s=>s.var!=null&&s.semana<=h.semana).slice(-12);
+  const X0=M+70, X1=W-M-200, Y0=320, Y1=H-150, vals=S.flatMap(s=>[s.var,s.prom4]).filter(v=>v!=null);
+  let lo=Math.min(0,...vals), hi=Math.max(...vals,0.1); const ps=pasoLindo(hi-lo); lo=Math.floor(lo/ps)*ps; hi=Math.ceil(hi/ps)*ps;
+  const yv=v=>Y1-(v-lo)/(hi-lo)*(Y1-Y0); ejesV(x,X0,Y0,X1,Y1,lo,hi,ps,v=>nf(1).format(v).replace('-','−'));
+  const bw=(X1-X0)/S.length;
+  S.forEach((s,i)=>{ const xc=X0+bw*i+bw/2, y=yv(s.var), y0=yv(0); x.fillStyle=s.semana===h.semana?AM:AZ2; x.fillRect(xc-bw*0.32,Math.min(y,y0),bw*0.64,Math.abs(y0-y));
+    x.font=FT(600,21,'m'); x.textAlign='center'; x.fillStyle=s.semana===h.semana?AM:'#fff'; x.fillText(nf(2).format(s.var).replace('-','−'),xc,s.var>=0?y-10:y+26);
+    x.font=FT(400,20,'m'); x.fillStyle=AZ2; x.fillText(semCorta(s.semana),xc,Y1+34); x.textAlign='left'; });
+  const pts=S.map((s,i)=>s.prom4==null?null:[X0+bw*i+bw/2,yv(s.prom4)]); x.strokeStyle='#fff'; x.lineWidth=3; x.beginPath(); let ini=false;
+  pts.forEach(p=>{ if(!p) return; if(!ini){x.moveTo(...p);ini=true;} else x.lineTo(...p); }); x.stroke();
+  const ul=[...pts].reverse().find(p=>p); if(ul){ x.font=FT(600,22); x.fillStyle='#fff'; x.fillText('Promedio',ul[0]+18,ul[1]-2); x.fillText('4 semanas',ul[0]+18,ul[1]+24); }
+  pieC(x,'IPCEER · semana '+h.rango,'Fuente: CEER en base a SEPA'); }
+
+function imgRotacion(x,h){ const {W,H,M}=IMG; fondo(x,'esq'); encabezado(x,'Rotación de precios','Parte de los precios que subió y que bajó cada semana, %');
+  const R=(IND().rotacion||[]).filter(r=>r.region==='Nacional'&&r.codigo==='TOTAL'&&r.semana<=h.semana).sort((a,b)=>a.semana<b.semana?-1:1).slice(-12);
+  const X0=M+70, X1=W-M-160, Y0=320, Y1=H-150;
+  let hi=Math.max(...R.map(r=>r.sube),1), lo=-Math.max(...R.map(r=>r.baja),1); const ps=pasoLindo(hi-lo); hi=Math.ceil(hi/ps)*ps; lo=Math.floor(lo/ps)*ps;
+  const yv=v=>Y1-(v-lo)/(hi-lo)*(Y1-Y0); ejesV(x,X0,Y0,X1,Y1,lo,hi,ps,v=>nf(0).format(Math.abs(v)));
+  const bw=(X1-X0)/Math.max(R.length,1);
+  R.forEach((r,i)=>{ const xc=X0+bw*i+bw/2, y0=yv(0); const ult=r.semana===h.semana;
+    x.fillStyle=ult?AM:AZ2; x.fillRect(xc-bw*.32,yv(r.sube),bw*.64,y0-yv(r.sube));
+    x.fillStyle=CI; x.fillRect(xc-bw*.32,y0,bw*.64,yv(-r.baja)-y0);
+    x.font=FT(400,20,'m'); x.textAlign='center'; x.fillStyle=AZ2; x.fillText(semCorta(r.semana),xc,Y1+34);
+    if(ult){ x.font=FT(600,22,'m'); x.fillStyle=AM; x.fillText(nf(0).format(r.sube)+'%',xc,yv(r.sube)-10); x.fillStyle=CI; x.fillText(nf(0).format(r.baja)+'%',xc,yv(-r.baja)+28); }
+    x.textAlign='left'; });
+  const u=R[R.length-1]; if(u){ const xe=X0+bw*(R.length-1)+bw/2+bw*.32+16; x.font=FT(600,24); x.fillStyle=AZ2; x.fillText('Subieron',xe,yv(u.sube/2)+8); x.fillStyle=CI; x.fillText('Bajaron',xe,yv(-u.baja/2)+8); }
+  pieC(x,'IPCEER · semana '+h.rango,'Fuente: CEER en base a SEPA'); }
+
+function barrasH(x,items,fmt,titulo,unidad,h,fuente){ const {W,H,M}=IMG; fondo(x,'esq'); encabezado(x,titulo,unidad);
+  const n=items.length, Y0=310, Y1=H-120, fila=Math.min(56,(Y1-Y0)/Math.max(n,1)), X0=M+330, X1=W-M-200;
+  const vals=items.map(i=>i.v), lo=Math.min(0,...vals), hi=Math.max(0,...vals), xv=v=>X0+(v-lo)/(hi-lo||1)*(X1-X0);
+  items.forEach((it,k)=>{ const y=Y0+k*fila, bh=fila*.62; x.fillStyle=it.dest?AM:AZ2; const a=xv(Math.min(0,it.v)), b=xv(Math.max(0,it.v)); x.fillRect(a,y,Math.max(2,b-a),bh);
+    x.textBaseline='middle'; x.font=FT(500,26); x.fillStyle='#fff'; x.textAlign='right'; x.fillText(it.l.length>24?it.l.slice(0,23)+'…':it.l,X0-(lo<0?(X0-xv(lo))+18:18),y+bh/2);
+    x.textAlign='left'; x.font=FT(600,24,'m'); x.fillStyle=it.dest?AM:'#fff'; x.fillText(fmt(it.v),b+14,y+bh/2); x.textBaseline='alphabetic'; });
+  pieC(x,'IPCEER · semana '+h.rango,fuente||'Fuente: CEER en base a SEPA'); }
+
+function imgCadenas(x,h){ const reg=h.region_cadenas||'GBA', C=((IND().cba||{}).cadenas||[]).filter(c=>c.semana===h.semana&&c.region===reg&&c.en_ranking).sort((a,b)=>a.costo-b.costo).slice(0,10);
+  if(C.length>=2) return barrasH(x,C.map((c,i)=>({l:c.cadena,v:c.costo/1000,dest:i===0})),v=>'$'+nf(0).format(v)+' mil','La canasta básica en cada cadena',`Costo mensual de la CBA del INDEC para un adulto, ${reg}, miles de $`,h,'Fuente: CEER en base a SEPA e INDEC');
+  const N=(IND().cadenas||[]).filter(c=>c.semana===h.semana&&c.region===reg).sort((a,b)=>a.nivel-b.nivel).slice(0,10);
+  barrasH(x,N.map((c,i)=>({l:c.cadena,v:c.nivel-100,dest:i===0})),v=>(v>0?'+':'')+nf(1).format(v).replace('-','−')+'%','Precios por cadena',`Diferencia con el promedio, mismos productos, ${reg}, %`,h); }
+function imgRegiones(x,h){ const R=(IND().regiones||[]).filter(r=>r.semana===h.semana).sort((a,b)=>b.nivel-a.nivel);
+  barrasH(x,R.map((r,i)=>({l:r.region,v:r.nivel-100,dest:i===0})),v=>(v>0?'+':'')+nf(1).format(v).replace('-','−')+'%','Precios por región','Diferencia con el promedio del país, mismo producto y cadena, %',h); }
+const DIBUJOS={portada:imgPortada,semanal:imgSemanal,rotacion:imgRotacion,cadenas:imgCadenas,regiones:imgRegiones};
+
+function copiar(t){ if(navigator.clipboard&&window.isSecureContext) return navigator.clipboard.writeText(t).catch(()=>copiar2(t)); copiar2(t); }
+function copiar2(t){ const a=document.createElement('textarea'); a.value=t; a.style.position='fixed'; a.style.opacity='0'; document.body.appendChild(a); a.select(); try{document.execCommand('copy');}catch(e){} a.remove(); }
+function bajar(nombre,blob){ const u=URL.createObjectURL(blob), a=document.createElement('a'); a.href=u; a.download=nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),2000); }
+let _fuentes=null;
+function fuentes(){ return _fuentes||(_fuentes=Promise.all(["700 54px 'Cascadia Code'","600 54px 'Cascadia Code'","400 22px 'Cascadia Code'","400 30px Inter","500 30px Inter","600 30px Inter"].map(f=>document.fonts.load(f).catch(()=>null))).then(()=>document.fonts.ready)); }
+async function renderHilo(){
+  const h=D.hilo, L=document.getElementById('hilo-lista');
+  if(!h||!h.tuits){ document.getElementById('hilo-sub').textContent='Todavía no hay una semana completa para armar el hilo.'; L.innerHTML=''; return; }
+  const tot=h.tuits.length, nombre=k=>`ipceer-${h.semana}-${String(k).padStart(2,'0')}`;
+  document.getElementById('hilo-sub').innerHTML=`Hilo armado con el dato de la semana ${esc(h.rango)} (<span class="mono">${h.semana}</span>). Se genera solo con cada cálculo. Copiá cada tuit y bajá su imagen, o bajá todo junto. El límite de X es de <span class="mono">280</span> caracteres por tuit (los enlaces cuentan <span class="mono">23</span>).`;
+  L.innerHTML=h.tuits.map(t=>`<div class="tuit"><div><div class="n">${t.n}/${tot}</div><p class="tx">${esc(t.texto)}</p>
+    <div class="pie"><button class="btn sm" data-copiar="${t.n}">Copiar</button><span class="mono ${t.excede?'exc':''}">${t.largo}/280</span>${t.excede?'<span style="color:var(--neg)">Supera el límite: acortalo o publicalo con X Premium.</span>':''}</div></div>
+    <div>${t.imagen?`<canvas width="${IMG.W}" height="${IMG.H}" data-img="${t.imagen}" data-n="${t.n}"></canvas><div class="pie" style="margin-top:8px"><button class="btn sm" data-png="${t.n}">Descargar imagen</button><span>${IMG.W} × ${IMG.H} px</span></div>`:'<div class="sinimg">Sin imagen</div>'}</div></div>`).join('');
+  await fuentes();
+  L.querySelectorAll('canvas[data-img]').forEach(c=>{ const f=DIBUJOS[c.dataset.img]; if(f){ try{ f(c.getContext('2d'),h); }catch(e){ console.error(e); } } });
+  L.querySelectorAll('[data-copiar]').forEach(b=>b.onclick=()=>{ copiar(h.tuits[+b.dataset.copiar-1].texto); b.textContent='Copiado'; setTimeout(()=>b.textContent='Copiar',1500); });
+  L.querySelectorAll('[data-png]').forEach(b=>b.onclick=()=>{ const c=L.querySelector(`canvas[data-n="${b.dataset.png}"]`); c.toBlob(bl=>bajar(nombre(b.dataset.png)+'-'+c.dataset.img+'.png',bl),'image/png'); });
+  const todo=h.tuits.map(t=>`${t.n}/${tot}\n${t.texto}`).join('\n\n---\n\n');
+  document.getElementById('hilo-copiar').onclick=e=>{ copiar(todo); e.target.textContent='Copiado'; setTimeout(()=>e.target.textContent='Copiar el hilo completo',1500); };
+  document.getElementById('hilo-txt').onclick=()=>bajar(`ipceer-${h.semana}-hilo.txt`,new Blob([todo+'\n'],{type:'text/plain;charset=utf-8'}));
+  document.getElementById('hilo-png').onclick=async()=>{ for(const c of L.querySelectorAll('canvas[data-img]')){ await new Promise(r=>c.toBlob(bl=>{bajar(nombre(c.dataset.n)+'-'+c.dataset.img+'.png',bl); r();},'image/png')); await new Promise(r=>setTimeout(r,350)); } };
+}
+
 function render(){
   const tab=document.querySelector('.tabs button[aria-selected="true"]').dataset.tab;
   renderKpis();
@@ -661,7 +948,10 @@ function render(){
   if(tab==='sem') renderTablaSemanal();
   if(tab==='men') renderTablaMensual();
   if(tab==='rub') renderRubros();
-  if(tab==='reg') renderRegiones();
+  if(tab==='reg'){ renderRegiones(); renderNivReg(); }
+  if(tab==='rot') renderRot();
+  if(tab==='cad') renderCad();
+  if(tab==='hilo') renderHilo();
   if(tab==='met') renderMetodo();
   if(tab==='val') renderVal();
 }

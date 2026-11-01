@@ -23,7 +23,7 @@ from pathlib import Path
 
 import polars as pl
 
-from . import descarga, historico, indec, indice, lectura, panel, resumen, sitio, validacion
+from . import descarga, hilo, historico, indec, indicadores, indice, lectura, panel, resumen, sitio, validacion
 from .clasificador import SIN_CLASIFICAR
 from .config import cargar_config
 
@@ -64,20 +64,42 @@ def cmd_calcular(cfg, args):
         res[f] = r
     if not res:
         return
-    val = {}
+    val, cba_m = {}, None
+    try:
+        cba_m = indicadores.cba_mensual(cfg)
+        if not cba_m.is_empty():
+            cba_m.write_csv(cfg.ruta("resultados") / "cba_mensual.csv")
+    except Exception as e:
+        log.warning("CBA mensual: %s", e)
     if "mensual" in res:
         try:
             val = validacion.construir(cfg, res["mensual"]["indices"], res.get("semanal", {}).get("indices"),
-                                       indec.directorio(cfg))
+                                       indec.directorio(cfg), cba_propia=cba_m)
         except Exception as e:
             log.warning("Validación INDEC: %s", e)
+    ind = {}
+    try:
+        ind = indicadores.calcular(cfg)
+        indicadores.guardar(ind, cfg)
+    except Exception as e:
+        log.warning("Indicadores: %s", e)
+    sem_ind = res.get("semanal", {}).get("indices")
     datos = resumen.armar_datos(
         cfg,
         res.get("mensual", {}).get("indices"),
-        res.get("semanal", {}).get("indices"),
+        sem_ind,
         (res.get("semanal") or res.get("mensual"))["cobertura"],
         validacion=val,
+        indicadores=ind,
     )
+    try:
+        if sem_ind is not None and "tramo" in sem_ind.columns:
+            sem_ind = sem_ind.filter(pl.col("tramo") == sem_ind["tramo"].max())
+        h = hilo.armar(cfg, datos, sem_ind, datos.get("indicadores", {}))
+        hilo.guardar(h, cfg)
+        datos["hilo"] = resumen._limpio(h)
+    except Exception as e:
+        log.warning("Hilo: %s", e)
     (cfg.ruta("resultados") / "datos.json").write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
 
 

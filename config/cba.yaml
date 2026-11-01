@@ -1,0 +1,198 @@
+# Canasta básica alimentaria (CBA) del INDEC para un adulto equivalente, por mes.
+# Composición de Gran Buenos Aires (INDEC, "Valorización mensual de la canasta básica
+# alimentaria y de la canasta básica total", cuadro "Composición de la canasta para el
+# adulto equivalente", vigente desde 2016).
+#
+# Cada componente se valoriza en cada cadena con la mediana del precio por kilo (o litro)
+# de los productos de SEPA cuya descripción cumple `incluir` y no cumple `excluir`
+# (expresiones regulares sobre la descripción en mayúsculas y sin tildes).
+#   cantidad: gramos (o cm3) por mes
+#   base: kg o l (unidad en la que se compara el precio)
+#   clases: opcional, limita a productos clasificados en esas clases COICOP (prefijo)
+#   gramos_por_unidad: para productos que se venden por unidad (huevos)
+
+fuente: "INDEC, Valorización mensual de la CBA y la CBT, Gran Buenos Aires"
+componentes:
+  - id: pan
+    nombre: Pan
+    cantidad: 6750
+    base: kg
+    incluir: '\bPAN (FRANCES|FLAUTA|MI[GN]+ON|DE CAMPO|BLANCO)\b|\bFLAUTITAS?\b|\bMIGNON\b'
+    excluir: 'RALLADO|LACTAL|HAMBURG|PANCHO|DULCE|TOSTAD|SALVADO|SIN TACC|CONGEL|PARA PIZZA'
+  - id: galletitas_agua
+    nombre: Galletitas de agua
+    cantidad: 420
+    base: kg
+    incluir: '\bGALL?ETITAS?\b.*\b(AGUA|CRACKERS?|SALADAS?)\b|\bCRACKERS?\b'
+    excluir: 'SABORIZ|QUESO|SANDWICH|RELLEN'
+  - id: galletitas_dulces
+    nombre: Galletitas dulces
+    cantidad: 210
+    base: kg
+    incluir: '\bGALL?ETITAS?\b.*\b(DULCES?|VAINILLA|MARIA|CHOCOLATE|RELLENAS?|SURTIDAS?)\b'
+    excluir: 'AGUA|CRACKER|SALADA|ARROZ'
+  - id: arroz
+    nombre: Arroz
+    cantidad: 1200
+    base: kg
+    incluir: '^ARROZ\b'
+    excluir: 'GALL?ET|SNACK|LISTO|PREPARAD|CON |SABOR|BARRA|INFL|HARINA|YAMANI|CARNAROLI|ARBORIO|SUSHI|BASMATI|JAZMIN'
+  - id: harina_trigo
+    nombre: Harina de trigo
+    cantidad: 1080
+    base: kg
+    incluir: '^HARINA\b'
+    excluir: 'MAIZ|ARROZ|GARBANZO|ALMENDRA|AVENA|MANDIOCA|SOJA|CENTENO|INTEGRAL|PREMEZCLA|LEUDANTE PARA|POLENTA|COCO|SIN TACC|LINO'
+  - id: harina_maiz
+    nombre: Harina de maíz
+    cantidad: 210
+    base: kg
+    incluir: 'HARINA DE MAIZ|\bPOLENTA\b'
+    excluir: 'LISTA|SNACK|INSTANTANEA CON|QUESO'
+  - id: fideos
+    nombre: Fideos
+    cantidad: 1740
+    base: kg
+    incluir: '^FIDEOS?\b'
+    excluir: 'ARROZ|LISTO|INSTANT|SOPA|RELLEN|SIN TACC|LEGUMBRE|VEGETAL'
+  - id: papa
+    nombre: Papa
+    cantidad: 6510
+    base: kg
+    incluir: '^PAPAS?\b'
+    excluir: 'FRITA|PURE|CHIPS|SNACK|CONGEL|NOISETTE|BASTON|PAY|RAPIDA|SABOR|PREFRIT'
+  - id: batata
+    nombre: Batata
+    cantidad: 510
+    base: kg
+    incluir: '^BATATAS?\b'
+    excluir: 'DULCE|CHIPS|SNACK'
+  - id: azucar
+    nombre: Azúcar
+    cantidad: 1230
+    base: kg
+    incluir: '^AZUCAR\b'
+    excluir: 'IMPALPABLE|MASCABO|LIGHT|STEVIA|EDULC|ORGANIC|RUBIA|NEGRA|SOBRES?|SACHET|ROSAD|GLAS'
+  - id: dulces
+    nombre: Dulces
+    cantidad: 330
+    base: kg
+    incluir: 'DULCE DE LECHE|\bMERMELADA\b|DULCE DE BATATA|DULCE DE MEMBRILLO'
+    excluir: 'ALFAJOR|GALL?ET|HELADO|BOMBON|POSTRE|TORTA|LIGHT|DIET|SIN AZUCAR|PANQUE'
+  - id: legumbres
+    nombre: Legumbres secas
+    cantidad: 240
+    base: kg
+    incluir: '^(LENTEJAS?|ARVEJAS?)( SECAS?| PARTIDAS?)?\b'
+    excluir: 'LATA|CONSERVA|REMOJ|LISTA|COCID|SNACK|CONGEL'
+  - id: hortalizas
+    nombre: Hortalizas
+    cantidad: 5730
+    base: kg
+    incluir: '^(ACELGA|CEBOLLAS?|LECHUGA|TOMATES?|ZANAHORIAS?|ZAPALLOS?|ZAPALLITOS?)\b|TOMATE (PERITA )?(EN LATA|PELADO|ENTERO)|PURE DE TOMATE|TOMATE TRITURADO'
+    excluir: 'DESHIDRAT|CONGEL|EN POLVO|SALSA|SECO|DISECAD|DE VERDEO|CHERRY|CONFIT|CALDO|SOPA|JUGO'
+  - id: frutas
+    nombre: Frutas
+    cantidad: 4950
+    base: kg
+    incluir: '^(MANZANAS?|MANDARINAS?|NARANJAS?|BANANAS?|PERAS?)\b'
+    excluir: 'JUGO|DESHIDRAT|DISECAD|MERMELADA|SABOR|POSTRE|YOGU|CONGEL|ALMIBAR|CHIPS|BEBIDA|ACEITE'
+  - id: carnes
+    nombre: Carnes
+    cantidad: 6270
+    base: kg
+    incluir: '\b(ASADO|CARNAZA|NALGA|CUADRADA|PALETA|CARNE PICADA|PICADA (COMUN|ESPECIAL|VACUNA)|ROAST ?BEEF|OSOBUCO|ESPINAZO|AGUJA|CUADRIL|MERLUZA)\b|^POLLO( ENTERO| FRESCO| X KG)?\b|^PECHUGA|^PATA MUSLO'
+    excluir: 'HAMBURG|MEDALL|REBOZ|BASTON|PATE|SALSA|CALDO|SOPA|SALCHICH|ARROLLAD|NUGGET|PATITA|FIAMBRE|ALIMENTO|PERRO|GATO|SABOR|SNACK|JAMON|EMPANAD|PIZZA|CONDIMENTO|ESPECIA|LATA'
+  - id: menudencias
+    nombre: Menudencias
+    cantidad: 270
+    base: kg
+    incluir: '^HIGADO\b'
+    excluir: 'PATE|ACEITE|ALIMENTO|PERRO|GATO'
+  - id: fiambres
+    nombre: Fiambres
+    cantidad: 60
+    base: kg
+    incluir: '\bJAMON COCIDO\b|\bSALAME\b|\bSALAMIN\b'
+    excluir: 'SANDWICH|PIZZA|EMPANAD|TARTA|SABOR|SNACK|ALIMENTO'
+  - id: huevos
+    nombre: Huevos
+    cantidad: 600
+    base: kg
+    gramos_por_unidad: 50
+    incluir: '^HUEVOS?\b'
+    excluir: 'PASCUA|CHOCOLAT|CODORNIZ|KINDER|SORPRESA|POLVO|LIQUID|PASTEURIZ|CLARA|YEMA'
+  - id: leche
+    nombre: Leche
+    cantidad: 9270
+    base: l
+    incluir: '^LECHE\b'
+    excluir: 'POLVO|CHOCOLAT|CACAO|CONDENS|ALMENDRA|COCO|SOJA|ARROZ|AVENA|INFANTIL|FORMULA|CREMA|DULCE|SABOR|FRUTILLA|VAINILLA|BEBIBLE|CAFE|LIMPIEZA|CORPORAL|DESMAQUILL|PROTEIN'
+  - id: queso
+    nombre: Queso
+    cantidad: 330
+    base: kg
+    incluir: '\bQUESO\b.*\b(CREMOSO|CUARTIROLO|RALLADO|PARA RALLAR|REGGIANITO|SARDO|PORT SALUT|BARRA|TYBO|MAQUINA|DANBO)\b'
+    excluir: 'UNTABLE|CREMA DE|SNACK|SABOR|PIZZA|EMPANAD|TARTA|ALIMENTO|PAN DE QUESO|GALL?ET'
+  - id: yogur
+    nombre: Yogur
+    cantidad: 570
+    base: kg
+    incluir: '^YOG(H)?U(R|RT)\b'
+    excluir: 'POLVO|PROTEIN|ALIMENTO|HELADO'
+  - id: manteca
+    nombre: Manteca
+    cantidad: 60
+    base: kg
+    incluir: '^MANTECA\b'
+    excluir: 'MANI|CACAO|KARITE|ACEITE|CORPORAL|AJO|SABOR'
+  - id: aceite
+    nombre: Aceite
+    cantidad: 1200
+    base: l
+    incluir: '^ACEITE\b.*\b(GIRASOL|MEZCLA|MAIZ|SOJA|COMESTIBLE)\b'
+    excluir: 'OLIVA|AEROSOL|SPRAY|ROCIO|BEBE|CORPORAL|MOTOR|AUTO|MASAJ|ESENCIAL|COCO|SESAMO|ALTO OLEICO|PALTA'
+  - id: bebidas
+    nombre: Bebidas no alcohólicas
+    cantidad: 3450
+    base: l
+    clases: ['01.2.2']
+    incluir: '.'
+    excluir: 'AGUA MINERAL|AGUA SIN GAS|AGUA DE MESA|MINERALIZADA|ISOTONIC|ENERG|POLVO|SOBRE|SAQUITO|SUERO|TE FRIO|KOMBUCHA'
+  - id: alcohol
+    nombre: Bebidas alcohólicas
+    cantidad: 1080
+    base: l
+    clases: ['02.1.2', '02.1.3']
+    incluir: '\b(CERVEZA|VINO)\b'
+    excluir: 'SIN ALCOHOL|0,0|0\.0|ESPUMANTE|CHAMPAGNE|ESPUMOSO|VINAGRE|COCINA'
+  - id: sal
+    nombre: Sal fina
+    cantidad: 120
+    base: kg
+    incluir: '^SAL\b'
+    excluir: 'GRUESA|PARRILLA|LIGHT|BAJO|APIO|AJO|HIERBAS|CONDIMENT|SABOR|ROSADA|DEL HIMALAYA|SALES|BAÑO|ENTREFINA GRUESA'
+  - id: condimentos
+    nombre: Condimentos
+    cantidad: 120
+    base: kg
+    incluir: '^(MAYONESA|CALDO)\b'
+    excluir: 'LIGHT|SIN|VEGANA|SABOR A'
+  - id: vinagre
+    nombre: Vinagre
+    cantidad: 60
+    base: l
+    incluir: '^VINAGRE\b'
+    excluir: 'BALSAMICO|LIMPIEZA|SIDRA DE MANZANA ORGANICA|ACETO|CREMA'
+  - id: cafe
+    nombre: Café
+    cantidad: 30
+    base: kg
+    incluir: '^CAFE\b'
+    excluir: 'CAPSULA|CAPPUCC|LATTE|CON LECHE|LICOR|SABOR|SOLUBLE|INSTANT|SAQUITO|MOCCA|MOKA|DESCAFEIN|GRANO|BEBIDA|FRIO|HELADO'
+  - id: yerba
+    nombre: Yerba mate
+    cantidad: 510
+    base: kg
+    incluir: '^YERBA\b'
+    excluir: 'SAQUITO|COCIDO|TE DE|EXTRACT'

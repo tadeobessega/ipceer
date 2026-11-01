@@ -164,9 +164,40 @@ def procesar_comercio(archivos: dict[str, bytes], cfg: Config) -> pl.DataFrame |
     )
 
 
+def _nombres_cadenas(archivos: dict[str, bytes]) -> list[dict]:
+    """Nombre de fantasía de cada bandera (comercio.csv), para mostrar las cadenas."""
+    if "comercio.csv" not in archivos:
+        return []
+    try:
+        com = _leer_csv(archivos["comercio.csv"])
+    except Exception:
+        return []
+    if not {"id_comercio", "id_bandera"}.issubset(com.columns):
+        return []
+    col = next((c for c in ("comercio_bandera_nombre", "comercio_razon_social") if c in com.columns), None)
+    if col is None:
+        return []
+    return [{"id_comercio": r["id_comercio"], "id_bandera": r["id_bandera"], "cadena": (r[col] or "").strip()}
+            for r in com.select("id_comercio", "id_bandera", col).unique().iter_rows(named=True)]
+
+
+def actualizar_cadenas(cfg: Config, filas: list[dict]) -> None:
+    """Mantiene data/panel/cadenas.csv (id_comercio, id_bandera, cadena) con el último nombre visto."""
+    if not filas:
+        return
+    ruta = cfg.ruta("panel_diario").parent / "cadenas.csv"
+    nuevo = pl.DataFrame(filas, schema={"id_comercio": pl.Utf8, "id_bandera": pl.Utf8, "cadena": pl.Utf8})
+    if ruta.exists():
+        viejo = pl.read_csv(ruta, schema_overrides={"id_comercio": pl.Utf8, "id_bandera": pl.Utf8, "cadena": pl.Utf8})
+        nuevo = pl.concat([viejo, nuevo])
+    nuevo = nuevo.filter(pl.col("cadena").str.len_chars() > 0).unique(["id_comercio", "id_bandera"], keep="last")
+    nuevo.sort("id_comercio", "id_bandera").write_csv(ruta)
+
+
 def procesar_zip_diario(ruta_zip: Path, fecha: date, cfg: Config) -> Path:
-    partes = []
+    partes, nombres = [], []
     for nombre, archivos in _iterar_comercios(ruta_zip):
+        nombres += _nombres_cadenas(archivos)
         try:
             df = procesar_comercio(archivos, cfg)
         except Exception as e:  # un comercio mal formado no debe frenar el día
@@ -177,6 +208,7 @@ def procesar_zip_diario(ruta_zip: Path, fecha: date, cfg: Config) -> Path:
     if not partes:
         raise ValueError(f"{ruta_zip}: no se encontraron precios válidos")
     panel = pl.concat(partes, how="vertical_relaxed").with_columns(pl.lit(fecha).alias("fecha"))
+    actualizar_cadenas(cfg, nombres)
     destino = cfg.ruta("panel_diario") / f"{fecha.isoformat()}.parquet"
     panel.write_parquet(destino, compression="zstd")
     log.info("%s: %d productos-cadena-región, %d cadenas", fecha, panel.height,

@@ -67,19 +67,40 @@ COMERCIOS = [  # id, bandera, nombre, sucursales (provincia, lat, lon, localidad
     (12, 2, "Express Tres", [("AR-Q", -38.95, -68.06, "Neuquen"), ("AR-U", -42.77, -65.04, "Puerto Madryn"),
                              ("AR-A", -24.79, -65.41, "Salta"), ("AR-N", -27.37, -55.90, "Posadas"),
                              ("AR-B", -34.44, -58.56, "Tigre"), ("AR-C", -34.58, -58.44, "CABA")]),
+    (13, 1, "Mercado Cuatro", [("AR-C", -34.62, -58.40, "CABA"), ("AR-B", -34.70, -58.40, "Lanus"),
+                               ("AR-S", -32.94, -60.66, "Rosario"), ("AR-X", -31.40, -64.20, "Cordoba")]),
+    (14, 3, "Mayorista Cinco", [("AR-B", -34.76, -58.21, "Quilmes"), ("AR-B", -34.53, -58.71, "San Miguel"),
+                                ("AR-M", -32.90, -68.85, "Mendoza"), ("AR-Q", -38.95, -68.05, "Neuquen")]),
 ]
 
+# nivel de precios propio de cada cadena (sintético) y de cada región
+NIVEL_CADENA = {10: 1.00, 11: 1.04, 12: 1.09, 13: 0.97, 14: 0.91}
+NIVEL_PROVINCIA = {"AR-Q": 1.08, "AR-U": 1.10, "AR-M": 1.01, "AR-A": 0.97, "AR-T": 0.97, "AR-N": 0.98,
+                   "AR-H": 0.98}
 
-def precio(base: float, clase, d: date, comercio: int, sucursal: int, prod: int, rng: random.Random) -> float:
-    dias = (d - date(2026, 1, 1)).days
+
+def _nivel(clase, d: date) -> float:
     mensual = TENDENCIA[clase] / 100
     # dos tercios del aumento del mes se aplican en la primera semana (estacionalidad intramensual)
     meses = d.year * 12 + d.month - (2026 * 12 + 1)
     frac = min(1.0, (d.day - 1) / 7) * 2 / 3 + max(0.0, (d.day - 8) / 23) / 3
-    nivel = (1 + mensual) ** (meses + min(frac, 1.0))
-    efecto = 1 + 0.03 * math.sin(comercio * 7 + sucursal * 3 + prod)
-    ruido = math.exp(rng.gauss(0, 0.004))
-    return round(base * nivel * efecto * ruido * (1 + 0.0 * dias), 2)
+    return (1 + mensual) ** (meses + min(frac, 1.0))
+
+
+def precio(base: float, clase, d: date, comercio: int, sucursal: int, prod: int, rng: random.Random,
+           provincia: str = "") -> float:
+    """Precios "pegajosos": cada producto de cada cadena se remarca cada 1 a 4 semanas (con la
+    inflación acumulada) y a veces baja un poco; entre remarcaciones queda fijo."""
+    dias = (d - date(2026, 1, 1)).days
+    periodo = 7 + (prod * 3 + comercio * 5) % 22
+    desfase = (prod * 7 + comercio * 11) % periodo
+    ultimo = d - timedelta(days=(dias - desfase) % periodo)
+    ciclo = (dias - desfase) // periodo
+    baja = 0.97 if (prod * 13 + comercio * 17 + ciclo * 7) % 9 == 0 else 1.0
+    nivel = _nivel(clase, ultimo) * baja
+    efecto = (1 + 0.03 * math.sin(comercio * 7 + prod)) * NIVEL_CADENA.get(comercio, 1.0)
+    efecto *= NIVEL_PROVINCIA.get(provincia, 1.0) * (1 + 0.004 * math.sin(sucursal * 3 + prod))
+    return round(base * nivel * efecto, 2)
 
 
 def generar_dia(d: date, destino: Path, seed: int = 0) -> Path:
@@ -101,11 +122,11 @@ def generar_dia(d: date, destino: Path, seed: int = 0) -> Path:
                     for variante in range(4):  # varias marcas/variedades por producto
                         if rng.random() < 0.06:
                             continue  # faltante
-                        ean = f"779{pid:03d}{variante:02d}{cid:05d}"
-                        p = precio(base * (1 + 0.15 * variante), clase, d, cid, sid, pid * 10 + variante, rng)
+                        ean = f"779{pid:03d}{variante:02d}00000"  # mismo código de barras en todas las cadenas
+                        p = precio(base * (1 + 0.15 * variante), clase, d, cid, sid, pid * 10 + variante, rng, prov)
                         promo = f"{p * 0.8:.2f}" if rng.random() < 0.1 else ""
                         texto = f"{desc} Var{variante} {cant}{uni}"
-                        pr += f"{cid}|{bid}|{sid}|{ean}|1|{texto}|{cant}|{uni}|{marca}|{p:.2f}|||||{promo}|\n"
+                        pr += f"{cid}|{bid}|{sid}|{ean}|1|{texto}|{cant}|{uni}|{marca}|{p:.2f}||||{promo}|\n"
             pr += "Ultima actualizacion: 2026-01-01\n"
             interno = io.BytesIO()
             with zipfile.ZipFile(interno, "w", zipfile.ZIP_DEFLATED) as zi:

@@ -451,16 +451,17 @@ def costo_cba(cfg: Config, semanas: list[str], niveles: list[dict]) -> dict:
 
 def cba_mensual(cfg: Config, regiones: tuple[str, ...] = ("GBA", NACIONAL)) -> pl.DataFrame:
     """Costo mensual de la CBA (mediana entre cadenas de cada componente), para comparar con la
-    CBA oficial del INDEC. Si un mes no tiene precio para un componente, se arrastra el del
-    mes anterior (solo dentro de un tramo continuo de meses)."""
+    CBA oficial del INDEC.
+
+    Solo se valorizan los componentes que tienen precio ese mes: nunca se arrastra el precio de
+    un mes anterior. Por eso el costo puede cambiar de un mes a otro porque entra o sale un
+    componente; la variación mensual (`var_comun`) se calcula solo con los componentes que tienen
+    precio en los dos meses."""
     cba = cargar_cba(cfg)
     q = {c["id"]: c["cantidad"] / 1000 for c in cba["componentes"]}
-    filas, ultimo, mes_ant = [], {}, None
+    filas, previos = [], {}
     for r in sorted(cfg.ruta("panel_mensual").glob("*.parquet")):
         a, m = map(int, r.stem.split("-"))
-        if mes_ant and (a * 12 + m) - mes_ant > 2:
-            ultimo = {}
-        mes_ant = a * 12 + m
         panel = _cadena_id(pl.read_parquet(r))
         dias = int(panel["dias_con_datos"][0]) if "dias_con_datos" in panel.columns else 0
         pu = precios_cba(cfg, panel)
@@ -470,17 +471,17 @@ def cba_mensual(cfg: Config, regiones: tuple[str, ...] = ("GBA", NACIONAL)) -> p
             d = pu if reg == NACIONAL else pu.filter(pl.col("region") == reg)
             if d.is_empty():
                 continue
-            ref = (d.group_by("cadena_id", "componente").agg(pl.col("pu").median())
-                   .group_by("componente").agg(pl.col("pu").median()))
-            precios = dict(ref.iter_rows())
-            observados = len(precios)
-            for k in q:
-                if k not in precios and (reg, k) in ultimo:
-                    precios[k] = ultimo[(reg, k)]
-            ultimo |= {(reg, k): v for k, v in precios.items()}
+            precios = dict(d.group_by("cadena_id", "componente").agg(pl.col("pu").median())
+                           .group_by("componente").agg(pl.col("pu").median()).iter_rows())
+            var = None
+            ant = previos.get(reg)
+            if ant and (a * 12 + m) - ant[0] == 1:
+                comunes = [k for k in q if k in precios and k in ant[1]]
+                if comunes:
+                    var = (sum(precios[k] * q[k] for k in comunes) / sum(ant[1][k] * q[k] for k in comunes) - 1) * 100
+            previos[reg] = (a * 12 + m, precios)
             filas.append({"mes": r.stem, "region": reg, "costo": sum(precios[k] * q[k] for k in q if k in precios),
-                          "componentes": observados, "componentes_con_precio": sum(1 for k in q if k in precios),
-                          "total_componentes": len(q), "dias": dias})
+                          "componentes": len(precios), "total_componentes": len(q), "var_comun": var, "dias": dias})
     return pl.DataFrame(filas) if filas else pl.DataFrame()
 
 

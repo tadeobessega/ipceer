@@ -446,7 +446,11 @@ def indice_mensual(cfg: Config, panel: pl.DataFrame) -> pl.DataFrame:
         for mes, lr, n in s.select("mes_id", "lr", "n").iter_rows():
             if mes <= base:
                 continue
-            nivel *= math.exp(lr) if _meses(prev, mes) == 1 else 1.0
+            if _meses(prev, mes) != 1:
+                # falta un mes en la región: la serie se corta (no se supone que no hubo cambio)
+                log.warning("Combustibles %s: falta %s, la serie se corta", reg, prev)
+                break
+            nivel *= math.exp(lr)
             niveles[reg][mes] = nivel
             prev = mes
             filas.append({"periodo": mes, "region": reg, "indice": nivel, "n_productos": n})
@@ -513,16 +517,7 @@ def niveles(panel: pl.DataFrame) -> dict:
     pd_ = panel.filter(pl.col("depto_id").is_not_null())
     volcar(out["departamentos"], precio(pd_, ["depto_id"]),
            _encadenar(rel.filter(pl.col("depto_id").is_not_null()), ["depto_id"]), ["depto_id"], PRODUCTOS_DEPTO)
-    # el índice encadenado del país y de cada unidad arranca en 100 en su primer mes; para que
-    # el de un mes sin relativos no quede vacío entre meses con datos, se arrastra el nivel
-    for nivel in ("pais", "provincias", "departamentos"):
-        for prods in out[nivel].values():
-            for s in prods.values():
-                ult = None
-                for i, v in enumerate(s["i"]):
-                    if v is None and ult is not None and s["p"][i] is not None:
-                        s["i"][i] = ult
-                    ult = s["i"][i] if s["i"][i] is not None else ult
+    # un mes sin relativos queda vacío: no se arrastra el nivel del mes anterior
     return out
 
 

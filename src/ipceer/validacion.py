@@ -297,6 +297,7 @@ def construir(cfg: Config, mensual: pl.DataFrame, semanal: pl.DataFrame | None, 
         tr = tramos(meses, "mensual", cfg["indice"]["max_meses_salto"])
         costo = dict(cp.select("mes", "costo").iter_rows())
         comp = dict(cp.select("mes", "componentes").iter_rows())
+        var_c = dict(cp.select("mes", "var_comun").iter_rows()) if "var_comun" in cp.columns else {}
         for t in sorted(set(tr.values())):
             ms = [m for m in meses if tr[m] == t]
             if len(ms) < 2:
@@ -309,7 +310,8 @@ def construir(cfg: Config, mensual: pl.DataFrame, semanal: pl.DataFrame | None, 
                     a0, m0 = map(int, ms[i - 1].split("-"))
                     a1, m1 = map(int, m.split("-"))
                     if (a1 * 12 + m1) - (a0 * 12 + m0) == 1:
-                        f["var_propio"] = (costo[m] / costo[ms[i - 1]] - 1) * 100
+                        # variación con los mismos componentes en los dos meses
+                        f["var_propio"] = var_c.get(m, (costo[m] / costo[ms[i - 1]] - 1) * 100)
                         f["var_indec"] = (oficial[m] / oficial[ms[i - 1]] - 1) * 100
                 serie.append(f)
             vp = [x["var_propio"] for x in serie if x["var_propio"] is not None]

@@ -163,7 +163,7 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
             .with_columns(
                 pl.when(pl.col("n_reg") >= minp).then(pl.col("logrel_reg"))
                 .when(pl.col("n_nac") >= minp).then(pl.col("logrel_nac"))
-                .otherwise(0.0).alias("logrel"),
+                .otherwise(None).alias("logrel"),  # sin datos: no se supone que el precio no cambió
                 pl.when(pl.col("n_reg") >= minp).then(pl.lit("regional"))
                 .when(pl.col("n_nac") >= minp).then(pl.lit("nacional"))
                 .otherwise(pl.lit("sin_datos")).alias("origen"),
@@ -184,7 +184,13 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
         pl.concat([base0, *filas])
         .with_columns(pl.col("periodo").replace_strict(tramo, return_dtype=pl.Int32).alias("tramo"))
         .sort("codigo", "region", "periodo")
-        .with_columns((pl.col("logrel").cum_sum().over("codigo", "region", "tramo").exp() * 100).alias("indice"))
+        .with_columns(pl.col("logrel").fill_null(0.0).cum_sum().over("codigo", "region", "tramo").alias("_acum"))
+        .with_columns(
+            # nivel de la clase: vacío en los períodos sin datos (no se arrastra el anterior)
+            pl.when(pl.col("logrel").is_null()).then(None).otherwise(pl.col("_acum").exp() * 100).alias("indice"),
+            # nivel previo, solo para ponderar el eslabón siguiente (no entra como variación de precio)
+            pl.col("_acum").shift(1).over("codigo", "region", "tramo").fill_null(0.0).exp().alias("_nivel_prev"))
+        .drop("_acum")
     )
     # base = 100: el mes_base configurado en su tramo; en los demás, el primer período del tramo
     base = ic.get("mes_base") if frecuencia == "mensual" else None
@@ -203,11 +209,22 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
     parcial = elem.group_by("periodo").agg(pl.col("parcial").any(), pl.col("tramo").first())
 
     def agregar(df: pl.DataFrame, por: list[str]) -> pl.DataFrame:
-        return df.group_by(por).agg(
-            ((pl.col("indice") * pl.col("ponderacion")).sum() / pl.col("ponderacion").sum()).alias("indice"),
+        """Laspeyres encadenado: en cada período, promedio de los relativos de las clases CON datos,
+        ponderados por su peso en la canasta y su nivel del período anterior. Una clase sin datos en
+        un período queda afuera de ese eslabón: no se le supone variación cero ni se arrastra nada."""
+        w = pl.col("ponderacion") * pl.col("_nivel_prev")
+        con = pl.col("logrel").is_not_null()
+        eslabon = df.group_by(*por, "tramo").agg(
+            ((w * pl.col("logrel").exp()).filter(con).sum() / w.filter(con).sum()).alias("_rel"),
             pl.col("ponderacion").sum().alias("ponderacion"),
             pl.col("n_reg").sum().alias("n_productos"),
         )
+        claves = [c for c in por if c != "periodo"]
+        eslabon = eslabon.sort(*claves, "periodo").with_columns(
+            (pl.col("_rel").log().fill_null(0.0).cum_sum().over(*claves, "tramo").exp() * 100).alias("indice"))
+        # sin ninguna clase con datos en el período: el agregado queda vacío ese período
+        return eslabon.with_columns(pl.when(pl.col("_rel").is_null()).then(None).otherwise(pl.col("indice"))
+                                    .alias("indice")).drop("_rel", "tramo")
 
     regional = pl.concat([
         agregar(elem, ["periodo", "region", "codigo"]).with_columns(pl.lit("clase").alias("nivel")),
@@ -218,12 +235,20 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
         agregar(elem, ["periodo", "region"]).with_columns(pl.lit("TOTAL").alias("codigo"), pl.lit("total").alias("nivel")),
     ], how="diagonal")
 
+    if base:  # el agregado encadenado arranca en 100 al inicio del tramo: se lleva a 100 en el mes base
+        regional = regional.join(parcial.select("periodo", "tramo"), on="periodo").with_columns(
+            pl.when(pl.col("tramo") == tramo[base])
+            .then(pl.col("indice") / pl.col("indice").filter(pl.col("periodo") == base).first()
+                  .over("region", "nivel", "codigo", "tramo") * 100)
+            .otherwise(pl.col("indice")).alias("indice")).drop("tramo")
+
     # 3. nacional
     nac = (
         regional.with_columns(pl.col("region").replace_strict(w_region, return_dtype=pl.Float64).alias("w_region"))
         .with_columns((pl.col("w_region") * pl.col("ponderacion")).alias("w"))
         .group_by("periodo", "codigo", "nivel")
-        .agg(((pl.col("indice") * pl.col("w")).sum() / pl.col("w").sum()).alias("indice"),
+        .agg(pl.when(pl.col("indice").null_count() == 0)  # si falta una región, el nacional queda vacío
+             .then((pl.col("indice") * pl.col("w")).sum() / pl.col("w").sum()).otherwise(None).alias("indice"),
              pl.col("w").sum().alias("ponderacion"), pl.col("n_productos").sum())
         .with_columns(pl.lit(NACIONAL).alias("region"))
     )

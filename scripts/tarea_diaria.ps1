@@ -32,7 +32,7 @@ if (-not (Test-Path $Python)) {
   if (Get-Command py -ErrorAction SilentlyContinue) { py -3 -m venv "$Repo\.venv" 2>&1 | AlLog }
   else { python -m venv "$Repo\.venv" 2>&1 | AlLog }
 }
-& $Python -c "import ipceer, pdfplumber, fastexcel" 2>$null
+& $Python -c "import ipceer, pdfplumber, fastexcel, shapely" 2>$null
 if ($LASTEXITCODE -ne 0) {
   Log "Instalando dependencias"
   & $Python -m pip install --upgrade pip 2>&1 | AlLog

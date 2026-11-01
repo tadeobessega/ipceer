@@ -40,6 +40,9 @@ NOMBRES_INDEC = {"B": "Bienes (INDEC)"}
 
 # ---------------------------------------------------------------- lectura INDEC
 
+FUERA_DEL_TOTAL = {"07.2.2"}
+
+
 def leer_indec(dir_indec: Path) -> pl.DataFrame:
     """Une divisiones y aperturas en formato largo: codigo, region, mes (AAAA-MM), indice."""
     partes = []
@@ -220,7 +223,9 @@ def construir(cfg: Config, mensual: pl.DataFrame, semanal: pl.DataFrame | None, 
 
     propios = mensual.filter(~pl.col("parcial"))
     codigos_propios = propios.filter(pl.col("nivel") == "clase")["codigo"].unique().to_list()
-    replica = replica_indec(indec, cfg, [EQUIVALENCIAS.get(c, c) for c in codigos_propios] + codigos_propios)
+    # la réplica es la canasta del total de bienes de góndola: sin combustibles, que van aparte
+    en_total = [c for c in codigos_propios if c not in FUERA_DEL_TOTAL]
+    replica = replica_indec(indec, cfg, [EQUIVALENCIAS.get(c, c) for c in en_total] + en_total)
 
     # pares: (codigo propio, nivel, codigo INDEC)
     pares = [("TOTAL", "total", "REPLICA"), ("TOTAL", "total", "B")]

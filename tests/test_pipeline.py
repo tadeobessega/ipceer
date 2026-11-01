@@ -217,3 +217,26 @@ def test_indicadores_y_hilo(cfg):
     assert h["tuits"][0]["texto"].startswith("El IPCEER midió una inflación semanal de bienes del ")
     assert "—" not in "".join(t["texto"] for t in h["tuits"])
     assert any(t["imagen"] == "cadenas" for t in h["tuits"])
+
+
+def test_combustibles(cfg):
+    from ipceer import combustibles
+    from sintetico_combustibles import csv_precios, geometria
+    d = combustibles.directorio(cfg)
+    cajas = geometria(d / "geo")
+    csv_precios(d / "precios-y-volumenes.csv", cajas)
+    combustibles.procesar(cfg)
+    datos, idx = combustibles.construir(cfg)
+    # índice: 2,5% mensual de tendencia más saltos semestrales del 4%
+    nac = idx.filter(pl.col("region") == "Nacional").sort("periodo")
+    v = nac.filter(pl.col("periodo") == "2024-03")["var_pct"][0]
+    assert 2.0 < v < 3.2
+    assert set(idx["region"].unique()) >= {"GBA", "Pampeana", "Cuyo", "Patagonia", "Nacional"}
+    # niveles: Chubut más caro que CABA en nafta súper; y se abarata en términos relativos
+    pr = datos["provincias"]
+    p0 = pr["26"]["nafta_super"]["p"][0] / pr["02"]["nafta_super"]["p"][0]
+    p1 = pr["26"]["nafta_super"]["p"][-1] / pr["02"]["nafta_super"]["p"][-1]
+    assert p0 > 1.05 and p1 < p0
+    # departamentos asignados por coordenadas y geometría para el mapa
+    assert len(datos["departamentos"]) == 15 and len(datos["geo"]["departamentos"]) == 15
+    assert datos["sin_departamento_pct"] == 0

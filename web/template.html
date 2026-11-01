@@ -145,6 +145,26 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
 .tuit canvas{width:100%;height:auto;display:block;border:1px solid var(--line)}
 .tuit .sinimg{color:var(--muted);font-size:13px;border:1px dashed var(--line2);display:flex;align-items:center;justify-content:center;min-height:120px}
 @media (max-width:900px){.tuit{grid-template-columns:1fr}}
+.mapctl{display:flex;gap:14px;flex-wrap:wrap;margin:4px 0 14px;font-size:13px;color:var(--muted)}
+.mapctl label{display:flex;gap:8px;align-items:center}
+.mapgrid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:24px}
+.mapa{position:relative}
+.mapa svg{width:100%;height:auto;display:block}
+.mapa path{stroke:#fff;stroke-width:.6;vector-effect:non-scaling-stroke;cursor:pointer}
+.mapa path.prov{fill:none;stroke:var(--fg);stroke-width:1.1;pointer-events:none}
+.mapa path:hover{stroke:var(--fg);stroke-width:2}
+.mtip{position:absolute;pointer-events:none;background:#111;color:#fff;font-size:12px;padding:8px 10px;min-width:180px;z-index:5;line-height:1.45}
+.mtip b{font-weight:600}
+.mtip .mono{font-family:var(--mono)}
+.mleg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:8px}
+.mleg i{display:block;height:10px;flex:1;max-width:260px}
+.mside h4{font-family:var(--title);font-size:14px;margin:18px 0 6px}
+.mside ol{margin:0;padding-left:20px;font-size:13px}
+.mside li{margin-bottom:3px}
+.mside li .mono{float:right}
+.respuesta{background:var(--panel2);border-left:3px solid var(--accent);padding:12px 14px;font-size:14px;line-height:1.55}
+.respuesta b{font-weight:600}
+@media (max-width:900px){.mapgrid{grid-template-columns:1fr}}
 [hidden]{display:none!important}
 @media (max-width:900px){
   .hero,.met{grid-template-columns:1fr}
@@ -164,6 +184,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <button role="tab" data-tab="men" aria-selected="false">Mensual</button>
       <button role="tab" data-tab="rub" aria-selected="false">Rubros</button>
       <button role="tab" data-tab="reg" aria-selected="false">Regiones</button>
+      <button role="tab" data-tab="comb" aria-selected="false">Combustibles</button>
       <button role="tab" data-tab="rot" aria-selected="false">Rotación</button>
       <button role="tab" data-tab="cad" aria-selected="false">Cadenas</button>
       <button role="tab" data-tab="val" aria-selected="false">Validación</button>
@@ -266,6 +287,43 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
         <div class="card s6"><h3>Resumen por región</h3><div class="tablewrap"><table id="t-reg"></table></div></div>
         <div class="card s6"><h3>Nivel de precios por región</h3><p class="cap">Diferencia con el promedio del país, con el mismo producto de la misma cadena en distintas regiones. Última semana.</p><div class="chart short"><canvas id="c-nreg"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
         <div class="card s6"><h3>Nivel de precios por región, semana a semana</h3><p class="cap">Índice, promedio del país = 100.</p><div class="chart short"><canvas id="c-nreg2"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- COMBUSTIBLES -->
+  <div data-panel="comb" hidden>
+    <section>
+      <h2><span class="tag">Energía</span>Combustibles</h2>
+      <p class="sub" id="comb-sub">Precios en surtidor de naftas, gasoil y GNC que las estaciones de servicio informan todos los meses a la Secretaría de Energía, con su volumen vendido y su ubicación. Se suman al IPCEER como el rubro “Combustibles y lubricantes para vehículos” del IPC, con su ponderador del INDEC, y permiten ver diferencias de precios y de variaciones por provincia y por departamento o partido.</p>
+      <div class="kpis" id="comb-kpis" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))"></div>
+      <div class="grid" style="margin-top:16px">
+        <div class="card s12"><h3>Variación mensual</h3><p class="cap">Combustibles, bienes de góndola (IPCEER) y los dos juntos con sus ponderadores del IPC. Nacional.</p><div class="chart"><canvas id="c-comb1"></canvas></div><div class="src">Fuente: CEER en base a Secretaría de Energía (Res. 1104/2004) y SEPA.</div></div>
+        <div class="card s12" id="mapa-card">
+          <h3><span>Mapa de precios</span><span class="seg" id="seg-geo"><button data-v="provincias" aria-pressed="true">Provincias</button><button data-v="departamentos" aria-pressed="false">Departamentos y partidos</button></span></h3>
+          <div class="mapctl">
+            <label class="f">Producto <select id="m-prod"></select></label>
+            <label class="f">Mostrar <select id="m-met">
+              <option value="rel">Precio contra el promedio del país (al final)</option>
+              <option value="var">Variación de precios en el período</option>
+              <option value="drel">Cambio del precio relativo en el período</option>
+            </select></label>
+            <label class="f">Desde <select id="m-desde"></select></label>
+            <label class="f">Hasta <select id="m-hasta"></select></label>
+          </div>
+          <div class="mapgrid">
+            <div class="mapa"><svg id="mapa" role="img" aria-label="Mapa de la Argentina"></svg><div class="mtip" id="mtip" hidden></div><div class="mleg" id="mleg"></div></div>
+            <div class="mside">
+              <div class="respuesta" id="m-resp"></div>
+              <h4>Más arriba</h4><ol id="m-top"></ol>
+              <h4>Más abajo</h4><ol id="m-bot"></ol>
+            </div>
+          </div>
+          <div class="src">Fuente: CEER en base a Secretaría de Energía (precios y volúmenes por estación de servicio, Res. 1104/2004) y Georef (IGN). Precio promedio ponderado por el volumen vendido de cada estación; variación con las mismas estaciones en los dos meses.</div>
+        </div>
+        <div class="card s6"><h3>¿Se acercan o se alejan?</h3><p class="cap" id="m-cap-disp"></p><div class="chart"><canvas id="c-comb2"></canvas></div><div class="src">Fuente: CEER en base a Secretaría de Energía.</div></div>
+        <div class="card s6"><h3>Precio inicial y variación</h3><p class="cap">Cada punto es una jurisdicción: su precio contra el promedio del país al inicio del período y cuánto subió. Si la recta baja, las que eran más caras subieron menos (convergencia).</p><div class="chart"><canvas id="c-comb3"></canvas></div><div class="src">Fuente: CEER en base a Secretaría de Energía.</div></div>
+        <div class="card s12"><h3 id="m-ttab">Detalle</h3><div class="tablewrap" style="max-height:520px;overflow-y:auto"><table id="t-comb"></table></div></div>
       </div>
     </section>
   </div>
@@ -600,6 +658,11 @@ prom. 4 mens.  = (1 + prom. 4 sem.)^(30,44 / 7) − 1</div>
     <li><b>Proyección:</b> completa las semanas que faltan haciendo crecer el nivel al ritmo del promedio de las últimas 4 semanas.</li></ul>
     <div class="formula">var. mes = media( I(sem) : sem ∈ mes ) / media( I(sem) : sem ∈ mes−1 ) − 1</div>
     <p>Por la estacionalidad dentro del mes, la proyección hecha a fin de mes tiende a sobrestimar (supone que las últimas semanas suben tanto como el promedio, que incluye el salto de la primera). La tabla mensual cerrada usa los precios diarios del mes completo, no las semanas.</p>`],
+  ['combustibles','Combustibles',`
+    <p>Los precios de naftas, gasoil y GNC salen del dataset <b>Precios y volúmenes a partir de 2018</b> de la Secretaría de Energía (Resolución 1104/2004): cada estación de servicio informa todos los meses su precio en surtidor y el volumen vendido de cada producto, con su dirección y coordenadas. Se usa el precio diurno cuando la estación informa diurno y nocturno, y se descartan precios fuera de un tercio a tres veces la mediana del producto y el mes. Además, la tarea diaria guarda una copia del dataset <b>Precios en surtidor</b> (precios vigentes), para armar más adelante un índice semanal.</p>
+    <p><b>Índice.</b> Para cada estación y producto se compara el precio de un mes con el del mes anterior. Los relativos se promedian (en logaritmos) ponderados por el volumen vendido, por producto y región del IPC; los productos se combinan con su volumen de todo el período, y las regiones, con el peso de la región y de la clase 07.2.2 (“Combustibles y lubricantes para vehículos de uso del hogar”) en el IPC del INDEC. Se compara contra esa misma apertura del INDEC en la pestaña Validación.</p>
+    <p><b>IPCEER con combustibles.</b> Suma el índice de combustibles al total de bienes de góndola, cada uno con su peso en el IPC de cada región (el de bienes es la parte de la canasta que cubre el relevamiento). Se calcula en los meses que tienen las dos fuentes; el IPCEER semanal y mensual de bienes no cambia.</p>
+    <p><b>Mapa.</b> Cada estación se ubica en su departamento o partido con sus coordenadas y los límites de Georef (IGN); si no tiene coordenadas, se usa el departamento más frecuente de su localidad. El <b>precio</b> de cada jurisdicción es el promedio ponderado por volumen de sus estaciones, y se compara con el del país en el mismo mes. La <b>variación</b> entre dos meses usa un índice encadenado con las mismas estaciones mes a mes, para que no la mueva la entrada o salida de estaciones. El <b>cambio del precio relativo</b> es cuántos puntos se movió el precio de la jurisdicción contra el del país: si es positivo, se encareció en términos relativos. Para responder si cambiaron los costos relativos se mira cuántas jurisdicciones movieron su precio relativo 2 puntos o más, si la dispersión entre ellas creció o bajó, y si las que eran más caras subieron más o menos (pendiente de la variación contra el precio inicial). Los departamentos con pocas estaciones pueden tener movimientos grandes por una sola estación: el detalle muestra cuántas hay.</p>`],
   ['rotacion','Rotación de precios',`
     <p>Para cada producto de cada cadena y región se compara el precio del último día con datos de la semana con el del último día con datos de la semana anterior. Un precio <b>cambió</b> si se movió más de <span class="f">${pct(((D.indicadores||{}).parametros||{}).umbral_cambio_pct??0.5)}</span>: como el precio de una cadena en una región es el promedio entre sus sucursales, por debajo de ese umbral el movimiento suele ser una sucursal sola y no una remarcación.</p>
     <p>Las proporciones se calculan dentro de cada rubro y región y se agregan con los mismos ponderadores del IPCEER, para que un rubro con muchos productos (por ejemplo, perfumería) no pese más que uno con pocos y mucho gasto (por ejemplo, carnes). Con eso se obtiene una descomposición útil de la inflación semanal:</p>
@@ -947,6 +1010,120 @@ async function renderHilo(){
   document.getElementById('hilo-png').onclick=async()=>{ for(const c of L.querySelectorAll('canvas[data-img]')){ const ok=await bajar(nombre(c.dataset.n)+'-'+c.dataset.img+'.png',await aBlob(c)); if(!ok) break; await new Promise(r=>setTimeout(r,300)); } };
 }
 
+/* ---------- combustibles ---------- */
+const cst={geo:'provincias',prod:'nafta_super',met:'rel',desde:null,hasta:null,init:false};
+const CB=()=>D.combustibles||{};
+function renderComb(){
+  const C=CB();
+  if(!C.meses||!C.meses.length){ document.getElementById('comb-kpis').innerHTML='<div class="kpi"><span>Combustibles</span><b class="nd">sin datos aún</b><small>Se bajan de la Secretaría de Energía con la tarea diaria.</small></div>'; document.getElementById('mapa-card').hidden=true; ['c-comb1','c-comb2','c-comb3'].forEach(i=>sinDatos(i)); return; }
+  document.getElementById('mapa-card').hidden=false;
+  const M=C.meses, I=(C.indice||[]).filter(r=>r.region==='Nacional').sort((a,b)=>a.mes<b.mes?-1:1), u=I[I.length-1]||{};
+  const TC=(C.total_con_combustibles||[]).filter(r=>r.region==='Nacional').sort((a,b)=>a.mes<b.mes?-1:1), ut=TC[TC.length-1];
+  const ps=(C.pais.AR||{}).nafta_super||{p:[]}, pu=ps.p[M.length-1];
+  document.getElementById('comb-kpis').innerHTML=[
+    `<div class="kpi"><span>Combustibles · ${u.mes?mesLargo(u.mes):''}<br>variación mensual, nacional</span><b class="ac">${pct(u.var)}</b><small>Interanual <span class="mono">${pct(u.var_ia)}</span></small><div class="kfuente">Fuente: Secretaría de Energía.</div></div>`,
+    `<div class="kpi"><span>Nafta súper, precio promedio<br>${mesLargo(M[M.length-1])}</span><b>${pu?'$ '+num(pu,0):'–'}</b><small>por litro, promedio del país ponderado por ventas</small><div class="kfuente">${num(C.n_estaciones||0,0)} estaciones informantes.</div></div>`,
+    `<div class="kpi"><span>IPCEER con combustibles · ${ut?mesLargo(ut.mes):''}</span><b>${ut?pct(ut.var):'–'}</b><small>${ut?`Bienes <span class="mono">${pct(ut.var_bienes)}</span> · combustibles <span class="mono">${pct(ut.var_combustibles)}</span>`:'Se calcula en los meses con datos de las dos fuentes.'}</small><div class="kfuente">${ut?'Combustibles pesan el '+pct(ut.peso_combustibles,1)+' de esta canasta.':''}</div></div>`].join('');
+  const ult=I.slice(-24), lab=ult.map(r=>mesLbl(r.mes));
+  const bienes=((D.series.Nacional||{}).TOTAL||{}).mensual||[];
+  const o=baseOpts({layout:{padding:{right:150}},scales:{x:axX(),y:axY(v=>num(v,2)+'%')}}); o.plugins.etiquetasFinales={on:true};
+  draw('c-comb1',{type:'line',data:{labels:lab,datasets:[
+    {label:'Combustibles',data:ult.map(r=>r.var),borderColor:css('--ambar'),backgroundColor:css('--ambar'),borderWidth:2.5,pointRadius:2},
+    {label:'Bienes (IPCEER)',data:ult.map(r=>{const b=bienes.find(x=>x.mes===r.mes);return b?b.var:null;}),borderColor:css('--accent'),backgroundColor:css('--accent'),borderWidth:2.5,pointRadius:2},
+    {label:'Bienes + combustibles',data:ult.map(r=>{const t=TC.find(x=>x.mes===r.mes);return t?t.var:null;}),borderColor:css('--cian'),backgroundColor:css('--cian'),borderWidth:2.5,pointRadius:2,borderDash:[5,3]}]},options:o});
+  if(!cst.init){
+    cst.init=true; cst.hasta=M[M.length-1]; cst.desde=M[Math.max(0,M.length-13)];
+    const md=document.getElementById('m-desde'), mh=document.getElementById('m-hasta'), opts=M.map(m=>`<option value="${m}">${mesLbl(m)}</option>`).join('');
+    md.innerHTML=opts; mh.innerHTML=opts;
+    md.onchange=e=>{cst.desde=e.target.value; renderMapa();}; mh.onchange=e=>{cst.hasta=e.target.value; renderMapa();};
+    document.getElementById('m-met').onchange=e=>{cst.met=e.target.value; renderMapa();};
+    document.getElementById('m-prod').onchange=e=>{cst.prod=e.target.value; renderMapa();};
+    document.querySelectorAll('#seg-geo button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#seg-geo button').forEach(x=>x.setAttribute('aria-pressed',x===b)); cst.geo=b.dataset.v; renderMapa();});
+  }
+  renderMapa();
+}
+function colorDiv(v,max){ if(v==null||isNaN(v)) return '#e4e6eb'; const t=Math.max(-1,Math.min(1,v/(max||1)));
+  const a=[246,247,249], b=t<0?[40,64,165]:[175,62,48], k=Math.pow(Math.abs(t),0.8);
+  return `rgb(${a.map((x,i)=>Math.round(x+(b[i]-x)*k)).join(',')})`; }
+function unidades(){
+  const C=CB(), M=C.meses, i0=M.indexOf(cst.desde), i1=M.indexOf(cst.hasta), nac=(C.pais.AR||{})[cst.prod];
+  const base=cst.geo==='provincias'?C.provincias:C.departamentos, geo=(C.geo||{})[cst.geo]||[];
+  const nprov=Object.fromEntries(((C.geo||{}).provincias||[]).map(g=>[g.id,g.n]));
+  return geo.map(g=>{ const s=(base[g.id]||{})[cst.prod]; if(!s||!nac) return {g,v:null};
+    const p0=s.p[i0], p1=s.p[i1], x0=s.i[i0], x1=s.i[i1], n0=nac.p[i0], n1=nac.p[i1];
+    const rel0=p0&&n0?(p0/n0-1)*100:null, rel1=p1&&n1?(p1/n1-1)*100:null, vr=x0&&x1?(x1/x0-1)*100:null;
+    return {g,prov:nprov[g.p]||'',p0,p1,rel0,rel1,var:vr,drel:rel0!=null&&rel1!=null?rel1-rel0:null,n:s.n[i1]||0};
+  }).map(u=>({...u,v:u.g&&u.var!==undefined?(cst.met==='rel'?u.rel1:cst.met==='var'?u.var:u.drel):null}));
+}
+function renderMapa(){
+  const C=CB(), M=C.meses; if(!M) return;
+  const prods=cst.geo==='provincias'?Object.keys(C.productos):Object.keys(C.productos).filter(k=>k!=='gnc');
+  if(!prods.includes(cst.prod)) cst.prod=prods[0];
+  const sp=document.getElementById('m-prod'); sp.innerHTML=prods.map(k=>`<option value="${k}">${esc(C.productos[k])}</option>`).join(''); sp.value=cst.prod;
+  if(M.indexOf(cst.desde)>=M.indexOf(cst.hasta)) cst.desde=M[Math.max(0,M.indexOf(cst.hasta)-1)];
+  document.getElementById('m-desde').value=cst.desde; document.getElementById('m-hasta').value=cst.hasta;
+  const nac=(C.pais.AR||{})[cst.prod], i0=M.indexOf(cst.desde), i1=M.indexOf(cst.hasta);
+  const vnac=nac&&nac.i[i0]&&nac.i[i1]?(nac.i[i1]/nac.i[i0]-1)*100:null;
+  const U=unidades();
+  // proyección
+  const todos=((C.geo||{}).provincias||[]).flatMap(g=>g.a); let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  todos.forEach(a=>{for(let k=0;k<a.length;k+=2){x0=Math.min(x0,a[k]);x1=Math.max(x1,a[k]);y0=Math.min(y0,a[k+1]);y1=Math.max(y1,a[k+1]);}});
+  const kx=Math.cos(38.5*Math.PI/180), W=(x1-x0)*kx, H=(y1-y0);
+  const path=a=>{let d='';for(let k=0;k<a.length;k+=2){d+=(k?'L':'M')+((a[k]-x0)*kx).toFixed(1)+' '+((y1-a[k+1])).toFixed(1);}return d+'Z';};
+  const vals=U.map(u=>cst.met==='var'&&vnac!=null&&u.v!=null?u.v-vnac:u.v).filter(v=>v!=null&&isFinite(v)).map(Math.abs).sort((a,b)=>a-b);
+  const max=vals.length?vals[Math.floor(vals.length*0.95)]||vals[vals.length-1]:1;
+  const svg=document.getElementById('mapa'); svg.setAttribute('viewBox',`-5 -5 ${W+10} ${H+10}`);
+  const fmt=v=>v==null?'–':cst.met==='var'?pct(v,1):pct(v,1,true).replace('%',cst.met==='drel'?' pp':'%');
+  svg.innerHTML=U.map((u,k)=>`<path data-k="${k}" d="${u.g.a.map(path).join('')}" fill="${colorDiv(u.v==null?null:(cst.met==='var'&&vnac!=null?u.v-vnac:u.v),max)}"/>`).join('')+
+    (cst.geo==='departamentos'?((C.geo.provincias||[]).map(g=>`<path class="prov" d="${g.a.map(path).join('')}"/>`).join('')):'');
+  const tip=document.getElementById('mtip'), box=svg.parentElement;
+  svg.querySelectorAll('path[data-k]').forEach(pth=>{ pth.onmousemove=e=>{ const u=U[+pth.dataset.k], r=box.getBoundingClientRect();
+      tip.hidden=false; tip.style.left=Math.min(e.clientX-r.left+14,r.width-200)+'px'; tip.style.top=(e.clientY-r.top+14)+'px';
+      tip.innerHTML=`<b>${esc(u.g.n)}</b>${u.prov&&cst.geo==='departamentos'?'<br>'+esc(u.prov):''}<br>`+(u.p1==null&&u.p0==null?'Sin datos':
+        `${esc(C.productos[cst.prod])}<br>${mesLbl(cst.desde)}: <span class="mono">${u.p0?'$'+num(u.p0,0):'–'}</span> (${u.rel0==null?'–':pct(u.rel0,1,true)} vs. país)<br>${mesLbl(cst.hasta)}: <span class="mono">${u.p1?'$'+num(u.p1,0):'–'}</span> (${u.rel1==null?'–':pct(u.rel1,1,true)} vs. país)<br>Variación: <span class="mono">${pct(u.var,1)}</span> (país ${pct(vnac,1)})<br>Estaciones: <span class="mono">${u.n}</span>`); };
+    pth.onmouseleave=()=>{tip.hidden=true;}; });
+  const ref=cst.met==='var'?vnac:0;
+  document.getElementById('mleg').innerHTML=`<span class="mono">${fmt(ref-max)}</span><i style="background:linear-gradient(90deg,${colorDiv(-max,max)},${colorDiv(0,max)},${colorDiv(max,max)})"></i><span class="mono">${fmt(ref+max)}</span><span>${cst.met==='rel'?'contra el promedio del país':cst.met==='var'?'centrado en la variación del país ('+pct(vnac,1)+')':'puntos porcentuales'}</span>`;
+  // ranking
+  const con=U.filter(u=>u.v!=null&&isFinite(u.v)).sort((a,b)=>b.v-a.v);
+  const li=u=>`<li>${esc(u.g.n)}${cst.geo==='departamentos'?' <span style="color:var(--muted)">('+esc(u.prov)+')</span>':''} <span class="mono">${fmt(u.v)}</span></li>`;
+  document.getElementById('m-top').innerHTML=con.slice(0,8).map(li).join('');
+  document.getElementById('m-bot').innerHTML=con.slice(-8).reverse().map(li).join('');
+  // respuesta: ¿cambiaron los costos relativos?
+  const ok=U.filter(u=>u.rel0!=null&&u.rel1!=null&&u.var!=null);
+  const dsv=a=>{const m=a.reduce((x,y)=>x+y,0)/a.length; return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length);};
+  let resp='No hay suficientes datos para el período elegido.';
+  if(ok.length>=3){
+    const d0=dsv(ok.map(u=>u.rel0)), d1=dsv(ok.map(u=>u.rel1));
+    const mx=ok.reduce((a,u)=>a+u.rel0,0)/ok.length, my=ok.reduce((a,u)=>a+u.var,0)/ok.length;
+    const sxx=ok.reduce((a,u)=>a+(u.rel0-mx)**2,0), b=sxx?ok.reduce((a,u)=>a+(u.rel0-mx)*(u.var-my),0)/sxx:0;
+    const r=(()=>{const syy=ok.reduce((a,u)=>a+(u.var-my)**2,0);return sxx&&syy?ok.reduce((a,u)=>a+(u.rel0-mx)*(u.var-my),0)/Math.sqrt(sxx*syy):0;})();
+    const mov=ok.filter(u=>Math.abs(u.drel)>=2).length, sv=[...ok].sort((a,b)=>a.var-b.var);
+    const sub=[...ok].sort((a,b)=>b.drel-a.drel);
+    resp=`<b>${mov>=Math.max(2,ok.length*0.15)?'Sí, hubo cambios de precios relativos.':'Pocos cambios de precios relativos.'}</b> Entre ${mesLbl(cst.desde)} y ${mesLbl(cst.hasta)}, ${esc(C.productos[cst.prod]).toLowerCase()} subió <span class="mono">${pct(vnac,1)}</span> en el país, con variaciones de <span class="mono">${pct(sv[0].var,1)}</span> (${esc(sv[0].g.n)}) a <span class="mono">${pct(sv[sv.length-1].var,1)}</span> (${esc(sv[sv.length-1].g.n)}). `+
+      `En <span class="mono">${mov}</span> de ${ok.length} ${cst.geo==='provincias'?'provincias':'jurisdicciones'} el precio relativo al país se movió 2 puntos o más; se encareció más ${esc(sub[0].g.n)} (<span class="mono">${num(sub[0].drel,1)} pp</span>) y se abarató más ${esc(sub[sub.length-1].g.n)} (<span class="mono">${num(sub[sub.length-1].drel,1)} pp</span>). `+
+      `Las diferencias de precios entre ${cst.geo==='provincias'?'provincias':'jurisdicciones'} ${d1<d0*0.97?'se achicaron':d1>d0*1.03?'se ampliaron':'casi no cambiaron'} (desvío de <span class="mono">${num(d0,1)}%</span> a <span class="mono">${num(d1,1)}%</span>)`+
+      (Math.abs(r)>=0.3?`, y ${b<0?'las que eran más caras subieron menos (convergencia)':'las que eran más caras subieron más (divergencia)'}.`:', sin relación clara entre el precio inicial y la suba.');
+  }
+  document.getElementById('m-resp').innerHTML=resp;
+  // dispersión en el tiempo (entre provincias)
+  const P=C.provincias, ids=Object.keys(P);
+  const disp=M.map((m,i)=>{ const n=nac&&nac.p[i]; const r=ids.map(id=>((P[id]||{})[cst.prod]||{p:[]}).p[i]).filter(v=>v&&n).map(v=>(v/n-1)*100); return r.length>=3?dsv(r):null; });
+  document.getElementById('m-cap-disp').textContent=`Desvío estándar entre provincias del precio de ${C.productos[cst.prod].toLowerCase()} contra el promedio del país, en %. Si baja, los precios se parecen más entre provincias.`;
+  draw('c-comb2',{type:'line',data:{labels:M.map(mesLbl),datasets:[{label:'Desvío',data:disp,borderColor:css('--accent'),backgroundColor:css('--accent'),borderWidth:2.5,pointRadius:0,
+      segment:{borderColor:c=>{const k=c.p1DataIndex; return k>i0&&k<=i1?css('--ambar'):css('--accent');}}}]},
+    options:baseOpts({plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' Desvío: '+num(c.parsed.y,2)+'%'}}},scales:{x:axX(),y:{...axY(v=>num(v,1)+'%'),beginAtZero:true}}})});
+  const pts=ok.map(u=>({x:u.rel0,y:u.var,n:u.g.n}));
+  let reg=[]; if(pts.length>=3){ const mx=pts.reduce((a,p)=>a+p.x,0)/pts.length,my=pts.reduce((a,p)=>a+p.y,0)/pts.length,sxx=pts.reduce((a,p)=>a+(p.x-mx)**2,0),b=sxx?pts.reduce((a,p)=>a+(p.x-mx)*(p.y-my),0)/sxx:0; const xs=pts.map(p=>p.x),lo=Math.min(...xs),hi=Math.max(...xs); reg=[{x:lo,y:my+b*(lo-mx)},{x:hi,y:my+b*(hi-mx)}]; }
+  draw('c-comb3',{type:'scatter',data:{datasets:[{label:'Jurisdicción',data:pts,backgroundColor:css('--accent'),pointRadius:cst.geo==='provincias'?5:3},
+      {type:'line',label:'Tendencia',data:reg,borderColor:css('--ambar'),borderWidth:2,pointRadius:0}]},
+    options:baseOpts({interaction:{mode:'nearest',intersect:true},plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>c.raw.n?` ${c.raw.n}: ${pct(c.raw.x,1,true)} al inicio, subió ${pct(c.raw.y,1)}`:''}}},
+      scales:{x:{type:'linear',title:{display:true,text:'Precio contra el país al inicio (%)',color:css('--muted')},grid:{color:css('--line')},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>num(v,1)+'%'}},y:{title:{display:true,text:'Variación en el período (%)',color:css('--muted')},grid:{color:css('--line')},border:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>num(v,1)+'%'}}}})});
+  document.getElementById('m-ttab').textContent=`Detalle por ${cst.geo==='provincias'?'provincia':'departamento o partido'} · ${C.productos[cst.prod]}`;
+  document.getElementById('t-comb').innerHTML=`<thead><tr><th>${cst.geo==='provincias'?'Provincia':'Departamento o partido'}</th>${cst.geo==='departamentos'?'<th>Provincia</th>':''}<th class="n">Precio ${mesLbl(cst.desde)}</th><th class="n">Precio ${mesLbl(cst.hasta)}</th><th class="n">Variación</th><th class="n">Vs. país al inicio</th><th class="n">Vs. país al final</th><th class="n">Cambio relativo</th><th class="n">Estaciones</th></tr></thead><tbody>`+
+    U.filter(u=>u.p1!=null||u.p0!=null).sort((a,b)=>(b.v??-1e9)-(a.v??-1e9)).map(u=>`<tr><td>${esc(u.g.n)}</td>${cst.geo==='departamentos'?`<td>${esc(u.prov)}</td>`:''}<td class="n">${u.p0?'$ '+num(u.p0,0):'–'}</td><td class="n">${u.p1?'$ '+num(u.p1,0):'–'}</td><td class="n">${pct(u.var,1)}</td><td class="n">${pct(u.rel0,1,true)}</td><td class="n">${pct(u.rel1,1,true)}</td><td class="n">${u.drel==null?'–':num(u.drel,1)+' pp'}</td><td class="n">${u.n}</td></tr>`).join('')+'</tbody>';
+}
+
 function render(){
   const tab=document.querySelector('.tabs button[aria-selected="true"]').dataset.tab;
   renderKpis();
@@ -956,6 +1133,7 @@ function render(){
   if(tab==='rub') renderRubros();
   if(tab==='reg'){ renderRegiones(); renderNivReg(); }
   if(tab==='rot') renderRot();
+  if(tab==='comb') renderComb();
   if(tab==='cad') renderCad();
   if(tab==='hilo') renderHilo();
   if(tab==='met') renderMetodo();

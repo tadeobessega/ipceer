@@ -23,7 +23,7 @@ from pathlib import Path
 
 import polars as pl
 
-from . import descarga, hilo, historico, indec, indicadores, indice, lectura, panel, resumen, sitio, validacion
+from . import combustibles, descarga, hilo, historico, indec, indicadores, indice, lectura, panel, resumen, sitio, validacion
 from .clasificador import SIN_CLASIFICAR
 from .config import cargar_config
 
@@ -71,9 +71,18 @@ def cmd_calcular(cfg, args):
             cba_m.write_csv(cfg.ruta("resultados") / "cba_mensual.csv")
     except Exception as e:
         log.warning("CBA mensual: %s", e)
+    comb_datos, comb_idx = {}, None
+    try:
+        comb_datos, comb_idx = combustibles.construir(cfg)
+    except Exception as e:
+        log.warning("Combustibles: %s", e)
     if "mensual" in res:
         try:
-            val = validacion.construir(cfg, res["mensual"]["indices"], res.get("semanal", {}).get("indices"),
+            mens_val = res["mensual"]["indices"]
+            if comb_idx is not None:
+                mens_val = pl.concat([mens_val, comb_idx.select([c for c in comb_idx.columns if c in mens_val.columns])],
+                                     how="diagonal_relaxed")
+            val = validacion.construir(cfg, mens_val, res.get("semanal", {}).get("indices"),
                                        indec.directorio(cfg), cba_propia=cba_m)
         except Exception as e:
             log.warning("Validación INDEC: %s", e)
@@ -92,6 +101,13 @@ def cmd_calcular(cfg, args):
         validacion=val,
         indicadores=ind,
     )
+    if comb_datos:
+        try:
+            comb_datos["total_con_combustibles"] = combustibles.total_con_combustibles(
+                cfg, res.get("mensual", {}).get("indices"), comb_idx, res.get("mensual", {}).get("cobertura"))
+        except Exception as e:
+            log.warning("IPCEER con combustibles: %s", e)
+        datos["combustibles"] = resumen._limpio(comb_datos)
     try:
         if sem_ind is not None and "tramo" in sem_ind.columns:
             sem_ind = sem_ind.filter(pl.col("tramo") == sem_ind["tramo"].max())
@@ -119,6 +135,10 @@ def cmd_diario(cfg, args):
     except Exception as e:  # sin red igual se procesa lo que ya está archivado
         log.error("Descarga fallida: %s", e)
     cmd_procesar(cfg, args)
+    try:
+        combustibles.actualizar(cfg)
+    except Exception as e:
+        log.error("Combustibles: %s", e)
     if panel.dias_disponibles(cfg):
         cmd_consolidar(cfg, args)
         cmd_calcular(cfg, args)
@@ -174,6 +194,8 @@ def main(argv=None):
     c = sub.add_parser("consolidar")
     c.add_argument("--todos", action="store_true", help="rehace todos los períodos (ej. tras cambiar el clasificador)")
     c.set_defaults(fn=cmd_consolidar)
+    sub.add_parser("combustibles", help="baja y procesa los precios de combustibles de Energía").set_defaults(
+        fn=lambda cfg, args: combustibles.actualizar(cfg))
     i = sub.add_parser("indec")
     i.add_argument("--forzar", action="store_true")
     i.set_defaults(fn=cmd_indec)

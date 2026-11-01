@@ -54,6 +54,19 @@ def descargar(cfg: Config, max_horas: float = 24) -> list[Path]:
     return out
 
 
+def _num(v) -> float:
+    """Número de una celda: 239058, "239058.5", "239.058,5" o "2,21"."""
+    if not isinstance(v, str):
+        return float(v)
+    t = v.strip().replace("$", "").replace(" ", "")
+    import re
+    if "," in t:
+        t = t.replace(".", "").replace(",", ".")
+    elif re.fullmatch(r"\d{1,3}(\.\d{3})+", t):  # "239.058": punto de miles
+        t = t.replace(".", "")
+    return float(t)
+
+
 def _mes_de_celda(v) -> str | None:
     """Reconoce un mes en una celda: fecha de Excel, '2026-09', 'sep-26', 'Septiembre 2026'."""
     import datetime as dt
@@ -75,24 +88,42 @@ def _mes_de_celda(v) -> str | None:
 
 
 def leer_cba(dir_indec: Path) -> "pl.DataFrame":
-    """CBA oficial de Gran Buenos Aires por adulto equivalente: columnas mes (AAAA-MM), cba ($).
+    """CBA oficial de Gran Buenos Aires por adulto equivalente: columnas mes (AAAA-MM), cba ($),
+    ice (inversa del coeficiente de Engel) y cbt ($).
 
     Lee data/indec/serie_cba_cbt.xls (cuadro del INDEC: mes, CBA, inversa del coeficiente de
     Engel, CBT). Si existe data/indec/cba_gba.csv (columnas mes,cba) se usa ese archivo.
     """
     import polars as pl
     manual = dir_indec / "cba_gba.csv"
-    vacio = pl.DataFrame(schema={"mes": pl.Utf8, "cba": pl.Float64})
+    vacio = pl.DataFrame(schema={"mes": pl.Utf8, "cba": pl.Float64, "ice": pl.Float64, "cbt": pl.Float64})
     if manual.exists():
-        return pl.read_csv(manual, schema_overrides={"mes": pl.Utf8, "cba": pl.Float64})
-    ruta = dir_indec / "serie_cba_cbt.xls"
-    if not ruta.exists():
+        m = pl.read_csv(manual, schema_overrides={"mes": pl.Utf8, "cba": pl.Float64})
+        for c in ("ice", "cbt"):
+            if c not in m.columns:
+                m = m.with_columns(pl.lit(None, dtype=pl.Float64).alias(c))
+        return m.select("mes", "cba", "ice", "cbt")
+    ruta = next((dir_indec / n for n in ("serie_cba_cbt.xls", "serie_cba_cbt.xlsx") if (dir_indec / n).exists()), None)
+    if ruta is None:
         return vacio
-    try:
-        import fastexcel
-        libro = fastexcel.read_excel(str(ruta))
-    except Exception as e:
-        log.warning("CBA INDEC: no se pudo leer %s: %s", ruta.name, e)
+    import shutil
+    import tempfile
+    import fastexcel
+    libro = None
+    # el sitio a veces sirve un .xlsx con extensión .xls: se prueba con las dos
+    for suf in (ruta.suffix, ".xlsx" if ruta.suffix == ".xls" else ".xls"):
+        try:
+            if suf == ruta.suffix:
+                libro = fastexcel.read_excel(str(ruta))
+            else:
+                tmp = Path(tempfile.mkdtemp()) / f"cba{suf}"
+                shutil.copy(ruta, tmp)
+                libro = fastexcel.read_excel(str(tmp))
+            break
+        except Exception as e:
+            err = e
+    if libro is None:
+        log.warning("CBA INDEC: no se pudo leer %s: %s", ruta.name, err)
         return vacio
     filas = {}
     for nombre in libro.sheet_names:
@@ -109,17 +140,25 @@ def leer_cba(dir_indec: Path) -> "pl.DataFrame":
                     break
             if not mes:
                 continue
+            nums = []
             for v in resto:
                 try:
-                    x = float(str(v).replace(".", "").replace(",", ".")) if isinstance(v, str) else float(v)
+                    nums.append(_num(v))
                 except (TypeError, ValueError):
                     continue
-                if x > 10:  # el primer número grande es la CBA (el siguiente es la inversa de Engel, ~2)
-                    filas.setdefault(mes, x)
-                    break
+            # orden del cuadro: CBA, inversa del coeficiente de Engel (~2 a 3), CBT
+            cba = next((x for x in nums if x > 10), None)
+            if cba is None or mes in filas:
+                continue
+            despues = nums[nums.index(cba) + 1:]
+            ice = next((x for x in despues if 1 < x < 6), None)
+            cbt = next((x for x in despues if x > 10), None)
+            filas[mes] = (cba, ice, cbt)
         if filas:
             break
     if not filas:
         log.warning("CBA INDEC: no se encontraron datos en %s", ruta.name)
         return vacio
-    return pl.DataFrame({"mes": list(filas), "cba": list(filas.values())}).sort("mes")
+    return pl.DataFrame({"mes": list(filas), "cba": [v[0] for v in filas.values()],
+                         "ice": [v[1] for v in filas.values()], "cbt": [v[2] for v in filas.values()]},
+                        schema={"mes": pl.Utf8, "cba": pl.Float64, "ice": pl.Float64, "cbt": pl.Float64}).sort("mes")

@@ -291,7 +291,7 @@ def construir(cfg: Config, mensual: pl.DataFrame, semanal: pl.DataFrame | None, 
     from .indec import leer_cba
     cba_o = leer_cba(dir_indec)
     if cba_propia is not None and not cba_propia.is_empty() and not cba_o.is_empty():
-        oficial = dict(cba_o.iter_rows())
+        oficial = dict(cba_o.select("mes", "cba").iter_rows())
         cp = cba_propia.filter(pl.col("region") == "GBA", pl.col("dias") >= 10).sort("mes")
         meses = [m for m in cp["mes"].to_list() if m in oficial]
         tr = tramos(meses, "mensual", cfg["indice"]["max_meses_salto"])

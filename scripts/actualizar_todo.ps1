@@ -90,6 +90,14 @@ Paso "Cálculo" { Ipceer calcular }
 Paso "Tablero" { Ipceer sitio }
 Paso "Resumen" { Ipceer estado }
 
+# 10. base histórica 2016-2018: si no está corriendo, se relanza (sigue donde quedó)
+if (-not $historico) {
+  try {
+    schtasks /Run /TN "IPCEER historico" 2>&1 | AlLog
+    Log "Base histórica 2016-2018: relanzada (tarda varias horas; dejá la PC prendida y sin suspender)."
+  } catch { Log "No se pudo relanzar la base histórica: $_" }
+}
+
 Log "Fin. Resumen de pasos:"
 $Pasos.GetEnumerator() | ForEach-Object { Log ("   {0,-45} {1}" -f $_.Key, $_.Value) }
 if (Test-Path "$Repo\resultados\estado.json") {

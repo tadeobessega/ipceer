@@ -63,6 +63,9 @@ def _bajar(url: str, destino: Path, timeout: int, reintentos: int) -> None:
         except (requests.RequestException, OSError) as e:
             log.warning("Fallo descargando %s (intento %d/%d): %s", url, intento, reintentos, e)
             tmp.unlink(missing_ok=True)
+            # 429 = el servidor pide que se baje el ritmo: reintentar enseguida empeora las cosas
+            if getattr(getattr(e, "response", None), "status_code", None) == 429:
+                raise
             if intento == reintentos:
                 raise
             time.sleep(10 * intento)
@@ -178,8 +181,12 @@ def descargar_wayback(cfg: Config) -> list[Path]:
         try:
             _bajar(f"https://web.archive.org/web/{ts}id_/{orig}", tmp, d["timeout_segundos"] * 5, d["reintentos"])
         except Exception as e:
+            if getattr(getattr(e, "response", None), "status_code", None) == 429:
+                log.warning("Wayback: el Internet Archive limita las descargas (429). Se sigue en la próxima corrida.")
+                break
             log.error("Wayback: no se pudo bajar %s: %s", ts, e)
             continue
+        time.sleep(5)  # una captura cada tantos segundos, para no superar el límite del Archive
         fecha = _fecha_dentro_del_zip(tmp) if zipfile.is_zipfile(tmp) else None
         destino = dir_crudos / f"sepa_{fecha.isoformat()}.zip" if fecha else None
         if destino is None:

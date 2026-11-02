@@ -62,6 +62,10 @@ indicadores:
   # Una cadena entra en el ranking de la CBA si tiene precio propio para esta parte del costo.
   cobertura_min_cba: 0.6
 
+# Base histórica 2016-2018 (Zenodo): días que se bajan y procesan a la vez.
+historico:
+  paralelo: 4
+
 # Municipios con índice propio: las sucursales se asignan por polígono (Georef) y el índice usa los
 # ponderadores de la región del IPC indicada. id = código Georef del partido.
 municipios:

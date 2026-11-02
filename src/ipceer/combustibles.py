@@ -141,28 +141,81 @@ def _recurso_ckan(dataset: str, patron: str) -> str | None:
     return None
 
 
-def descargar(cfg: Config, max_dias: float = 6) -> Path | None:
-    """Baja (si tiene más de `max_dias`) el CSV de precios y volúmenes por estación y mes."""
-    d = directorio(cfg)
-    destino = d / "precios-y-volumenes.csv"
-    if destino.exists() and time.time() - destino.stat().st_mtime < max_dias * 86400:
-        return destino
-    url = _recurso_ckan(DATASET_VOLUMENES, r"2018") or URL_VOLUMENES
-    url = url.replace("https://datos.energia.gob.ar", "http://datos.energia.gob.ar")
-    tmp = destino.with_suffix(".part")
+def _recursos_volumenes() -> list[dict]:
+    """Recursos CSV del dataset de precios y volúmenes (Energía publica un archivo por período)."""
     try:
-        with requests.get(url, stream=True, timeout=600, headers=UA) as r:
-            r.raise_for_status()
-            with open(tmp, "wb") as f:
-                for parte in r.iter_content(1 << 20):
-                    f.write(parte)
-        tmp.replace(destino)
-        log.info("Combustibles: %s (%.0f MB)", destino.name, destino.stat().st_size / 1e6)
+        d = _get(CKAN + "package_show", params={"id": DATASET_VOLUMENES}, timeout=60).json()["result"]
     except Exception as e:
-        log.warning("Combustibles: no se pudo bajar %s: %s", url, e)
-        if tmp.exists():
-            tmp.unlink()
-    return destino if destino.exists() else None
+        log.warning("Combustibles: no se pudo consultar el catálogo: %s", e)
+        return []
+    out = []
+    for r in d.get("resources", []):
+        url, nombre = r.get("url") or "", r.get("name") or ""
+        if url.lower().endswith(".csv") or (r.get("format") or "").lower() == "csv":
+            out.append({"id": r.get("id"), "nombre": nombre, "url": url,
+                        "modificado": r.get("last_modified") or r.get("metadata_modified") or r.get("created") or ""})
+    return out
+
+
+def descargar(cfg: Config, max_dias: float = 6) -> Path | None:
+    """Baja todos los CSV de precios y volúmenes por estación y mes (uno por recurso del catálogo).
+    Un archivo se vuelve a bajar si el catálogo dice que cambió o si tiene más de `max_dias`."""
+    d = directorio(cfg)
+    dv = d / "volumenes"
+    dv.mkdir(exist_ok=True)
+    recursos = _recursos_volumenes() or [{"id": "a-partir-de-2018", "nombre": "precios-y-volumenes-a-partir-de-2018",
+                                          "url": URL_VOLUMENES, "modificado": ""}]
+    (d / "recursos.json").write_text(json.dumps(recursos, ensure_ascii=False, indent=1), encoding="utf-8")
+    previo = {}
+    reg = dv / "registro.json"
+    if reg.exists():
+        previo = json.loads(reg.read_text(encoding="utf-8"))
+    for r in recursos:
+        destino = dv / f"{r['id']}.csv"
+        viejo = destino.exists() and time.time() - destino.stat().st_mtime > max_dias * 86400
+        if destino.exists() and previo.get(r["id"]) == r["modificado"] and not (viejo and not r["modificado"]):
+            continue
+        url = r["url"].replace("https://datos.energia.gob.ar", "http://datos.energia.gob.ar")
+        tmp = destino.with_suffix(".part")
+        try:
+            with requests.get(url, stream=True, timeout=600, headers=UA) as resp:
+                resp.raise_for_status()
+                with open(tmp, "wb") as f:
+                    for parte in resp.iter_content(1 << 20):
+                        f.write(parte)
+            tmp.replace(destino)
+            previo[r["id"]] = r["modificado"]
+            log.info("Combustibles: %s (%.0f MB)", r["nombre"] or destino.name, destino.stat().st_size / 1e6)
+        except Exception as e:
+            log.warning("Combustibles: no se pudo bajar %s: %s", url, e)
+            if tmp.exists():
+                tmp.unlink()
+    reg.write_text(json.dumps(previo, indent=1), encoding="utf-8")
+    archivos = sorted(dv.glob("*.csv"))
+    return dv if archivos else None
+
+
+def _coordenadas_surtidor(cfg: Config) -> pl.DataFrame:
+    """Latitud y longitud de cada estación según los archivos diarios de "Precios en surtidor"
+    (el CSV de volúmenes no trae coordenadas). Clave: número de inscripción = idempresa."""
+    filas = []
+    for a in sorted((directorio(cfg) / "surtidor").glob("*.csv.gz")):
+        try:
+            df = pl.read_csv(a, infer_schema=False, encoding="utf8-lossy", ignore_errors=True, truncate_ragged_lines=True)
+        except Exception as e:
+            log.warning("Surtidor %s: %s", a.name, e)
+            continue
+        cols = {_norm(c): c for c in df.columns}
+        if not all(k in cols for k in ("idempresa", "latitud", "longitud")):
+            continue
+        filas.append(df.select(pl.col(cols["idempresa"]).str.strip_chars().alias("est"),
+                               pl.col(cols["latitud"]).alias("lat_s"), pl.col(cols["longitud"]).alias("lon_s")))
+    if not filas:
+        return pl.DataFrame(schema={"est": pl.Utf8, "lat_s": pl.Float64, "lon_s": pl.Float64})
+    t = pl.concat(filas).with_columns(
+        pl.col("lat_s").str.replace(",", ".").cast(pl.Float64, strict=False),
+        pl.col("lon_s").str.replace(",", ".").cast(pl.Float64, strict=False)).drop_nulls()
+    return t.group_by("est").agg(pl.col("lat_s").last(), pl.col("lon_s").last())
 
 
 def archivar_surtidor(cfg: Config) -> Path | None:
@@ -375,15 +428,32 @@ def leer(ruta: Path) -> pl.DataFrame:
 def procesar(cfg: Config) -> Path | None:
     """CSV -> panel mensual por estación con departamento, provincia y región del IPC."""
     d = directorio(cfg)
-    ruta = d / "precios-y-volumenes.csv"
-    if not ruta.exists():
+    archivos = sorted((d / "volumenes").glob("*.csv")) or ([d / "precios-y-volumenes.csv"] if (d / "precios-y-volumenes.csv").exists() else [])
+    if not archivos:
         return None
     destino = d / "panel.parquet"
-    if destino.exists() and destino.stat().st_mtime > ruta.stat().st_mtime:
+    surt = sorted((d / "surtidor").glob("*.csv.gz"))
+    ultimo = max([a.stat().st_mtime for a in archivos] + [s.stat().st_mtime for s in surt[-1:]])
+    if destino.exists() and destino.stat().st_mtime > ultimo:
         return destino
-    df = leer(ruta)
+    partes = []
+    for a in archivos:
+        try:
+            partes.append(leer(a))
+        except Exception as e:
+            log.warning("Combustibles: no se pudo leer %s: %s", a.name, e)
+    if not partes:
+        return None
+    df = pl.concat(partes, how="diagonal_relaxed")
+    # si dos archivos traen el mismo mes de la misma estación, queda el último
+    df = df.unique(["est", "prod", "mes_id"], keep="last")
     est = df.group_by("est").agg(pl.col("lat").drop_nulls().last(), pl.col("lon").drop_nulls().last(),
                                  pl.col("prov_txt").drop_nulls().last(), pl.col("loc_txt").drop_nulls().last())
+    coord = _coordenadas_surtidor(cfg)
+    est = (est.join(coord, on="est", how="left")
+           .with_columns(pl.coalesce("lat", "lat_s").alias("lat"), pl.coalesce("lon", "lon_s").alias("lon"))
+           .drop("lat_s", "lon_s"))
+    log.info("Combustibles: %d de %d estaciones con coordenadas", est["lat"].drop_nulls().len(), est.height)
     est = asignar_departamentos(est, cfg)
     est = est.with_columns(pl.Series("region", [_region(p, la, lo, cfg) for p, la, lo in
                                                 est.select("prov_id", "lat", "lon").iter_rows()], dtype=pl.Utf8))

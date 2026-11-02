@@ -66,11 +66,31 @@ def _cadena_id(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def nombres_cadenas(cfg: Config) -> dict[str, str]:
+    """Nombre legible de cada cadena (id_comercio-id_bandera). Primero config/cadenas.csv (nombres
+    comerciales armados a partir de comercio.csv de SEPA); si una bandera no está, el nombre que
+    informa SEPA. Nunca se muestra el código: si no hay nombre, se dice que no lo informó."""
+    out = {}
     ruta = cfg.ruta("panel_diario").parent / "cadenas.csv"
-    if not ruta.exists():
-        return {}
-    df = pl.read_csv(ruta, schema_overrides={"id_comercio": pl.Utf8, "id_bandera": pl.Utf8, "cadena": pl.Utf8})
-    return {f"{a}-{b}": n.strip().title() if n.isupper() else n.strip() for a, b, n in df.iter_rows()}
+    if ruta.exists():
+        df = pl.read_csv(ruta, schema_overrides={"id_comercio": pl.Utf8, "id_bandera": pl.Utf8, "cadena": pl.Utf8})
+        out = {f"{a}-{b}": (n.strip().title() if n.isupper() else n.strip()) for a, b, n in
+               df.select("id_comercio", "id_bandera", "cadena").iter_rows() if n}
+    manual = cfg.dir_config / "cadenas.csv"
+    if manual.exists():
+        df = pl.read_csv(manual, infer_schema=False)
+        out.update({f"{a}-{b}": n.strip() for a, b, n in df.select("id_comercio", "id_bandera", "cadena").iter_rows() if n})
+    # nombres repetidos (dos banderas con el mismo nombre): se aclara la bandera
+    vistos: dict[str, int] = {}
+    for n in out.values():
+        vistos[n] = vistos.get(n, 0) + 1
+    return {k: (f"{n} (bandera {k.split('-')[1]})" if vistos[n] > 1 else n) for k, n in out.items()}
+
+
+def nombre_cadena(nombres: dict[str, str], cid: str) -> str:
+    if cid in nombres:
+        return nombres[cid]
+    a, _, b = cid.partition("-")
+    return f"Cadena sin nombre en SEPA (comercio {a}, bandera {b})"
 
 
 def efectos_fijos(df: pl.DataFrame, a: list[str], b: list[str], y: str = "y", w: str = "w",
@@ -258,7 +278,7 @@ def niveles_cadenas(cfg: Config, semanas: list[str]) -> list[dict]:
             ef = ef.with_columns(pl.col("efecto") - pl.col("efecto").mean())
             for r in ef.sort("efecto").iter_rows(named=True):
                 filas.append({"semana": s, "region": reg, "cadena_id": r["cadena_id"],
-                              "cadena": nombres.get(r["cadena_id"], r["cadena_id"]),
+                              "cadena": nombre_cadena(nombres, r["cadena_id"]),
                               "nivel": math.exp(r["efecto"]) * 100, "n": r["n"]})
     _rankear(filas, "nivel")
     return filas
@@ -322,7 +342,7 @@ def inflacion_cadenas(cfg: Config, semanas: list[str]) -> list[dict]:
         for (cid,), g in cel.group_by(["cadena_id"]):
             if g["n"].sum() < 30:
                 continue
-            filas.append({"semana": s1, "cadena_id": cid, "cadena": nombres.get(cid, cid),
+            filas.append({"semana": s1, "cadena_id": cid, "cadena": nombre_cadena(nombres, cid),
                           "var": (math.exp((g["W"] * g["lr"]).sum() / g["W"].sum()) - 1) * 100,
                           "n": int(g["n"].sum())})
     return filas
@@ -436,7 +456,7 @@ def costo_cba(cfg: Config, semanas: list[str], niveles: list[dict]) -> dict:
                     else:
                         sin_dato.append(comp[k]["nombre"])
                 cob = cubierto / costo if costo else 0
-                filas.append({"semana": s, "region": reg, "cadena_id": cid, "cadena": nombres.get(cid, cid),
+                filas.append({"semana": s, "region": reg, "cadena_id": cid, "cadena": nombre_cadena(nombres, cid),
                               "costo": costo, "cobertura": cob, "componentes": len(obs),
                               "en_ranking": cob >= p["cobertura_min_cba"],
                               # qué se completó y cómo: precio mediano de la región × nivel de la cadena

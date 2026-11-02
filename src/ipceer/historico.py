@@ -165,24 +165,34 @@ PRIORIDAD_DIA = {3: 0, 1: 1, 5: 2, 2: 3, 4: 4, 6: 5, 7: 6}  # día ISO de la sem
 
 
 def construir(cfg: Config, desde: date | None = None, hasta: date | None = None,
-              max_dias: int | None = None) -> int:
+              max_dias: int | None = None, paralelo: int | None = None) -> int:
     """Baja y procesa días de la base de Zenodo que falten. Con `max_dias`, procesa a lo sumo
-    esa cantidad (un lote) y termina."""
+    esa cantidad (un lote) y termina. Procesa `paralelo` días a la vez (por defecto el valor de
+    `historico.paralelo` en config.yaml, o 4): mientras uno se procesa, los otros se bajan."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     dias = listar_dias()
     orden = sorted(dias, key=lambda d: (PRIORIDAD_DIA[d.isoweekday()], d))
+    pend = [d for d in orden
+            if not ((desde and d < desde) or (hasta and d > hasta))
+            and not (cfg.ruta("panel_diario") / f"{d.isoformat()}.parquet").exists()]
+    if max_dias is not None:
+        pend = pend[:max_dias]
+    n = paralelo or int((cfg.datos.get("historico") or {}).get("paralelo", 4))
     hechos = 0
     with tempfile.TemporaryDirectory(dir=cfg.ruta("panel_diario").parent) as tmp:
-        for dia in orden:
-            urls = dias[dia]
-            if max_dias is not None and hechos >= max_dias:
-                break
-            if (desde and dia < desde) or (hasta and dia > hasta):
-                continue
-            if (cfg.ruta("panel_diario") / f"{dia.isoformat()}.parquet").exists():
-                continue
+        def uno(dia: date) -> None:
+            sub = Path(tmp) / dia.isoformat()
+            sub.mkdir()
             try:
-                procesar_dia(dia, urls, cfg, Path(tmp))
-                hechos += 1
-            except Exception as e:  # un día malo no frena la serie
-                log.error("Zenodo %s: %s", dia, e)
+                procesar_dia(dia, dias[dia], cfg, sub)
+            finally:
+                shutil.rmtree(sub, ignore_errors=True)
+        with ThreadPoolExecutor(max_workers=max(1, n)) as ex:
+            futuros = {ex.submit(uno, d): d for d in pend}
+            for f in as_completed(futuros):
+                try:
+                    f.result()
+                    hechos += 1
+                except Exception as e:  # un día malo no frena la serie
+                    log.error("Zenodo %s: %s", futuros[f], e)
     return hechos

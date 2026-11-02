@@ -489,7 +489,7 @@ def cba_mensual(cfg: Config, regiones: tuple[str, ...] = ("GBA", NACIONAL)) -> p
             previos[reg] = (a * 12 + m, precios)
             filas.append({"mes": r.stem, "region": reg, "costo": sum(precios[k] * q[k] for k in q if k in precios),
                           "componentes": len(precios), "total_componentes": len(q), "var_comun": var, "dias": dias})
-    return pl.DataFrame(filas) if filas else pl.DataFrame()
+    return pl.DataFrame(filas, infer_schema_length=None) if filas else pl.DataFrame()
 
 
 # ---------------------------------------------------------------- todo junto
@@ -530,12 +530,13 @@ def guardar(ind: dict, cfg: Config) -> None:
     dir_res = cfg.ruta("resultados")
     for clave in ("rotacion", "cadenas", "regiones", "inflacion_cadenas", "dispersion"):
         if ind.get(clave):
-            pl.DataFrame(ind[clave]).write_csv(dir_res / f"{clave}_semanal.csv")
+            pl.DataFrame(ind[clave], infer_schema_length=None).write_csv(dir_res / f"{clave}_semanal.csv")
     if ind.get("cba", {}).get("cadenas"):
-        pl.DataFrame(ind["cba"]["cadenas"]).with_columns(
-            [pl.col(c).cast(pl.List(pl.Utf8)).list.join("; ") for c in ("completados", "sin_dato") if c in pl.DataFrame(ind["cba"]["cadenas"]).columns]
+        cad = pl.DataFrame(ind["cba"]["cadenas"], infer_schema_length=None)
+        cad.with_columns(
+            [pl.col(c).cast(pl.List(pl.Utf8)).list.join("; ") for c in ("completados", "sin_dato") if c in cad.columns]
         ).write_csv(dir_res / "cba_cadenas_semanal.csv")
-        pl.DataFrame(ind["cba"]["componentes"]).write_csv(dir_res / "cba_componentes_semanal.csv")
+        pl.DataFrame(ind["cba"]["componentes"], infer_schema_length=None).write_csv(dir_res / "cba_componentes_semanal.csv")
 
 
 __all__ = ["calcular", "guardar", "efectos_fijos", "id_semana"]

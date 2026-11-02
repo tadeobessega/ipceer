@@ -77,7 +77,7 @@ def calcular(cfg: Config) -> dict:
                           "w": w_cl.get((codigo, region), 0.0)})
     if not filas:
         return {}
-    el = pl.DataFrame(filas).with_columns(pl.col("codigo").str.slice(0, 2).alias("division"))
+    el = pl.DataFrame(filas, infer_schema_length=None).with_columns(pl.col("codigo").str.slice(0, 2).alias("division"))
 
     def _agr(df: pl.DataFrame, por: list[str]) -> pl.DataFrame:
         return (df.filter(pl.col("w") > 0).group_by(por)

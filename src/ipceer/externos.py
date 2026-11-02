@@ -53,7 +53,7 @@ def precio_mensual(t: pl.DataFrame) -> pl.DataFrame:
             if n_dias == total:
                 filas.append({"rubro": rubro, "codigo": codigo, "region": region, "concepto": concepto,
                               "mes": mes, "precio": suma / total})
-    return pl.DataFrame(filas) if filas else pl.DataFrame()
+    return pl.DataFrame(filas, infer_schema_length=None) if filas else pl.DataFrame()
 
 
 def indice_regulados(cfg: Config) -> pl.DataFrame | None:
@@ -88,7 +88,7 @@ def indice_regulados(cfg: Config) -> pl.DataFrame | None:
                           "tramo": tramo, "var_pct": var})
     if not filas:
         return None
-    df = pl.DataFrame(filas)
+    df = pl.DataFrame(filas, infer_schema_length=None)
     w_reg = ponderadores_region(cfg)
     pond = ponderadores_clase(cfg)
     w_cl = {(c, r): w for c, r, w in pond.select("codigo", "region", "ponderacion").iter_rows()}
@@ -101,7 +101,7 @@ def indice_regulados(cfg: Config) -> pl.DataFrame | None:
                             "indice": sum(i * x for i, x in zip(s["indice"], w)) / sum(w), "n_productos": int(s["n_productos"].sum()),
                             "tramo": int(s["tramo"][0]),
                             "var_pct": None if s["var_pct"].null_count() else (sum((1 + v / 100) * x for v, x in zip(s["var_pct"], w)) / sum(w) - 1) * 100})
-    df = pl.concat([df, pl.DataFrame(nac)]) if nac else df
+    df = pl.concat([df, pl.DataFrame(nac, infer_schema_length=None)]) if nac else df
     nombres = dict(pond.select("codigo", "nombre").unique("codigo").iter_rows())
     return df.sort("codigo", "region", "periodo").with_columns(
         pl.lit("clase").alias("nivel"), pl.col("codigo").replace_strict(nombres, default="").alias("nombre"),

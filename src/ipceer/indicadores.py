@@ -425,16 +425,23 @@ def costo_cba(cfg: Config, semanas: list[str], niveles: list[dict]) -> dict:
                 obs = dict(zip(g["componente"], g["pu"]))
                 lv = nivel.get((s, reg, cid), 1.0)
                 costo = cubierto = 0.0
+                completados, sin_dato = [], []
                 for k in q:
                     if k in obs:
                         costo += obs[k] * q[k]
                         cubierto += obs[k] * q[k]
                     elif k in ref_d:
                         costo += ref_d[k] * lv * q[k]
+                        completados.append(comp[k]["nombre"])
+                    else:
+                        sin_dato.append(comp[k]["nombre"])
                 cob = cubierto / costo if costo else 0
                 filas.append({"semana": s, "region": reg, "cadena_id": cid, "cadena": nombres.get(cid, cid),
                               "costo": costo, "cobertura": cob, "componentes": len(obs),
-                              "en_ranking": cob >= p["cobertura_min_cba"]})
+                              "en_ranking": cob >= p["cobertura_min_cba"],
+                              # qué se completó y cómo: precio mediano de la región × nivel de la cadena
+                              "completados": completados, "nivel_cadena": round(lv * 100, 2),
+                              "sin_dato": sin_dato})
             filas.append({"semana": s, "region": reg, "cadena_id": "MEDIANA", "cadena": "Mediana de las cadenas",
                           "costo": mediana, "cobertura": 1.0 if completa else None, "componentes": len(ref_d),
                           "en_ranking": False})
@@ -525,7 +532,9 @@ def guardar(ind: dict, cfg: Config) -> None:
         if ind.get(clave):
             pl.DataFrame(ind[clave]).write_csv(dir_res / f"{clave}_semanal.csv")
     if ind.get("cba", {}).get("cadenas"):
-        pl.DataFrame(ind["cba"]["cadenas"]).write_csv(dir_res / "cba_cadenas_semanal.csv")
+        pl.DataFrame(ind["cba"]["cadenas"]).with_columns(
+            [pl.col(c).cast(pl.List(pl.Utf8)).list.join("; ") for c in ("completados", "sin_dato") if c in pl.DataFrame(ind["cba"]["cadenas"]).columns]
+        ).write_csv(dir_res / "cba_cadenas_semanal.csv")
         pl.DataFrame(ind["cba"]["componentes"]).write_csv(dir_res / "cba_componentes_semanal.csv")
 
 

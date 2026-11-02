@@ -159,11 +159,23 @@ def procesar_dia(dia: date, urls: dict[str, str], cfg: Config, dir_tmp: Path) ->
     return destino
 
 
-def construir(cfg: Config, desde: date | None = None, hasta: date | None = None) -> int:
+# orden de descarga: primero un día por semana en todo el período (miércoles), después el resto;
+# así la comparación con el INDEC cubre todos los meses desde los primeros lotes y se va afinando
+PRIORIDAD_DIA = {3: 0, 1: 1, 5: 2, 2: 3, 4: 4, 6: 5, 7: 6}  # día ISO de la semana -> orden
+
+
+def construir(cfg: Config, desde: date | None = None, hasta: date | None = None,
+              max_dias: int | None = None) -> int:
+    """Baja y procesa días de la base de Zenodo que falten. Con `max_dias`, procesa a lo sumo
+    esa cantidad (un lote) y termina."""
     dias = listar_dias()
+    orden = sorted(dias, key=lambda d: (PRIORIDAD_DIA[d.isoweekday()], d))
     hechos = 0
     with tempfile.TemporaryDirectory(dir=cfg.ruta("panel_diario").parent) as tmp:
-        for dia, urls in dias.items():
+        for dia in orden:
+            urls = dias[dia]
+            if max_dias is not None and hechos >= max_dias:
+                break
             if (desde and dia < desde) or (hasta and dia > hasta):
                 continue
             if (cfg.ruta("panel_diario") / f"{dia.isoformat()}.parquet").exists():

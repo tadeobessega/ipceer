@@ -240,3 +240,15 @@ def test_combustibles(cfg):
     # departamentos asignados por coordenadas y geometría para el mapa
     assert len(datos["departamentos"]) == 15 and len(datos["geo"]["departamentos"]) == 15
     assert datos["sin_departamento_pct"] == 0
+
+
+def test_regulados_no_completa_meses(tmp_path):
+    """Un mes sin tarifa registrada corta la serie: no hay variación inventada."""
+    from ipceer import externos
+    cfg = cargar_config(Path(__file__).resolve().parents[1])
+    idx = externos.indice_regulados(cfg)
+    nac = idx.filter(pl.col("region") == "Nacional").sort("periodo")
+    # agosto 2026 no está registrado: septiembre no tiene variación y empieza un tramo nuevo
+    sep = nac.filter(pl.col("periodo") == "2026-09").row(0, named=True)
+    assert sep["var_pct"] is None
+    assert "2026-08" not in nac["periodo"].to_list()

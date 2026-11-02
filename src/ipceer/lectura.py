@@ -102,7 +102,57 @@ def _iterar_comercios(ruta_zip: Path):
         yield from recorrer(zf, "")
 
 
-def procesar_comercio(archivos: dict[str, bytes], cfg: Config) -> pl.DataFrame | None:
+_MUNI_CACHE: dict = {}
+
+
+def _municipios(cfg: Config):
+    """(árbol de geometrías, ids, {id: región}) de los municipios configurados, o None."""
+    conf = cfg.datos.get("municipios") or []
+    if not conf:
+        return None
+    clave = tuple(m["id"] for m in conf)
+    if clave in _MUNI_CACHE:
+        return _MUNI_CACHE[clave]
+    import json
+    ruta = cfg.ruta("panel_diario").parent.parent / "combustibles" / "geo" / "departamentos.geojson"
+    if not ruta.exists():
+        return None
+    import shapely
+    from shapely.geometry import shape
+    feats = [f for f in json.loads(ruta.read_text(encoding="utf-8"))["features"] if f["properties"]["id"] in clave]
+    if not feats:
+        return None
+    res = (shapely.STRtree([shape(f["geometry"]) for f in feats]), [f["properties"]["id"] for f in feats],
+           {m["id"]: m.get("region", "GBA") for m in conf})
+    _MUNI_CACHE[clave] = res
+    return res
+
+
+def _sucursales_municipio(suc: pl.DataFrame, cfg: Config) -> pl.DataFrame | None:
+    """id_comercio, id_bandera, id_sucursal, municipio (id Georef) de las sucursales que caen
+    dentro de un municipio configurado (por coordenadas)."""
+    m = _municipios(cfg)
+    if m is None or "sucursales_latitud" not in suc.columns:
+        return None
+    import numpy as np
+    import shapely
+    arbol, ids, _ = m
+    lat = suc["sucursales_latitud"].cast(pl.Utf8).str.replace(",", ".").cast(pl.Float64, strict=False).to_numpy()
+    lon = suc["sucursales_longitud"].cast(pl.Utf8).str.replace(",", ".").cast(pl.Float64, strict=False).to_numpy()
+    ok = np.where(np.isfinite(lat) & np.isfinite(lon))[0]
+    if not len(ok):
+        return None
+    pi, gi = arbol.query(shapely.points(lon[ok], lat[ok]), predicate="within")
+    if not len(pi):
+        return None
+    filas = suc[ok[pi]].select("id_comercio", "id_bandera", "id_sucursal").with_columns(
+        pl.Series("municipio", [ids[g] for g in gi], dtype=pl.Utf8))
+    return filas
+
+
+def procesar_comercio(archivos: dict[str, bytes], cfg: Config, municipal: list | None = None) -> pl.DataFrame | None:
+    """Precios del día de un comercio por producto-cadena-región. Si se pasa `municipal`, le agrega
+    los mismos precios de las sucursales de cada municipio configurado (región = id del municipio)."""
     if "productos.csv" not in archivos or "sucursales.csv" not in archivos:
         return None
     prod = _leer_csv(archivos["productos.csv"], COLUMNAS_PRODUCTOS)
@@ -111,6 +161,7 @@ def procesar_comercio(archivos: dict[str, bytes], cfg: Config) -> pl.DataFrame |
     if prod.is_empty() or not req.issubset(prod.columns):
         return None
 
+    suc_muni = _sucursales_municipio(suc, cfg) if municipal is not None else None
     suc = asignar_regiones(suc, cfg).select("id_comercio", "id_bandera", "id_sucursal", "region")
     opcionales = {
         "productos_descripcion": "descripcion",
@@ -154,14 +205,20 @@ def procesar_comercio(archivos: dict[str, bytes], cfg: Config) -> pl.DataFrame |
         (pl.col("precio_lista") <= pl.col("_med") * f) & (pl.col("precio_lista") >= pl.col("_med") / f)
     )
 
-    return df.group_by(CLAVE).agg(
+    aggs = [
         pl.col("precio_lista").log().mean().exp().alias("precio_lista"),
         pl.col("precio_efectivo").log().mean().exp().alias("precio_efectivo"),
         pl.col("id_sucursal").n_unique().alias("n_sucursales"),
         pl.col("descripcion").first(),
         pl.col("marca").first(),
         pl.col("es_ean").first(),
-    )
+    ]
+    if suc_muni is not None and suc_muni.height:
+        mdf = (df.drop("region").join(suc_muni, on=["id_comercio", "id_bandera", "id_sucursal"], how="inner")
+               .rename({"municipio": "region"}))
+        if mdf.height:
+            municipal.append(mdf.group_by(CLAVE).agg(*aggs))
+    return df.group_by(CLAVE).agg(*aggs)
 
 
 def _nombres_cadenas(archivos: dict[str, bytes]) -> list[dict]:
@@ -194,17 +251,39 @@ def actualizar_cadenas(cfg: Config, filas: list[dict]) -> None:
     nuevo.sort("id_comercio", "id_bandera").write_csv(ruta)
 
 
-def procesar_zip_diario(ruta_zip: Path, fecha: date, cfg: Config) -> Path:
-    partes, nombres = [], []
+def dir_municipio(cfg: Config, muni_id: str) -> Path:
+    d = cfg.ruta("panel_diario").parent.parent / "municipios" / muni_id
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _guardar_municipal(municipal: list, fecha: date, cfg: Config) -> None:
+    if not municipal:
+        return
+    _, _, region = _municipios(cfg)
+    todo = pl.concat(municipal, how="vertical_relaxed").with_columns(pl.lit(fecha).alias("fecha"))
+    for (mid,), g in todo.group_by(["region"]):
+        d = dir_municipio(cfg, mid) / "panel" / "diario"
+        d.mkdir(parents=True, exist_ok=True)
+        # región del IPC del municipio, para usar sus ponderadores
+        g.with_columns(pl.lit(region.get(mid, "GBA")).alias("region")).write_parquet(
+            d / f"{fecha.isoformat()}.parquet", compression="zstd")
+
+
+def procesar_zip_diario(ruta_zip: Path, fecha: date, cfg: Config, solo_municipios: bool = False) -> Path:
+    partes, nombres, municipal = [], [], []
     for nombre, archivos in _iterar_comercios(ruta_zip):
         nombres += _nombres_cadenas(archivos)
         try:
-            df = procesar_comercio(archivos, cfg)
+            df = procesar_comercio(archivos, cfg, municipal)
         except Exception as e:  # un comercio mal formado no debe frenar el día
             log.warning("No se pudo procesar %s: %s", nombre, e)
             continue
         if df is not None:
             partes.append(df)
+    _guardar_municipal(municipal, fecha, cfg)
+    if solo_municipios:
+        return ruta_zip
     if not partes:
         raise ValueError(f"{ruta_zip}: no se encontraron precios válidos")
     panel = pl.concat(partes, how="vertical_relaxed").with_columns(pl.lit(fecha).alias("fecha"))

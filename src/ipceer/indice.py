@@ -85,6 +85,20 @@ def _cargar(ruta: Path, col_precio: str, mapa: dict[str, str | None]) -> pl.Data
     ).filter(pl.col("codigo").is_not_null())
 
 
+def _en_curso(periodo: str, frecuencia: str, ultimo_dia: date | None) -> bool:
+    """Un período es parcial si todavía no terminó: su último día es posterior al último día con
+    datos. Un mes o una semana del pasado con días sin archivo (ej. la base 2016-2018, que tiene
+    huecos o se baja de a un día por semana) no es parcial: se mide con los días que tiene."""
+    if ultimo_dia is None:
+        return False
+    if frecuencia == "mensual":
+        a, m = map(int, periodo.split("-"))
+        fin = date(a + (m == 12), 1 if m == 12 else m + 1, 1).toordinal() - 1
+    else:
+        fin = _inicio(periodo, frecuencia).toordinal() + 6
+    return fin > ultimo_dia.toordinal()
+
+
 def _info(ruta: Path) -> tuple[int, int]:
     d = pl.read_parquet(ruta, columns=["dias_con_datos", "dias_periodo"]).row(0)
     return int(d[0]), int(d[1])
@@ -126,6 +140,8 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
     if len(rutas) < 2:
         raise ValueError(f"Se necesitan al menos dos períodos ({frecuencia}) consolidados")
     periodos = [r.stem for r in rutas]
+    dias = sorted(cfg.ruta("panel_diario").glob("*.parquet"))
+    ultimo_dia = date.fromisoformat(dias[-1].stem) if dias else None
 
     clases = set()
     for r in rutas:
@@ -152,7 +168,7 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
         if tramo[per] != tramo[per_prev]:  # comienza un tramo nuevo: no se compara con el anterior
             filas.append(grilla.with_columns(
                 pl.lit(per).alias("periodo"), pl.lit(0.0).alias("logrel"), pl.lit("inicio_tramo").alias("origen"),
-                pl.lit(0, dtype=pl.UInt32).alias("n_reg"), pl.lit(info_a[0] < info_a[1]).alias("parcial"),
+                pl.lit(0, dtype=pl.UInt32).alias("n_reg"), pl.lit(_en_curso(per, frecuencia, ultimo_dia)).alias("parcial"),
             ).select("periodo", "codigo", "region", "logrel", "origen", "n_reg", "parcial"))
             previo, info_p = actual, info_a
             continue
@@ -169,7 +185,7 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
                 .otherwise(pl.lit("sin_datos")).alias("origen"),
                 pl.col("n_reg").fill_null(0).cast(pl.UInt32),
                 pl.lit(per).alias("periodo"),
-                pl.lit(info_a[0] < info_a[1]).alias("parcial"),
+                pl.lit(_en_curso(per, frecuencia, ultimo_dia)).alias("parcial"),
             )
         )
         filas.append(r.select("periodo", "codigo", "region", "logrel", "origen", "n_reg", "parcial"))
@@ -178,7 +194,7 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
     info0 = _info(rutas[0])
     base0 = grilla.with_columns(
         pl.lit(periodos[0]).alias("periodo"), pl.lit(0.0).alias("logrel"), pl.lit("base").alias("origen"),
-        pl.lit(0, dtype=pl.UInt32).alias("n_reg"), pl.lit(info0[0] < info0[1]).alias("parcial"),
+        pl.lit(0, dtype=pl.UInt32).alias("n_reg"), pl.lit(_en_curso(periodos[0], frecuencia, ultimo_dia)).alias("parcial"),
     ).select("periodo", "codigo", "region", "logrel", "origen", "n_reg", "parcial")
     elem = (
         pl.concat([base0, *filas])

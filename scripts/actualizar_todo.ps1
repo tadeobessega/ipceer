@@ -81,6 +81,7 @@ Paso "Combustibles (Energía y Georef)" { Ipceer combustibles }
 Paso "SEPA: descarga" { Ipceer descargar }
 Paso "SEPA: procesamiento" { Ipceer procesar }
 Paso "Nombres de las cadenas" { Ipceer cadenas }
+Paso "Municipios (Morón)" { Ipceer municipios }
 if ($historico) {
   Paso "Consolidación de semanas y meses" { Ipceer consolidar }
 } else {

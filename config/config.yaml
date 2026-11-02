@@ -62,6 +62,13 @@ indicadores:
   # Una cadena entra en el ranking de la CBA si tiene precio propio para esta parte del costo.
   cobertura_min_cba: 0.6
 
+# Municipios con índice propio: las sucursales se asignan por polígono (Georef) y el índice usa los
+# ponderadores de la región del IPC indicada. id = código Georef del partido.
+municipios:
+  - id: "06568"
+    nombre: Morón
+    region: GBA
+
 hilo:
   # Enlace que va en el último tuit del hilo.
   url: https://claude.ai/artifact/C3tPXgBGkjWig3PiRWFDs9

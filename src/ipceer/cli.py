@@ -23,7 +23,7 @@ from pathlib import Path
 
 import polars as pl
 
-from . import combustibles, descarga, hilo, historico, indec, indicadores, indice, lectura, panel, resumen, sitio, validacion
+from . import combustibles, diario, externos, descarga, hilo, municipios, historico, indec, indicadores, indice, lectura, panel, resumen, sitio, validacion
 from .clasificador import SIN_CLASIFICAR
 from .config import cargar_config
 
@@ -76,9 +76,17 @@ def cmd_calcular(cfg, args):
         comb_datos, comb_idx = combustibles.construir(cfg)
     except Exception as e:
         log.warning("Combustibles: %s", e)
+    reg_idx = None
+    try:
+        reg_idx = externos.indice_regulados(cfg)
+    except Exception as e:
+        log.warning("Regulados: %s", e)
     if "mensual" in res:
         try:
             mens_val = res["mensual"]["indices"]
+            if reg_idx is not None:
+                mens_val = pl.concat([mens_val, reg_idx.select([c for c in reg_idx.columns if c in mens_val.columns])],
+                                     how="diagonal_relaxed")
             if comb_idx is not None:
                 mens_val = pl.concat([mens_val, comb_idx.select([c for c in comb_idx.columns if c in mens_val.columns])],
                                      how="diagonal_relaxed")
@@ -108,6 +116,19 @@ def cmd_calcular(cfg, args):
         except Exception as e:
             log.warning("IPCEER con combustibles: %s", e)
         datos["combustibles"] = resumen._limpio(comb_datos)
+    try:
+        datos["regulados"] = resumen._limpio(externos.datos_regulados(cfg))
+        datos["externos"] = resumen._limpio(externos.externos(cfg))
+    except Exception as e:
+        log.warning("Regulados y consultoras: %s", e)
+    try:
+        datos["municipios"] = resumen._limpio(municipios.calcular(cfg))
+    except Exception as e:
+        log.warning("Municipios: %s", e)
+    try:
+        datos["diario"] = resumen._limpio(diario.calcular(cfg))
+    except Exception as e:
+        log.warning("Índice diario: %s", e)
     try:
         if sem_ind is not None and "tramo" in sem_ind.columns:
             sem_ind = sem_ind.filter(pl.col("tramo") == sem_ind["tramo"].max())
@@ -195,8 +216,11 @@ def cmd_indec(cfg, args):
 def cmd_historico(cfg, args):
     from datetime import date
     n = historico.construir(cfg, date.fromisoformat(args.desde) if args.desde else None,
-                            date.fromisoformat(args.hasta) if args.hasta else None)
-    log.info("Zenodo: %d días nuevos", n)
+                            date.fromisoformat(args.hasta) if args.hasta else None, args.lote)
+    faltan = sum(1 for d in historico.listar_dias() if not (cfg.ruta("panel_diario") / f"{d.isoformat()}.parquet").exists())
+    log.info("Zenodo: %d días nuevos; faltan %d", n, faltan)
+    (cfg.ruta("resultados") / "historico_estado.json").write_text(
+        json.dumps({"procesados_en_este_lote": n, "faltan": faltan}), encoding="utf-8")
 
 
 def cmd_reporte(cfg, args):
@@ -240,12 +264,15 @@ def main(argv=None):
         fn=lambda cfg, args: combustibles.actualizar(cfg))
     sub.add_parser("cadenas", help="nombres de las cadenas desde los últimos zips").set_defaults(fn=cmd_cadenas)
     sub.add_parser("estado", help="resumen de datos y resultados").set_defaults(fn=cmd_estado)
+    sub.add_parser("municipios", help="paneles e índices por municipio").set_defaults(
+        fn=lambda cfg, args: log.info("Municipios: %d días reprocesados", municipios.reprocesar(cfg)))
     i = sub.add_parser("indec")
     i.add_argument("--forzar", action="store_true")
     i.set_defaults(fn=cmd_indec)
     h = sub.add_parser("historico", help="base 2016-2018 de Precios Claros en Zenodo")
     h.add_argument("--desde")
     h.add_argument("--hasta")
+    h.add_argument("--lote", type=int, help="procesa a lo sumo esta cantidad de días y termina")
     h.set_defaults(fn=cmd_historico)
     r = sub.add_parser("reporte-clasificacion")
     r.add_argument("-n", type=int, default=500)

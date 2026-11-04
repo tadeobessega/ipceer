@@ -1,0 +1,84 @@
+name: Respaldo diario de SEPA
+# Guarda en el release "sepa-archivo" los zips diarios de SEPA, para que no se pierda ningún día
+# aunque la PC esté apagada (el portal solo guarda los últimos 7 días). La PC baja de ahí lo
+# que le falte. También avisa (abre un issue) si el respaldo falla o si la PC dejó de actualizar.
+on:
+  schedule:
+    - cron: "17 11 * * *"   # 08:17 en Argentina
+    - cron: "17 23 * * *"   # 20:17
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/workflows/respaldo_sepa.yml", "scripts/respaldo_sepa.py"]
+permissions:
+  contents: write
+  issues: write
+concurrency: respaldo-sepa
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: sepa-archivo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Release del archivo
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Archivo de SEPA" \
+            --notes "Copias diarias de los zips de SEPA (precios de supermercados). Las completa este flujo y las usa la PC que calcula el IPCEER."
+          gh release view "$TAG" --json assets -q '.assets[].name' > respaldados.txt
+          wc -l respaldados.txt
+      - name: Bajar los días nuevos
+        id: bajar
+        run: |
+          set +e
+          python scripts/respaldo_sepa.py respaldados.txt archivo/ | tee salida.txt
+          echo "codigo=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+      - name: Subir al release
+        run: |
+          shopt -s nullglob
+          for f in archivo/sepa_*.zip; do gh release upload "$TAG" "$f" --clobber; done
+      - name: Borrar copias de más de 60 días
+        run: |
+          limite=$(date -d '60 days ago' +%F)
+          gh release view "$TAG" --json assets -q '.assets[].name' | grep -E '^sepa_[0-9-]+\.zip$' | while read n; do
+            f=${n#sepa_}; f=${f%.zip}
+            if [[ "$f" < "$limite" ]]; then gh release delete-asset "$TAG" "$n" -y; fi
+          done
+      - name: Controlar la PC
+        id: pc
+        run: |
+          # la PC sube estado_pc.json al release al terminar cada corrida
+          if gh release download "$TAG" -p estado_pc.json -O estado_pc.json 2>/dev/null; then
+            ult=$(python -c "import json;print(json.load(open('estado_pc.json'))['ultimo_dia'])")
+            corrida=$(python -c "import json;print(json.load(open('estado_pc.json'))['corrida'])")
+            dias=$(( ( $(date +%s) - $(date -d "$ult" +%s) ) / 86400 ))
+            echo "La PC tiene datos hasta $ult (última corrida $corrida, hace $dias días)"
+            echo "atraso=$dias" >> "$GITHUB_OUTPUT"; echo "ultimo=$ult" >> "$GITHUB_OUTPUT"
+          else
+            echo "La PC todavía no informó su estado"; echo "atraso=-1" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Avisar si algo no anda
+        if: always()
+        run: |
+          titulo=""; cuerpo=""
+          if [ "${{ steps.bajar.outputs.codigo }}" = "2" ] || [ "${{ steps.bajar.outcome }}" = "failure" ]; then
+            titulo="Respaldo de SEPA: no se pudo bajar el día de ayer"
+            cuerpo="El flujo no pudo bajar el zip de ayer ni del portal ni de la Wayback Machine. Si la PC tampoco lo baja en los próximos 6 días, ese día se pierde. Ver la corrida: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          fi
+          if [ "${{ steps.pc.outputs.atraso }}" -ge 2 ] 2>/dev/null; then
+            titulo="IPCEER: la PC no actualiza desde el ${{ steps.pc.outputs.ultimo }}"
+            cuerpo="La base de la PC tiene datos hasta el ${{ steps.pc.outputs.ultimo }} (${{ steps.pc.outputs.atraso }} días de atraso). Revisá que la PC esté prendida y la tarea 'IPCEER diario'. El portal guarda 7 días; lo que este flujo respalde se recupera solo en la próxima corrida."
+          fi
+          if [ -n "$titulo" ]; then
+            abierto=$(gh issue list --state open --search "\"$titulo\" in:title" --json number -q '.[0].number')
+            if [ -z "$abierto" ]; then gh issue create --title "$titulo" --body "$cuerpo"; else gh issue comment "$abierto" --body "$cuerpo"; fi
+          else
+            # todo bien: cierra los avisos abiertos
+            for n in $(gh issue list --state open --search "in:title IPCEER: la PC no actualiza" --json number -q '.[].number'); do gh issue close "$n" -c "Resuelto: la PC volvió a actualizar."; done
+          fi

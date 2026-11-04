@@ -598,10 +598,6 @@ function renderKpis(){
     k.push(`<div class="kpi"><span>${ultC.parcial?'Semana en curso':'Última semana completa'} · ${semLbl(ultC)}</span><b>${pct(ultC.var,2)}</b><small>Mensualizada: <span class="mono">${pct(ultC.var_mensualizada)}</span></small></div>`);
     k.push(`<div class="kpi"><span>Promedio últimas 4 semanas</span><b class="ac">${pct(ultC.prom4_mensualizada)}</b><small>${ultC.prom4==null?'<span style="font-family:var(--font)">Hacen falta 4 semanas con datos</span>':'mensualizado · semanal <span class="mono">'+pct(ultC.prom4,2)+'</span>'}</small></div>`);
   }
-  const sal=(s.saltos||[]).slice(-1)[0];
-  if(sal){
-    k.push(`<div class="kpi"><span>Acumulado desde ${diaLbl(sal.desde[0])}–${diaLbl(sal.desde[1])} ${sal.desde[0].slice(0,4)}</span><b>${pct(sal.var,1)}</b><small>Promedio mensual: <span class="mono">${pct(sal.var_mensual,1)}</span> en ${num(sal.meses,1)} meses</small><small style="font-family:var(--font);margin-top:6px">Punto de partida: copia de SEPA guardada en la Wayback Machine.</small></div>`);
-  }
   if(p){
     k.push(`<div class="kpi"><span>${mesLargo(p.mes)} · relevado</span><b>${pct(p.relevado)}</b><small><span class="mono">${p.semanas_observadas}</span> de <span class="mono">${p.semanas_mes}</span> semanas con datos</small></div>`);
     k.push(`<div class="kpi"><span>${mesLargo(p.mes)} · proyección</span><b class="am">${pct(p.proyeccion)}</b><small>Piso por arrastre: <span class="mono">${pct(p.arrastre)}</span></small></div>`);

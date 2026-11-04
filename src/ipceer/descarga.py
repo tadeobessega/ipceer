@@ -4,8 +4,9 @@ El dataset `sepa-precios` mantiene un recurso por día de la semana (sepa_lunes.
 que se pisa cada semana. O sea: el portal solo guarda los últimos 7 días.
 Cada día que no se descarga se pierde, por eso este paso tiene que correr todos los días.
 
-Nota: el portal responde 403 a los servidores de GitHub Actions; hay que correr esto
-desde una máquina en Argentina (servidor propio o runner self-hosted).
+Nota: el portal respondió 403 a los servidores de GitHub Actions. La descarga principal corre
+en la PC; el flujo de respaldo de GitHub lo intenta igual (y si no puede, prueba la Wayback
+Machine) y guarda lo que consigue en un release, de donde la PC completa los días que falten.
 """
 
 from __future__ import annotations
@@ -35,9 +36,13 @@ class Recurso:
     nombre: str
 
 
+UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/130.0 Safari/537.36"}
+
+
 def listar_recursos(cfg: Config) -> list[Recurso]:
     d = cfg["descarga"]
-    r = requests.get(d["ckan_api"], params={"id": d["dataset"]}, timeout=d["timeout_segundos"])
+    r = requests.get(d["ckan_api"], params={"id": d["dataset"]}, timeout=d["timeout_segundos"], headers=UA)
     r.raise_for_status()
     recursos = []
     for res in r.json()["result"]["resources"]:
@@ -53,7 +58,7 @@ def _bajar(url: str, destino: Path, timeout: int, reintentos: int) -> None:
     tmp = destino.with_suffix(".parcial")
     for intento in range(1, reintentos + 1):
         try:
-            with requests.get(url, stream=True, timeout=timeout) as r:
+            with requests.get(url, stream=True, timeout=timeout, headers=UA) as r:
                 r.raise_for_status()
                 with open(tmp, "wb") as f:
                     for bloque in r.iter_content(chunk_size=1 << 20):
@@ -205,4 +210,53 @@ def descargar_wayback(cfg: Config) -> list[Path]:
             if nuevo_registro:
                 f.write("timestamp,url,fecha,estado\n")
             f.write(f"{ts},{orig},{fecha or ''},{estado}\n")
+    return nuevos
+
+
+# --- Respaldo en GitHub (release "sepa-archivo" del repo) -------------------------------
+
+def _repo_respaldo(cfg: Config) -> tuple[str, str] | None:
+    r = (cfg.datos.get("descarga") or {}).get("respaldo_github") or {}
+    return (r["repo"], r.get("tag", "sepa-archivo")) if r.get("repo") else None
+
+
+def desde_github(cfg: Config) -> list[Path]:
+    """Trae del respaldo en GitHub los zips de SEPA que falten en la carpeta local.
+
+    El respaldo lo llena un flujo de GitHub Actions todos los días; sirve para los días en que
+    la PC estuvo apagada más de lo que el portal guarda (7 días)."""
+    rr = _repo_respaldo(cfg)
+    if rr is None:
+        return []
+    repo, tag = rr
+    d = cfg["descarga"]
+    try:
+        r = requests.get(f"https://api.github.com/repos/{repo}/releases/tags/{tag}", timeout=d["timeout_segundos"],
+                         headers={"Accept": "application/vnd.github+json"})
+        if r.status_code == 404:
+            return []
+        r.raise_for_status()
+    except requests.RequestException as e:
+        log.warning("Respaldo en GitHub no disponible: %s", e)
+        return []
+    dir_crudos = cfg.ruta("crudos")
+    nuevos = []
+    for a in r.json().get("assets", []):
+        nombre = a.get("name", "")
+        if not re.fullmatch(r"sepa_\d{4}-\d{2}-\d{2}\.zip", nombre):
+            continue
+        destino = dir_crudos / nombre
+        if destino.exists():
+            continue
+        log.info("Respaldo en GitHub: bajando %s (%.0f MB)", nombre, a.get("size", 0) / 1e6)
+        try:
+            _bajar(a["browser_download_url"], destino, d["timeout_segundos"] * 5, d["reintentos"])
+        except Exception as e:
+            log.warning("Respaldo en GitHub: no se pudo bajar %s: %s", nombre, e)
+            continue
+        if not zipfile.is_zipfile(destino):
+            destino.rename(destino.with_suffix(".invalido"))
+            continue
+        _registrar(dir_crudos, Recurso(fecha_de_zip(destino), a["browser_download_url"], "github"), destino)
+        nuevos.append(destino)
     return nuevos

@@ -16,6 +16,11 @@ descarga:
   timeout_segundos: 60
   reintentos: 3
   # El portal solo publica los últimos días: los zips se guardan siempre.
+  # Respaldo diario en GitHub (lo llena .github/workflows/respaldo_sepa.yml); la PC baja de
+  # ahí los días que le falten.
+  respaldo_github:
+    repo: tadeobessega/ipceer
+    tag: sepa-archivo
 
 regiones:
   # Una sucursal de la provincia de Buenos Aires se asigna a GBA si está a menos de

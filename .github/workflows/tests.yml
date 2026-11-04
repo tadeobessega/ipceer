@@ -1,6 +1,6 @@
 name: tests
-# Solo corre los tests con datos sintéticos. La descarga de SEPA no puede correr en
-# GitHub Actions (el portal responde 403 a sus servidores): se hace en una PC local.
+# Solo corre los tests con datos sintéticos. La descarga de SEPA corre en la PC; el respaldo
+# diario está en respaldo_sepa.yml.
 on:
   push:
   pull_request:

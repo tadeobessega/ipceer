@@ -35,7 +35,17 @@ def cmd_descargar(cfg, args):
         descarga.descargar_wayback(cfg)
     except Exception as e:  # la Wayback Machine es un extra: si falla, sigue el día normal
         log.warning("Wayback Machine no disponible: %s", e)
-    pend = descarga.descargar_pendientes(cfg)
+    try:
+        pend = descarga.descargar_pendientes(cfg)
+    except Exception as e:  # si el portal no responde, igual se completa desde el respaldo
+        log.error("Portal de SEPA: %s", e)
+    try:
+        n = descarga.desde_github(cfg)
+        if n:
+            log.info("Respaldo en GitHub: %d días recuperados", len(n))
+    except Exception as e:
+        log.warning("Respaldo en GitHub: %s", e)
+    pend = descarga.zips_sin_procesar(cfg)
     log.info("Zips archivados pendientes de procesar: %d", len(pend))
 
 

@@ -49,7 +49,11 @@ function Ipceer { & $Python -m ipceer.cli @args 2>&1 | AlLog }
 
 Log "Inicio. Repo: $Repo. Archivo SEPA: $Archivo"
 
-# 1. código nuevo
+# 1. código nuevo: primero desde GitHub (tadeobessega/ipceer); si no, desde un paquete .bundle
+$conGit = [bool](Get-Command git -ErrorAction SilentlyContinue)
+if ($conGit -and ((git remote get-url origin 2>$null) -match "tadeobessega/ipceer")) {
+  Paso "Código nuevo (GitHub)" { git pull --ff-only origin main 2>&1 | AlLog }
+}
 $bundle = Get-ChildItem -Path $Repo -Filter "ipceer-*.bundle" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
 if ($bundle -and (Get-Command git -ErrorAction SilentlyContinue)) {
   Paso "Código nuevo ($($bundle.Name))" { git pull --ff-only $bundle.FullName main 2>&1 | AlLog; if ($LASTEXITCODE -eq 0) { Remove-Item $bundle.FullName } }
@@ -98,6 +102,9 @@ if (-not $historico) {
     Log "Base histórica 2016-2018: relanzada (tarda varias horas; dejá la PC prendida y sin suspender)."
   } catch { Log "No se pudo relanzar la base histórica: $_" }
 }
+
+# 11. estado para el control: archivo local, aviso en Windows y copia en GitHub (si gh está conectado)
+Paso "Estado de la base" { & powershell -NoProfile -ExecutionPolicy Bypass -File "$Repo\scripts\control.ps1" -Subir -Pasos ($Pasos | ConvertTo-Json -Compress) 2>&1 | AlLog }
 
 Log "Fin. Resumen de pasos:"
 $Pasos.GetEnumerator() | ForEach-Object { Log ("   {0,-45} {1}" -f $_.Key, $_.Value) }

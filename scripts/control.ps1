@@ -37,7 +37,7 @@ if ($msg) {
 
 # copia del estado en GitHub
 if ($Subir -and (Get-Command gh -ErrorAction SilentlyContinue)) {
-  gh auth status 2>$null | Out-Null
+  cmd /c "gh auth status >nul 2>&1"
   if ($LASTEXITCODE -eq 0) {
     Copy-Item $destino "$env:TEMP\estado_pc.json" -Force
     gh release upload sepa-archivo "$env:TEMP\estado_pc.json" --clobber -R tadeobessega/ipceer 2>&1 | Write-Output

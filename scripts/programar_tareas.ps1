@@ -62,13 +62,14 @@ Register-ScheduledTask -TaskName "IPCEER control" -Action $ctl -Trigger @((New-S
 try { powercfg /SETACVALUEINDEX SCHEME_CURRENT SUB_SLEEP RTCWAKE 1; powercfg /SETDCVALUEINDEX SCHEME_CURRENT SUB_SLEEP RTCWAKE 1; powercfg /SETACTIVE SCHEME_CURRENT } catch {}
 
 Write-Host "4/4  Aviso por correo si la PC deja de actualizar (GitHub CLI)"
+$ErrorActionPreference = "Continue"  # gh escribe en stderr cuando no está conectado: no es un error
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
   $r = Read-Host "GitHub CLI no está instalado. ¿Lo instalo con winget? (s/n)"
   if ($r -eq "s") { winget install --id GitHub.cli -e --accept-source-agreements --accept-package-agreements
     $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User") }
 }
 if (Get-Command gh -ErrorAction SilentlyContinue) {
-  gh auth status 2>$null | Out-Null
+  cmd /c "gh auth status >nul 2>&1"
   if ($LASTEXITCODE -ne 0) { Write-Host "Se abre el navegador para conectar GitHub (cuenta tadeobessega)."; gh auth login --web -h github.com -p https }
 }
 

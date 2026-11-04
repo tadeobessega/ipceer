@@ -1386,7 +1386,7 @@ function renderGeo(){
   const sems=gst.niv==='region'?semR:(G.semanas||[]);
   if(!gst.init){ gst.init=true;
     document.querySelectorAll('#seg-gniv button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#seg-gniv button').forEach(x=>x.setAttribute('aria-pressed',x===b)); gst.niv=b.dataset.v; gst.sem=null; renderGeo(); });
-    document.getElementById('g-met').onchange=e=>{gst.met=e.target.value; renderGeo();};
+    document.getElementById('g-met').onchange=e=>{gst.met=e.target.value; gst.metUser=true; renderGeo();};
     document.getElementById('g-sem').onchange=e=>{gst.sem=e.target.value; renderGeo();}; }
   const ss=document.getElementById('g-sem'); ss.innerHTML=[...sems].reverse().map(s=>`<option value="${s}">${semCorta(s)}</option>`).join('');
   if(!gst.sem||!sems.includes(gst.sem)){ const comp=[...sems].reverse().find(s=>{ if(gst.niv==='region'){ const w=(((D.series.Nacional||{}).TOTAL||{}).semanal||[]).find(x=>x.semana===s); return w&&!w.parcial; } return true; }); gst.sem=comp||sems[sems.length-1]; }
@@ -1424,6 +1424,7 @@ function renderGeo(){
   const li=u=>`<li>${esc(u.nom)}${u.prov&&u.prov!==u.nom?' <span style="color:var(--muted)">('+esc(u.prov)+')</span>':''} <span class="mono">${fmt(u.v)}</span></li>`;
   document.getElementById('g-top').innerHTML=lista.slice(0,8).map(li).join('');
   document.getElementById('g-bot').innerHTML=lista.length>8?lista.slice(-8).reverse().map(li).join(''):'';
+  if(!lista.length&&gst.met==='prom4m'&&!gst.metUser){ gst.met='var'; document.getElementById('g-met').value='var'; return renderGeo(); } // sin 4 semanas seguidas todavía
   const nombre={region:'regiones',provincia:'provincias',depto:'municipios'}[gst.niv];
   document.getElementById('g-resp').innerHTML=lista.length?`Semana del ${semCorta(gst.sem)}: ${lista.length} ${nombre} con dato. Más alto: <b>${esc(lista[0].nom)}</b> (<span class="mono">${fmt(lista[0].v)}</span>); más bajo: <b>${esc(lista[lista.length-1].nom)}</b> (<span class="mono">${fmt(lista[lista.length-1].v)}</span>).`:'Sin datos para esta semana.';
   document.getElementById('g-tit').textContent={region:'Por región',provincia:'Por provincia',depto:'Por municipio (departamento o partido)'}[gst.niv];

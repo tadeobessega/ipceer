@@ -23,7 +23,7 @@ from pathlib import Path
 
 import polars as pl
 
-from . import combustibles, diario, externos, descarga, hilo, municipios, historico, indec, indicadores, indice, lectura, panel, resumen, sitio, validacion
+from . import combustibles, diario, externos, geo, descarga, hilo, municipios, historico, indec, indicadores, indice, lectura, panel, resumen, sitio, validacion
 from .clasificador import SIN_CLASIFICAR
 from .config import cargar_config
 
@@ -125,6 +125,15 @@ def cmd_calcular(cfg, args):
         datos["municipios"] = resumen._limpio(municipios.calcular(cfg))
     except Exception as e:
         log.warning("Municipios: %s", e)
+    try:
+        geo.actualizar(cfg)
+        g = geo.datos(cfg)
+        if g:
+            if "combustibles" not in datos:
+                g["geometria"] = combustibles.geometria_simple(cfg)
+            datos["geo"] = resumen._limpio(g)
+    except Exception as e:
+        log.warning("Mapa por provincia y departamento: %s", e)
     try:
         datos["diario"] = resumen._limpio(diario.calcular(cfg))
     except Exception as e:

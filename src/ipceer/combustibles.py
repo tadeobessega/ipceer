@@ -66,7 +66,7 @@ REGION_PROVINCIA = {
 ALIAS = {
     "anio": ["anio", "ano", "year"],
     "mes": ["mes", "month"],
-    "periodo": ["indice_tiempo", "periodo", "fecha"],
+    "periodo": ["indice_tiempo", "periodo", "fecha"],  # el primero que exista
     "provincia": ["provincia"],
     "localidad": ["localidad"],
     "direccion": ["direccion"],
@@ -395,8 +395,9 @@ def leer(ruta: Path) -> pl.DataFrame:
         if k not in df.columns:
             df = df.with_columns(pl.lit(None, dtype=pl.Utf8).alias(k))
     if df["anio"].null_count() == df.height:
-        f = df["periodo"].str.slice(0, 10).str.to_date(strict=False)
-        df = df.with_columns(f.dt.year().cast(pl.Utf8).alias("anio"), f.dt.month().cast(pl.Utf8).alias("mes"))
+        # "2024/12", "2024-12", "2024-12-31 00:00:00" o "2024-12-01"
+        am = df["periodo"].str.extract_groups(r"^\s*(\d{4})[/-](\d{1,2})")
+        df = df.with_columns(am.struct.field("1").alias("anio"), am.struct.field("2").alias("mes"))
     df = df.with_columns(
         _numero("precio").alias("precio"), _numero("volumen").alias("volumen"),
         _numero("lat").alias("lat"), _numero("lon").alias("lon"),
@@ -428,7 +429,8 @@ def leer(ruta: Path) -> pl.DataFrame:
 def procesar(cfg: Config) -> Path | None:
     """CSV -> panel mensual por estación con departamento, provincia y región del IPC."""
     d = directorio(cfg)
-    archivos = sorted((d / "volumenes").glob("*.csv")) or ([d / "precios-y-volumenes.csv"] if (d / "precios-y-volumenes.csv").exists() else [])
+    preferidos = ("d6ecf302", "3cbdd364")  # "a partir de 2018" y "desde diciembre 2024"
+    archivos = sorted((d / "volumenes").glob("*.csv"), key=lambda a: (a.stem.startswith(preferidos), a.stem)) or ([d / "precios-y-volumenes.csv"] if (d / "precios-y-volumenes.csv").exists() else [])
     if not archivos:
         return None
     destino = d / "panel.parquet"

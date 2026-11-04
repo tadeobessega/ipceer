@@ -17,7 +17,7 @@ import polars as pl
 from . import indice, panel
 from .config import Config
 from .descarga import fecha_de_zip
-from .lectura import dir_municipio, procesar_zip_diario
+from .lectura import dir_geo, dir_municipio, procesar_zip_diario
 from .resumen import proyeccion_mes, serie_semanal
 
 log = logging.getLogger(__name__)
@@ -36,17 +36,22 @@ def config_municipio(cfg: Config, muni: dict) -> Config:
 def reprocesar(cfg: Config) -> int:
     """Arma los paneles diarios de los municipios con los zips archivados que todavía no los tienen."""
     munis = cfg.datos.get("municipios") or []
-    if not munis:
+    geo = bool((cfg.datos.get("geo") or {}).get("activo", True))
+    if not munis and not geo:
         return 0
+    from . import geo as geo_mod
+    hechas = geo_mod.semanas_hechas(cfg)
     n = 0
     for z in sorted(cfg.ruta("crudos").glob("sepa_*.zip")):
         f = fecha_de_zip(z)
         if f is None:
             continue
-        if all((dir_municipio(cfg, m["id"]) / "panel" / "diario" / f"{f.isoformat()}.parquet").exists() for m in munis):
+        falta_geo = geo and not (dir_geo(cfg) / "diario" / f"{f.isoformat()}.parquet").exists() \
+            and geo_mod.semana_de(f) not in hechas
+        if not falta_geo and all((dir_municipio(cfg, m["id"]) / "panel" / "diario" / f"{f.isoformat()}.parquet").exists() for m in munis):
             continue
         try:
-            procesar_zip_diario(z, f, cfg, solo_municipios=True)
+            procesar_zip_diario(z, f, cfg, solo_municipios=True, geo=falta_geo)
             n += 1
         except Exception as e:
             log.warning("Municipios %s: %s", z.name, e)

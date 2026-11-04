@@ -66,6 +66,13 @@ indicadores:
 historico:
   paralelo: 4
 
+# Mapa por provincia y por departamento o partido (sucursales ubicadas con Georef).
+geo:
+  activo: true
+  min_productos: 5         # productos comparables por clase y lugar para medir su variación
+  cobertura_min: 0.2       # parte de la canasta de la región que tiene que estar medida
+  min_productos_nivel: 30  # productos para estimar el nivel de precios de un lugar
+
 # Municipios con índice propio: las sucursales se asignan por polígono (Georef) y el índice usa los
 # ponderadores de la región del IPC indicada. id = código Georef del partido.
 municipios:

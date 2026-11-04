@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IPCEER · Índice de precios de bienes</title>
+<title>IPCEER · Índice de precios del CEER</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cascadia+Code:wght@400;600;700&display=swap">
@@ -37,7 +37,17 @@ a{color:var(--accent)}
 .logo svg,.blogo svg,.glogo svg{display:block}
 .blogo{display:inline-block;width:119px;height:28px}
 .brand>span:last-child{font-family:var(--mono);font-weight:700;font-size:31px;line-height:24px;height:24px;letter-spacing:-.01em;color:var(--ambar);border-left:1px solid var(--line2);padding-left:12px;display:inline-block}
-.tabs{display:flex;flex:1;min-width:0;overflow-x:auto;align-items:stretch}
+.tabs{display:flex;flex:1;min-width:0;overflow-x:auto;align-items:stretch;scrollbar-width:none;scroll-behavior:smooth}
+.tabs::-webkit-scrollbar{display:none}
+.tabflecha{flex:0 0 28px;align-self:center;height:32px;border:1px solid var(--line2);background:var(--panel);color:var(--accent);font:700 18px var(--mono);cursor:pointer;padding:0;line-height:1}
+.tabflecha:hover{border-color:var(--accent)}
+.tabflecha[hidden]{display:none}
+.hsel{font:500 12.5px var(--font);color:var(--muted);display:flex;gap:8px;align-items:center}
+details.plegable>summary{list-style:none;cursor:pointer}
+details.plegable>summary::-webkit-details-marker{display:none}
+details.plegable>summary h3::after{content:"+";font-family:var(--mono);color:var(--accent)}
+details.plegable[open]>summary h3::after{content:"−"}
+details.plegable:not([open])>summary h3{margin-bottom:0;padding-bottom:0;border-bottom:0}
 .tabs button{font:400 14px var(--font);background:transparent;color:var(--muted);border:0;border-bottom:2px solid transparent;padding:0 12px;cursor:pointer;white-space:nowrap}
 .tabs button:hover{color:var(--fg)}
 .tabs button[aria-selected="true"]{color:var(--fg);font-weight:600;border-bottom-color:var(--accent)}
@@ -60,7 +70,7 @@ h1{font-size:44px;line-height:52px;letter-spacing:-.02em;margin:.25em 0 .3em;fon
 h1 em{font-style:normal;color:var(--accent)}
 .lead{color:var(--fg2);font-size:18px;line-height:28px;margin:0;text-align:justify;hyphens:manual}
 .note{font-size:12.5px;color:var(--muted);margin-top:12px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:26px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-top:26px}
 .kpi{background:var(--panel);border-top:3px solid var(--fg);padding:24px;min-height:250px;display:flex;flex-direction:column}
 .kpi>span{display:block;font-size:15px;color:var(--muted);line-height:1.35}
 .kpi b{display:block;font-family:var(--mono);font-size:72px;line-height:76px;font-weight:600;letter-spacing:-.03em;margin:18px 0 8px;color:var(--fg)}
@@ -77,13 +87,18 @@ h2{font-size:26px;line-height:32px;letter-spacing:-.02em;margin:0 0 6px;font-wei
 h2 .tag{display:block;font-family:var(--font);font-size:13px;font-weight:500;color:var(--muted);letter-spacing:0;margin-bottom:2px}
 .sub{color:var(--fg2);margin:0 0 18px;text-align:justify;hyphens:manual}
 .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
-.card{background:var(--panel);border:1px solid var(--line);padding:16px 18px;min-width:0;position:relative;display:flex;flex-direction:column}
+.card{background:var(--panel);border:1px solid var(--line);padding:24px;min-width:0;position:relative;display:flex;flex-direction:column}
 .card>.src{margin-top:auto;padding-top:10px}
 .card>.tablewrap{flex:0 1 auto}
 .s12{grid-column:span 12}.s8{grid-column:span 8}.s7{grid-column:span 7}.s6{grid-column:span 6}.s5{grid-column:span 5}.s4{grid-column:span 4}
 .card h3{font-size:15px;margin:0 0 8px;font-weight:700;padding-bottom:8px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center}
 .btnpng{margin-left:auto;font:600 11px var(--mono);background:transparent;color:var(--accent);border:1px solid var(--line2);padding:3px 8px;cursor:pointer;flex:0 0 auto}
 .btnpng:hover{border-color:var(--accent);background:var(--accentbg)}
+details.info{display:inline-block;position:relative;margin-left:8px;vertical-align:1px}
+details.info summary,.ibtn-demo{list-style:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border:1px solid var(--accent);color:var(--accent);font:700 11px var(--mono);border-radius:50%}
+details.info summary::-webkit-details-marker{display:none}
+details.info[open] summary{background:var(--accent);color:#fff}
+details.info .pop{position:absolute;z-index:20;left:0;top:24px;width:320px;max-width:70vw;background:var(--panel);border:1px solid var(--line2);padding:10px 12px;font-size:12.5px;line-height:1.45;color:var(--fg2);white-space:normal;font-family:var(--font);font-weight:400}
 td.compl{font-size:12px;color:var(--fg2);min-width:280px;white-space:normal}
 .muted{color:var(--muted)}
 .card .cap{font-size:12.5px;color:var(--muted);margin:0 0 10px}
@@ -190,22 +205,22 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
 <header class="top">
   <div class="topin">
     <div class="brand"><span class="logo" style="color:#2840a5;--cursor:#d6810c" role="img" aria-label="CEER"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 469 110" width="100%" height="100%"><path fill="currentColor" d="M60.5 110Q31.6 110 15.8 95.8Q0 81.5 0 54.8Q0 28.8 14.4 14.4Q28.8 0 55.5 0Q71.9 0 83.7 6.4Q95.4 12.8 100.3 24.5L80.7 40.1Q76.3 33.2 69.5 29.4Q62.8 25.7 54.7 25.7Q42 25.7 34.9 33Q27.7 40.3 27.7 53.8Q27.7 68.7 36.9 76.5Q46 84.3 62.9 84.3Q70.1 84.3 77.2 83.6Q84.4 82.9 91.2 81.7L94 107Q85.9 108.8 77.3 109.4Q68.7 110 60.5 110ZM156.5 110Q129 110 114 95.8Q99 81.5 99 54.8Q99 28.8 111.8 14.4Q124.5 0 147.7 0Q170.4 0 182.8 13.3Q195.2 26.6 195.2 52Q195.2 59.2 194.6 65.7H116.8V46.9H168.6Q168.6 36.2 163.1 30.5Q157.7 24.8 147.9 24.8Q137.3 24.8 131.4 32.3Q125.6 39.9 125.6 53.8Q125.6 68.8 134.2 76.6Q142.9 84.4 158.9 84.4Q166.1 84.4 173.1 83.7Q180.1 82.9 187.4 81.6L190 107.2Q179.8 109 171.4 109.5Q163 110 156.5 110ZM255.5 110Q228 110 213 95.8Q198 81.5 198 54.8Q198 28.8 210.8 14.4Q223.5 0 246.7 0Q269.4 0 281.8 13.3Q294.2 26.6 294.2 52Q294.2 59.2 293.6 65.7H215.8V46.9H267.6Q267.6 36.2 262.1 30.5Q256.7 24.8 246.9 24.8Q236.3 24.8 230.4 32.3Q224.6 39.9 224.6 53.8Q224.6 68.8 233.2 76.6Q241.9 84.4 257.9 84.4Q265.1 84.4 272.1 83.7Q279.1 82.9 286.4 81.6L289 107.2Q278.8 109 270.4 109.5Q262 110 255.5 110ZM345.8 62.4 339.6 25.9H348.7Q350.3 0 375.8 0Q390.9 0 399 11.1Q407 22.2 407 43.1H380Q380 33.7 376.6 29.6Q373.1 25.5 365.5 25.5Q355.6 25.5 350.7 35.1Q345.8 44.7 345.8 62.4ZM296.4 108V84.8H370.6V108ZM318.8 108V2H341.8L345.8 32.4V108ZM300.4 25.2V2H340.4L342.4 25.2Z"/><rect fill="var(--cursor,#f7ac4d)" x="417" y="87" width="52" height="21"/></svg></span><span>IPCEER</span></div>
-    <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button class="tabflecha izq" type="button" aria-label="Ver pestañas anteriores" hidden>‹</button><nav class="tabs" role="tablist" aria-label="Secciones">
       <button role="tab" data-tab="res" aria-selected="true">Resumen</button>
       <button role="tab" data-tab="sem" aria-selected="false">Semanal</button>
       <button role="tab" data-tab="men" aria-selected="false">Mensual</button>
       <button role="tab" data-tab="rub" aria-selected="false">Rubros</button>
       <button role="tab" data-tab="reg" aria-selected="false">Regiones</button>
+      <button role="tab" data-tab="mapa" aria-selected="false">Mapa</button>
       <button role="tab" data-tab="comb" aria-selected="false">Combustibles</button>
       <button role="tab" data-tab="rot" aria-selected="false">Rotación</button>
       <button role="tab" data-tab="cad" aria-selected="false">Cadenas</button>
-      <button role="tab" data-tab="dia" aria-selected="false">Diario</button>
       <button role="tab" data-tab="ext" aria-selected="false">Consultoras</button>
       <button role="tab" data-tab="mun" aria-selected="false">Morón</button>
       <button role="tab" data-tab="val" aria-selected="false">Validación</button>
       <button role="tab" data-tab="hilo" aria-selected="false">Hilo</button>
       <button role="tab" data-tab="met" aria-selected="false">Metodología</button>
-    </nav>
+    </nav><button class="tabflecha der" type="button" aria-label="Ver más pestañas" hidden>›</button>
   </div>
   <div class="subbar"><div class="subin">
     <label>Región <select id="f-reg"></select></label>
@@ -222,7 +237,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
     <div class="hero">
       <div>
         <div class="eyebrow">Precios de supermercados de todo el país (SEPA) <span id="fecha-hero"></span></div>
-        <h1>Inflación de bienes, <em>semana a semana</em></h1>
+        <h1>Inflación semanal de bienes</h1>
                 <p class="lead">Medimos todos los días los precios que los grandes supermercados informan a la Secretaría de Comercio (base SEPA, más de 70.000 productos) y los agregamos con la canasta del IPC del INDEC. Es un indicador de alta frecuencia de los bienes que se venden en góndola, no un IPC completo: no incluye servicios, tarifas ni alquileres.</p>
         <p class="note" id="hero-note"></p>
       </div>
@@ -230,7 +245,15 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
     </div>
 
     <section>
-      <h2><span class="tag">Alta frecuencia</span>Inflación semanal</h2>
+      <h2>Precios de bienes día a día</h2>
+      <p class="sub" id="dia-sub"></p>
+      <div class="grid">
+        <div class="card s12"><h3><span id="dia-t1">Índice diario</span><label class="f hsel">Rubro <select id="d-rub"></select></label></h3><p class="cap" id="dia-cap"></p><div class="chart tall"><canvas id="c-dia"></canvas></div><div class="src">Fuente: CEER en base a SEPA. Cada día se compara con el día base, con los mismos productos de la misma cadena y región.</div></div>
+        <details class="card s12 plegable"><summary><h3>Desde cada evento, los precios se movieron así</h3></summary><p class="cap">Variación entre el último día con datos antes del evento y siete días después, y hasta el último dato. Los eventos se cargan con su fuente en <span class="mono">config/eventos.csv</span>.</p><div class="tablewrap"><table id="t-ev"></table></div></details>
+      </div>
+    </section>
+    <section>
+      <h2>Inflación semanal</h2>
       <p class="sub">Cada barra compara el precio promedio de una semana (lunes a domingo) con el de la semana anterior. La línea es el promedio de las últimas 4 semanas, que suaviza los saltos de comienzo de mes. En la vista mensualizada, cada variación se lleva a un mes de 30,4 días por interés compuesto.</p>
       <div class="grid">
         <div class="card s12">
@@ -244,7 +267,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
     </section>
 
     <section>
-      <h2><span class="tag">Meses</span>Inflación mensual y proyección del mes en curso</h2>
+      <h2>Inflación mensual y proyección del mes en curso</h2>
       <p class="sub">Los meses cerrados comparan el precio promedio de todo el mes con el del mes anterior, como hace el INDEC. Para el mes en curso mostramos lo relevado hasta hoy y dos escenarios para las semanas que faltan: <b>arrastre</b> (los precios no se mueven más) y <b>proyección</b> (siguen subiendo al ritmo promedio de las últimas 4 semanas).</p>
       <div class="grid">
         <div class="card s8">
@@ -264,7 +287,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
   <!-- SEMANAL -->
   <div data-panel="sem" hidden>
     <section>
-      <h2><span class="tag">Detalle</span>Serie semanal</h2>
+      <h2>Serie semanal</h2>
       <p class="sub">Variación de cada semana contra la anterior, mensualizada, y promedio móvil de 4 semanas (media geométrica de los 4 relativos). La cantidad de productos es la de pares producto-cadena-región comparados.</p>
       <div class="card"><div class="tablewrap"><table id="t-semanal"></table></div></div>
     </section>
@@ -273,7 +296,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
   <!-- MENSUAL -->
   <div data-panel="men" hidden>
     <section>
-      <h2><span class="tag">Detalle</span>Serie mensual</h2>
+      <h2>Serie mensual</h2>
       <p class="sub">Índice con base en el primer mes con datos = 100. La variación interanual aparece cuando haya 12 meses de historia.</p>
       <div class="grid">
         <div class="card s7"><h3>Nivel del índice</h3><div class="chart"><canvas id="c-niv"></canvas></div><div class="src">Base: primer mes relevado = 100.</div></div>
@@ -285,7 +308,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
   <!-- RUBROS -->
   <div data-panel="rub" hidden>
     <section>
-      <h2><span class="tag">Aperturas</span>Rubros</h2>
+      <h2>Rubros</h2>
       <p class="sub" id="rub-sub"></p>
       <div class="card"><div class="tablewrap"><table id="t-rubros"></table></div>
       <div class="src">El peso es el ponderador del rubro en la canasta total de la región (INDEC, base dic-2016). Si en una región hay pocos productos comparables, el rubro toma la variación nacional.</div></div>
@@ -295,7 +318,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
   <!-- REGIONES -->
   <div data-panel="reg" hidden>
     <section>
-      <h2><span class="tag">Aperturas</span>Regiones</h2>
+      <h2>Regiones</h2>
       <p class="sub">Las seis regiones del IPC del INDEC. El índice nacional las pondera por su participación en el gasto de consumo de los hogares y por el peso de la canasta que cubre el relevamiento en cada una.</p>
       <div class="grid">
         <div class="card s6"><h3>Promedio 4 semanas, mensualizado</h3><div class="chart short"><canvas id="c-reg"></canvas></div></div>
@@ -306,10 +329,33 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
     </section>
   </div>
 
+  <!-- MAPA -->
+  <div data-panel="mapa" hidden>
+    <section>
+      <h2>Inflación y precios por región, provincia y municipio</h2>
+      <p class="sub" id="g-sub"></p>
+      <div class="grid">
+        <div class="card s12" id="g-card">
+          <h3><span id="g-tit">Mapa</span><span class="seg" id="seg-gniv"><button data-v="region" aria-pressed="true">Regiones</button><button data-v="provincia" aria-pressed="false">Provincias</button><button data-v="depto" aria-pressed="false">Municipios</button></span></h3>
+          <div class="mapctl">
+            <label class="f">Mostrar <select id="g-met"><option value="prom4m">Inflación: promedio 4 semanas, mensualizado</option><option value="var">Inflación de la semana</option><option value="nivel">Nivel de precios (100 = promedio del país)</option></select></label>
+            <label class="f">Semana <select id="g-sem"></select></label>
+          </div>
+          <div class="mapgrid">
+            <div class="mapa"><svg id="g-mapa" role="img" aria-label="Mapa de la Argentina"></svg><div class="mtip" id="g-tip" hidden></div><div class="mleg" id="g-leg"></div></div>
+            <div class="mside"><div class="respuesta" id="g-resp"></div><h4>Más arriba</h4><ol id="g-top"></ol><h4>Más abajo</h4><ol id="g-bot"></ol></div>
+          </div>
+          <div class="src">Fuente: CEER en base a SEPA y Georef (IGN). Sucursales ubicadas por sus coordenadas. Inflación con los mismos productos de la misma cadena en el mismo lugar y los ponderadores de su región del IPC; nivel con el mismo producto de la misma cadena en distintos lugares.</div>
+        </div>
+        <div class="card s12"><h3 id="g-ttab">Detalle</h3><div class="tablewrap" style="max-height:520px;overflow-y:auto"><table id="t-geo"></table></div></div>
+      </div>
+    </section>
+  </div>
+
   <!-- COMBUSTIBLES -->
   <div data-panel="comb" hidden>
     <section>
-      <h2><span class="tag">Energía</span>Combustibles</h2>
+      <h2>Combustibles</h2>
       <p class="sub" id="comb-sub">Precios en surtidor de naftas, gasoil y GNC que las estaciones de servicio informan todos los meses a la Secretaría de Energía, con su volumen vendido y su ubicación. Se suman al IPCEER como el rubro “Combustibles y lubricantes para vehículos” del IPC, con su ponderador del INDEC, y permiten ver diferencias de precios y de variaciones por provincia y por departamento o partido.</p>
       <div class="kpis" id="comb-kpis" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))"></div>
       <div class="grid" style="margin-top:16px">
@@ -346,7 +392,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
   <!-- ROTACIÓN -->
   <div data-panel="rot" hidden>
     <section>
-      <h2><span class="tag">Cómo se mueven los precios</span>Rotación de precios</h2>
+      <h2>Rotación de precios</h2>
       <p class="sub" id="rot-sub">Cuántos precios cambian de una semana a la otra, cuántos suben y cuántos bajan, y de cuánto son los cambios. La inflación de la semana es, aproximadamente, la parte de precios que sube por el tamaño de las subas menos la parte que baja por el tamaño de las bajas: el mismo número puede salir de pocos aumentos grandes o de muchos aumentos chicos, y eso dice cosas distintas sobre la dinámica de precios.</p>
       <div class="kpis" id="rot-kpis" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))"></div>
       <div class="grid" style="margin-top:16px">
@@ -361,11 +407,11 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
   <!-- CADENAS -->
   <div data-panel="cad" hidden>
     <section>
-      <h2><span class="tag">Supermercados</span>Cadenas</h2>
+      <h2>Cadenas</h2>
       <p class="sub" id="cad-sub">Qué tan caras son las cadenas entre sí. Usamos dos medidas: el costo de la canasta básica alimentaria (CBA) del INDEC en cada cadena, y un nivel de precios que compara exactamente los mismos productos (mismo código de barras) en la misma región. La región se elige arriba; la CBA es la de un adulto equivalente de Gran Buenos Aires.</p>
       <div class="grid">
         <div class="card s12"><h3 id="cad-t1">La canasta básica en cada cadena</h3><p class="cap" id="cad-c1"></p><div class="chart tall" id="cad-ch1"><canvas id="c-cad1"></canvas></div><div class="src">Fuente: CEER en base a SEPA e INDEC (composición de la CBA de Gran Buenos Aires).</div></div>
-        <div class="card s12"><h3>Ranking de la semana</h3><p class="cap">Cuando una cadena no vende un componente de la CBA, se completa con el precio mediano de ese componente entre las cadenas de la región, multiplicado por el nivel de precios general de la cadena (100 = promedio). La última columna dice, para cada cadena, qué componentes se completaron así. La cobertura es la parte del costo con precios propios.</p><div class="tablewrap"><table id="t-cad"></table></div></div>
+        <div class="card s12"><h3>Ranking de la semana</h3><p class="cap">Si una cadena no vende un componente de la CBA, se completa con el precio mediano de la región por el nivel de precios de la cadena. El botón <span class="ibtn-demo">i</span> junto a cada cadena dice qué se completó. La cobertura es la parte del costo con precios propios.</p><div class="tablewrap"><table id="t-cad"></table></div></div>
         <div class="card s6"><h3>Nivel de precios con los mismos productos</h3><p class="cap">100 = promedio de las cadenas. Compara cada producto (código de barras) entre cadenas de la misma región.</p><div class="chart" id="cad-ch2"><canvas id="c-cad2"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
         <div class="card s6"><h3>¿Se acercan o se alejan?</h3><p class="cap">Brecha: cuánto más cara es la cadena más cara que la más barata. Desvío: desvío estándar de los niveles de las cadenas. Semana a semana, en %.</p><div class="chart"><canvas id="c-cad3"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
         <div class="card s6"><h3>Inflación semanal por cadena</h3><p class="cap">Última semana, todo el país, con la misma canasta y ponderación que el IPCEER.</p><div class="chart" id="cad-ch4"><canvas id="c-cad4"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
@@ -374,23 +420,10 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
     </section>
   </div>
 
-  <!-- DIARIO -->
-  <div data-panel="dia" hidden>
-    <section>
-      <h2><span class="tag">Alta frecuencia</span>Precios día a día y eventos</h2>
-      <p class="sub" id="dia-sub"></p>
-      <div class="mapctl"><label class="f">Rubros <select id="d-rub"></select></label></div>
-      <div class="grid" style="margin-top:12px">
-        <div class="card s12"><h3 id="dia-t1">Índice diario</h3><p class="cap" id="dia-cap"></p><div class="chart tall"><canvas id="c-dia"></canvas></div><div class="src">Fuente: CEER en base a SEPA. Cada día se compara con el día base usando solo los mismos productos de la misma cadena y región en los dos días.</div></div>
-        <div class="card s12"><h3>Desde cada evento, los precios se movieron así</h3><p class="cap">Variación entre el último día con datos antes del evento y (a) siete días después, (b) el último día con datos. Los eventos se cargan en <span class="mono">config/eventos.csv</span> con su fuente; no agregamos ninguno sin una fuente.</p><div class="tablewrap"><table id="t-ev"></table></div></div>
-      </div>
-    </section>
-  </div>
-
   <!-- CONSULTORAS Y REGULADOS -->
   <div data-panel="ext" hidden>
     <section>
-      <h2><span class="tag">Comparación</span>Consultoras y otras mediciones</h2>
+      <h2>Consultoras y otras mediciones</h2>
       <p class="sub">Lo que publican otras mediciones de alta frecuencia, puesto al lado de nuestro dato equivalente: mismo rubro, misma semana o mes, misma medida (semanal, promedio de 4 semanas o mes). Las consultoras relevan canastas, fuentes y métodos distintos, así que importa más la dirección que el decimal. Cada dato externo lleva su enlace; se cargan en <span class="mono">config/externos.csv</span>.</p>
       <div class="grid">
         <div class="card s12"><h3>Ellos y nosotros</h3><div class="legend"><span><i style="background:var(--ambar)"></i>Medición externa</span><span><i style="background:var(--accent)"></i>IPCEER equivalente</span></div><div class="chart"><canvas id="c-ext"></canvas></div><div class="src">Fuente: CEER en base a SEPA y a lo publicado por cada consultora (enlaces en la tabla).</div></div>
@@ -398,7 +431,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       </div>
     </section>
     <section>
-      <h2><span class="tag">Precios regulados</span>Tarifas y salarios fijados por norma</h2>
+      <h2>Tarifas y salarios fijados por norma</h2>
       <p class="sub">Precios que no están en SEPA y que fija una norma pública: se registran con su valor, vigencia, norma y fuente. Un mes entra solo si todos sus días tienen una tarifa vigente registrada; si falta un mes, la serie se corta ahí y no se completa. La variación se compara con el rubro equivalente del IPC del INDEC en la pestaña Validación.</p>
       <div class="grid">
         <div class="card s6"><h3>Variación mensual de los regulados</h3><div class="chart short"><canvas id="c-regu"></canvas></div><div class="src">Fuente: CEER en base a las normas citadas en la tabla.</div></div>
@@ -410,7 +443,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
   <!-- MUNICIPIOS -->
   <div data-panel="mun" hidden>
     <section>
-      <h2><span class="tag">Municipios</span><span id="mun-titulo">Morón</span></h2>
+      <h2><span id="mun-titulo">Morón</span></h2>
       <p class="sub" id="mun-sub"></p>
       <div class="grid" id="mun-grid">
         <div class="card s12"><h3>Inflación semanal: municipio y su región</h3><p class="cap">Promedio de 4 semanas, mensualizado.</p><div class="chart"><canvas id="c-mun1"></canvas></div><div class="src">Fuente: CEER en base a SEPA y Georef (IGN). Mismos ponderadores que la región del IPC.</div></div>
@@ -423,7 +456,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
   <!-- VALIDACIÓN -->
   <div data-panel="val" hidden>
     <section>
-      <h2><span class="tag">Contra el IPC del INDEC</span>¿La estamos pegando?</h2>
+      <h2>¿La estamos pegando?</h2>
       <p class="sub" id="val-sub">Comparamos el IPCEER con el IPC oficial del INDEC en el mismo mes, la misma región y el mismo rubro. Para el total usamos dos referencias: los <b>bienes</b> del INDEC (que incluyen ropa, combustibles, medicamentos y otros que acá no están) y una <b>réplica del INDEC con nuestra misma canasta</b>: los índices oficiales de los mismos rubros, ponderados igual. La réplica es la comparación justa: si difiere, es por la fuente de precios y no por la cobertura.</p>
       <div class="filters" style="display:flex;gap:14px;flex-wrap:wrap;margin:0 0 16px">
         <label class="f">Comparación <select id="v-par"></select></label>
@@ -451,12 +484,13 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
   <!-- HILO -->
   <div data-panel="hilo" hidden>
     <section>
-      <h2><span class="tag">Para publicar</span>Hilo de la semana</h2>
+      <h2>Hilo de la semana</h2>
       <p class="sub" id="hilo-sub"></p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px">
         <button class="btn" id="hilo-copiar">Copiar el hilo completo</button>
         <button class="btn" id="hilo-txt">Descargar texto</button>
-        <button class="btn" id="hilo-png">Descargar todas las imágenes</button>
+        <button class="btn" id="hilo-png">Descargar todas las imágenes (azul y blanca)</button>
+        <span class="seg" id="seg-tema" style="margin-left:auto"><button data-v="azul" aria-pressed="true">Fondo azul</button><button data-v="blanco" aria-pressed="false">Fondo blanco</button></span>
       </div>
       <div id="hilo-lista"></div>
     </section>
@@ -465,7 +499,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
   <!-- METODOLOGÍA -->
   <div data-panel="met" hidden>
     <section>
-      <h2><span class="tag">Cómo se calcula</span>Metodología</h2>
+      <h2>Metodología</h2>
       <div class="met">
         <nav class="toc" id="toc"></nav>
         <article id="metodo"></article>
@@ -541,6 +575,8 @@ const etiquetasFinales={id:'etiquetasFinales',afterDatasetsDraw(ch,a,opt){
   const c=ch.ctx; c.save(); c.font='600 12px '+css('--font'); c.textBaseline='middle';
   it.forEach(e=>{c.fillStyle=e.c; c.fillText(e.t,e.x+8,e.y);}); c.restore(); }};
 Chart.register(etiquetasFinales);
+// toda tarjeta con gráfico lleva fuente y logo
+document.querySelectorAll('.card').forEach(c=>{ if(c.querySelector('.chart')&&!c.querySelector(':scope > .src')) c.insertAdjacentHTML('beforeend','<div class="src">Fuente: CEER en base a SEPA'+(c.closest('[data-panel="val"]')?' e INDEC':'')+'.</div>'); });
 const GLOGO=document.querySelector('.logo svg').outerHTML;
 document.querySelectorAll('.card .src').forEach(e=>{ const t=document.createElement('span'); while(e.firstChild) t.appendChild(e.firstChild); e.appendChild(t); e.insertAdjacentHTML('beforeend','<span class="glogo" role="img" aria-label="CEER">'+GLOGO+'</span>'); });
 function baseOpts(extra={}){
@@ -746,6 +782,8 @@ prom. 4 mens.  = (1 + prom. 4 sem.)^(30,44 / 7) − 1</div>
     <p>Para ver cómo reaccionan los precios a un evento puntual se arma un índice por día y por rubro. Cada día se compara <b>directamente con el día base</b> (el primero de la ventana, hoy los últimos ${((D.indicadores||{}).parametros||{}).diario_dias||120} días sin cortes) con un Jevons sobre los mismos productos de la misma cadena y región en los dos días. No se encadena día a día porque los ruidos diarios se acumularían.</p>
     <p>Si un rubro no tiene productos comparables un día, ese día no tiene dato para ese rubro. Las clases sin datos quedan afuera y su peso se reparte entre las que tienen; el nacional existe solo si están las seis regiones ese día. No se completa ni se arrastra nada.</p>
     <p>Los eventos (devaluaciones, aumentos de tarifas o combustibles, medidas de precios) se cargan a mano en <span class="f">config/eventos.csv</span> con fecha, título, descripción y fuente. La reacción se mide entre el último día con datos antes del evento y siete días después, y hasta el último dato. Es una descripción, no una estimación causal: en esos días también pasan otras cosas.</p>`],
+  ['mapa','Mapa por región, provincia y municipio',`
+    <p>Cada sucursal se ubica en su departamento o partido con sus coordenadas y los polígonos de Georef. Por semana se calcula, para cada provincia y cada departamento: la <b>inflación</b> con los mismos productos de la misma cadena en el mismo lugar que la semana anterior, por clase del IPC y con los ponderadores de su región; y el <b>nivel de precios</b> con el mismo producto de la misma cadena en distintos lugares (100 = promedio del país). Un lugar sin productos comparables suficientes, o donde lo medido cubre menos del 20% de la canasta, queda en gris: no se completa.</p>`],
   ['externos','Consultoras, regulados y municipios',`
     <p><b>Consultoras.</b> Cada dato publicado (EcoGo, LCG y las que se sumen) se registra en <span class="f">config/externos.csv</span> con su enlace y se compara con nuestra medida equivalente: alimentos con la división 01, el total con nuestro total de bienes (que no incluye servicios), y la misma medida (semanal, promedio de 4 semanas o mensual). Las semanas de las consultoras no siempre coinciden con las semanas ISO; la nota de cada fila lo aclara.</p>
     <p><b>Regulados.</b> Precios que no están en SEPA y que fija una norma pública (por ahora, el salario del personal de casas particulares, que el IPC usa para “Servicio doméstico”). Se registran en <span class="f">config/regulados/tarifas.csv</span> con valor, vigencia, norma y fuente. El precio de un mes es el promedio de sus días; un mes entra solo si todos sus días tienen una tarifa registrada, y si falta un mes la serie se corta. Se comparan con el rubro equivalente del INDEC en Validación.</p>
@@ -913,6 +951,8 @@ function renderRot(){
 }
 
 function regCad(){ return st.reg; }
+function infoCompletado(f){ const c=f.completados||[], sd=f.sin_dato||[]; if(!c.length&&!sd.length) return '';
+  return `<details class="info"><summary aria-label="Qué se completó y cómo">i</summary><div class="pop"><b>Qué se completó y cómo</b><br>${completado(f)}</div></details>`; }
 function completado(f){
   const c=f.completados, sd=f.sin_dato||[];
   if(c==null) return '<span class="muted">sin detalle (recalcular)</span>';
@@ -939,8 +979,8 @@ function renderCad(){
   const niv=Object.fromEntries(N.map(n=>[n.cadena_id,n]));
   const infl=Object.fromEntries((I.inflacion_cadenas||[]).filter(c=>c.semana===s).map(c=>[c.cadena_id,c]));
   const flecha=v=>v==null?'–':v>0?`<span style="color:var(--cian)">▲ ${v}</span>`:v<0?`<span style="color:var(--neg)">▼ ${-v}</span>`:'=';
-  document.getElementById('t-cad').innerHTML=`<thead><tr><th class="n">Puesto</th><th class="n">Cambio</th><th>Cadena</th><th class="n">CBA</th><th class="n">Var. semanal</th><th class="n">Vs. mediana</th><th class="n">Nivel mismos productos</th><th class="n">Inflación semanal</th><th class="n">Cobertura CBA</th><th>Qué se completó y cómo</th></tr></thead><tbody>`+
-    fila.map(f=>`<tr><td class="n">${f.puesto??'–'}</td><td class="n">${flecha(f.cambio_puesto)}</td><td>${esc(f.cadena)}</td><td class="n">${pesos(f.costo)}</td><td class="n">${pct(f.var,2)}</td><td class="n">${med?pct((f.costo/med.costo-1)*100,1):'–'}</td><td class="n">${niv[f.cadena_id]?num(niv[f.cadena_id].nivel,1):'–'}</td><td class="n">${infl[f.cadena_id]?pct(infl[f.cadena_id].var,2):'–'}</td><td class="n">${pct(100*f.cobertura,0)}</td><td class="compl">${completado(f)}</td></tr>`).join('')+'</tbody>';
+  document.getElementById('t-cad').innerHTML=`<thead><tr><th class="n">Puesto</th><th class="n">Cambio</th><th>Cadena</th><th class="n">CBA</th><th class="n">Var. semanal</th><th class="n">Vs. mediana</th><th class="n">Nivel mismos productos</th><th class="n">Inflación semanal</th><th class="n">Cobertura CBA</th></tr></thead><tbody>`+
+    fila.map(f=>`<tr><td class="n">${f.puesto??'–'}</td><td class="n">${flecha(f.cambio_puesto)}</td><td>${esc(f.cadena)}${infoCompletado(f)}</td><td class="n">${pesos(f.costo)}</td><td class="n">${pct(f.var,2)}</td><td class="n">${med?pct((f.costo/med.costo-1)*100,1):'–'}</td><td class="n">${niv[f.cadena_id]?num(niv[f.cadena_id].nivel,1):'–'}</td><td class="n">${infl[f.cadena_id]?pct(infl[f.cadena_id].var,2):'–'}</td><td class="n">${pct(100*f.cobertura,0)}</td></tr>`).join('')+'</tbody>';
   const Ns=[...N].sort((a,b)=>a.nivel-b.nivel);
   document.getElementById('cad-ch2').style.minHeight=Math.max(220,Ns.length*28+60)+'px';
   if(Ns.length) draw('c-cad2',{type:'bar',data:{labels:Ns.map(n=>n.cadena),datasets:[{label:'Nivel',data:Ns.map(n=>n.nivel-100),backgroundColor:Ns.map(n=>n.nivel<100?css('--accent'):css('--neg'))}]},
@@ -986,31 +1026,40 @@ function renderNivReg(){
 const IMG={W:1600,H:900,M:72}, AZ='#2840a5', AZ2='#c0d0f9', AZ5='#3c59c0', AM='#f7ac4d', CI='#57d4d4';
 const FT=(w,px,f)=>`${w} ${px}px ${f==='m'?"'Cascadia Code','Cascadia Mono',monospace":"Inter,system-ui,sans-serif"}`;
 let _ruido=null;
+const TEMAS={azul:{bg:'#2840a5',claro:false,txt:'#ffffff',t2:'#c0d0f9',ser:'#c0d0f9',grid:'#3c59c0',zero:'#c0d0f9',am:'#f7ac4d',ci:'#57d4d4',logo:'#ffffff',cursor:'#f7ac4d'},
+  blanco:{bg:'#ffffff',claro:true,txt:'#171a24',t2:'#5d6069',ser:'#2840a5',grid:'#dfe1e5',zero:'#9c9ea5',am:'#d6810c',ci:'#138282',logo:'#2840a5',cursor:'#d6810c'}};
+let T=TEMAS.azul;
+/* flecha del promedio de 4 semanas: comparado con el de la semana anterior (el dato semanal no, por su estacionalidad) */
+function flecha4(h){ const S=(((D.series.Nacional||{}).TOTAL||{}).semanal||[]).filter(s=>s.semana<=h.semana&&s.prom4!=null);
+  if(S.length<2) return null; const a=S[S.length-1], b=S[S.length-2]; if(a.semana!==h.semana||Math.abs(a.prom4-b.prom4)<0.005) return a.semana===h.semana?{v:a.prom4,sube:null}:null; return {v:a.prom4,sube:a.prom4>b.prom4}; }
 function ruido(){ if(_ruido) return _ruido; const c=document.createElement('canvas'); c.width=c.height=320; const x=c.getContext('2d'); const im=x.createImageData(320,320);
   for(let i=0;i<im.data.length;i+=4){ const v=Math.random(); im.data[i]=im.data[i+1]=im.data[i+2]=255; im.data[i+3]=v>0.5?Math.round((v-0.5)*2*255):0; } x.putImageData(im,0,0); return _ruido=c; }
-function fondo(x,lado){ const {W,H}=IMG; x.fillStyle=AZ; x.fillRect(0,0,W,H);
+function fondo(x,lado){ const {W,H}=IMG; x.fillStyle=T.bg; x.fillRect(0,0,W,H); if(T.claro) return;
   const d=1120, top=-110, left= lado==='der' ? W-d*0.6 : lado==='izq' ? -d*0.62 : -d*0.8;
   const cx=left+d/2, cy=top+d/2, r=d/2, gx=left+d*0.64;
   const g=x.createRadialGradient(gx,cy,0,cx,cy,r); g.addColorStop(0,'#0b1438'); g.addColorStop(.45,'#132058'); g.addColorStop(.85,'#22378f'); g.addColorStop(1,'#25399a');
   x.save(); x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.fillStyle=g; x.fill(); x.restore();
   x.save(); x.globalAlpha=.10; x.fillStyle=x.createPattern(ruido(),'repeat'); x.fillRect(0,0,W,H); x.restore(); }
-function logoC(x,X,Y,w){ const sc=w/469; x.save(); x.translate(X,Y); x.scale(sc,sc); x.fillStyle='#fff'; x.fill(new Path2D(document.querySelector('.logo svg path').getAttribute('d'))); x.fillStyle=AM; x.fillRect(417,87,52,21); x.restore(); }
-function pieC(x,izq,der){ const {W,H,M}=IMG, y=H-54; x.textBaseline='alphabetic'; x.font=FT(400,24); x.fillStyle=AZ2; x.textAlign='left'; x.fillText(izq,M,y);
-  x.textAlign='right'; x.fillText(der,W-M,y); x.textAlign='center'; x.font=FT(700,24,'m'); x.fillStyle=CI; x.fillText('//',W/2,y); x.textAlign='left'; }
-function encabezado(x,titulo,unidad){ const {M}=IMG; logoC(x,M,M,190); x.textBaseline='alphabetic'; x.fillStyle='#fff'; x.font=FT(700,54,'m'); x.fillText(titulo,M,218); x.font=FT(400,28); x.fillStyle=AZ2; x.fillText(unidad,M,262); }
+function logoC(x,X,Y,w){ const sc=w/469; x.save(); x.translate(X,Y); x.scale(sc,sc); x.fillStyle=T.logo; x.fill(new Path2D(document.querySelector('.logo svg path').getAttribute('d'))); x.fillStyle=T.cursor; x.fillRect(417,87,52,21); x.restore(); }
+function pieC(x,izq,der){ const {W,H,M}=IMG, y=H-54; x.textBaseline='alphabetic'; x.font=FT(400,24); x.fillStyle=T.t2; x.textAlign='left'; x.fillText(izq,M,y);
+  x.textAlign='right'; x.fillText(der,W-M,y); x.textAlign='center'; x.font=FT(700,24,'m'); x.fillStyle=T.ci; x.fillText('//',W/2,y); x.textAlign='left'; }
+function encabezado(x,titulo,unidad){ const {M}=IMG; logoC(x,M,M,190); x.textBaseline='alphabetic'; x.fillStyle=T.txt; x.font=FT(700,54,'m'); x.fillText(titulo,M,218); x.font=FT(400,28); x.fillStyle=T.t2; x.fillText(unidad,M,262); }
 function envolver(x,t,maxw){ const ps=t.split(' '), ls=[]; let l=''; for(const p of ps){ const n=l?l+' '+p:p; if(x.measureText(n).width>maxw&&l){ls.push(l);l=p;} else l=n; } if(l) ls.push(l); return ls; }
 const cifra=(v,d=2)=>v==null?'s/d':nf(d).format(v).replace('-','−')+'%';
 
 function imgPortada(x,h){ const {W,H,M}=IMG; fondo(x,'der'); logoC(x,M,M,190);
-  x.textBaseline='alphabetic'; x.font=FT(400,34); x.fillStyle=CI; x.fillText('/',M,312); x.fillStyle=AZ2; x.fillText(' semana '+h.rango+' de '+h.semana.slice(0,4),M+12,312);
-  x.font=FT(700,76,'m'); x.fillStyle='#fff'; x.fillText('Inflación semanal',M,410); x.fillText('de bienes',M,494);
-  x.font=FT(600,210,'m'); x.fillStyle=AM; x.fillText(cifra(h.var,2),M-8,690);
-  x.font=FT(400,34); x.fillStyle='#fff';
+  x.textBaseline='alphabetic'; x.font=FT(400,34); x.fillStyle=T.ci; x.fillText('/',M,276); x.fillStyle=T.t2; x.fillText(' semana '+h.rango+' de '+h.semana.slice(0,4),M+12,276);
+  x.font=FT(700,76,'m'); x.fillStyle=T.txt; x.fillText('Inflación semanal',M,370); x.fillText('de bienes',M,454);
+  x.font=FT(600,210,'m'); x.fillStyle=T.am; x.fillText(cifra(h.var,2),M-8,646);
+  x.font=FT(400,34); x.fillStyle=T.txt;
   const p = h.proyeccion==null ? '' : h.proyeccion_previa!=null ? `Proyección de ${h.mes_nombre}: ${cifra(h.proyeccion,1)} (antes ${cifra(h.proyeccion_previa,1)})` : `Proyección de ${h.mes_nombre}: ${cifra(h.proyeccion,1)}`;
-  x.fillText(p,M,790); pieC(x,'IPCEER · índice de precios de bienes','Fuente: CEER en base a SEPA'); }
+  x.fillText(p,M,724);
+  const fl=flecha4(h); if(fl){ x.font=FT(400,34); x.fillStyle=T.txt; const t='Promedio 4 semanas: '+cifra(fl.v,2)+'  '; x.fillText(t,M,776); const w=x.measureText(t).width;
+    x.font=FT(700,34,'m'); x.fillStyle=T.ci; x.fillText(fl.sube==null?'=':fl.sube?'▲':'▼',M+w,776); }
+  pieC(x,'IPCEER · índice de precios de bienes','Fuente: CEER en base a SEPA'); }
 
 function ejesV(x,X0,Y0,X1,Y1,lo,hi,paso,fmt){ x.font=FT(400,22,'m'); x.textAlign='right'; x.textBaseline='middle';
-  for(let v=Math.ceil(lo/paso)*paso; v<=hi+1e-9; v+=paso){ const y=Y1-(v-lo)/(hi-lo)*(Y1-Y0); x.strokeStyle=Math.abs(v)<1e-9?AZ2:AZ5; x.lineWidth=Math.abs(v)<1e-9?2:1; x.beginPath(); x.moveTo(X0,y); x.lineTo(X1,y); x.stroke(); x.fillStyle=AZ2; x.fillText(fmt(v),X0-14,y); }
+  for(let v=Math.ceil(lo/paso)*paso; v<=hi+1e-9; v+=paso){ const y=Y1-(v-lo)/(hi-lo)*(Y1-Y0); x.strokeStyle=Math.abs(v)<1e-9?T.zero:T.grid; x.lineWidth=Math.abs(v)<1e-9?2:1; x.beginPath(); x.moveTo(X0,y); x.lineTo(X1,y); x.stroke(); x.fillStyle=T.t2; x.fillText(fmt(v),X0-14,y); }
   x.textAlign='left'; x.textBaseline='alphabetic'; }
 function pasoLindo(r){ const c=r/5, p=10**Math.floor(Math.log10(c)); return [1,2,2.5,5,10].map(k=>k*p).find(k=>k>=c); }
 
@@ -1020,12 +1069,13 @@ function imgSemanal(x,h){ const {W,H,M}=IMG; fondo(x,'esq'); encabezado(x,'Seman
   let lo=Math.min(0,...vals), hi=Math.max(...vals,0.1); const ps=pasoLindo(hi-lo); lo=Math.floor(lo/ps)*ps; hi=Math.ceil(hi/ps)*ps;
   const yv=v=>Y1-(v-lo)/(hi-lo)*(Y1-Y0); ejesV(x,X0,Y0,X1,Y1,lo,hi,ps,v=>nf(1).format(v).replace('-','−'));
   const bw=(X1-X0)/S.length;
-  S.forEach((s,i)=>{ const xc=X0+bw*i+bw/2, y=yv(s.var), y0=yv(0); x.fillStyle=s.semana===h.semana?AM:AZ2; x.fillRect(xc-bw*0.32,Math.min(y,y0),bw*0.64,Math.abs(y0-y));
-    x.font=FT(600,21,'m'); x.textAlign='center'; x.fillStyle=s.semana===h.semana?AM:'#fff'; x.fillText(nf(2).format(s.var).replace('-','−'),xc,s.var>=0?y-10:y+26);
-    x.font=FT(400,20,'m'); x.fillStyle=AZ2; x.fillText(semCorta(s.semana),xc,Y1+34); x.textAlign='left'; });
-  const pts=S.map((s,i)=>s.prom4==null?null:[X0+bw*i+bw/2,yv(s.prom4)]); x.strokeStyle='#fff'; x.lineWidth=3; x.beginPath(); let ini=false;
+  S.forEach((s,i)=>{ const xc=X0+bw*i+bw/2, y=yv(s.var), y0=yv(0); x.fillStyle=s.semana===h.semana?T.am:T.ser; x.fillRect(xc-bw*0.32,Math.min(y,y0),bw*0.64,Math.abs(y0-y));
+    x.font=FT(600,21,'m'); x.textAlign='center'; x.fillStyle=s.semana===h.semana?T.am:T.txt; x.fillText(nf(2).format(s.var).replace('-','−'),xc,s.var>=0?y-10:y+26);
+    x.font=FT(400,20,'m'); x.fillStyle=T.t2; x.fillText(semCorta(s.semana),xc,Y1+34); x.textAlign='left'; });
+  const pts=S.map((s,i)=>s.prom4==null?null:[X0+bw*i+bw/2,yv(s.prom4)]); x.strokeStyle=T.txt; x.lineWidth=3; x.beginPath(); let ini=false;
   pts.forEach(p=>{ if(!p) return; if(!ini){x.moveTo(...p);ini=true;} else x.lineTo(...p); }); x.stroke();
-  const ul=[...pts].reverse().find(p=>p); if(ul){ x.font=FT(600,22); x.fillStyle='#fff'; x.fillText('Promedio',ul[0]+18,ul[1]-2); x.fillText('4 semanas',ul[0]+18,ul[1]+24); }
+  const ul=[...pts].reverse().find(p=>p); if(ul){ x.font=FT(600,22); x.fillStyle=T.txt; x.fillText('Promedio',ul[0]+18,ul[1]-2); x.fillText('4 semanas',ul[0]+18,ul[1]+24);
+    const fl=flecha4(h); if(fl){ const w=x.measureText('4 semanas').width; x.font=FT(700,26,'m'); x.fillStyle=T.ci; x.fillText(fl.sube==null?'=':fl.sube?'▲':'▼',ul[0]+18+w+10,ul[1]+24); } }
   pieC(x,'IPCEER · semana '+h.rango,'Fuente: CEER en base a SEPA'); }
 
 function imgRotacion(x,h){ const {W,H,M}=IMG; fondo(x,'esq'); encabezado(x,'Rotación de precios','Parte de los precios que subió y que bajó cada semana, %');
@@ -1035,20 +1085,20 @@ function imgRotacion(x,h){ const {W,H,M}=IMG; fondo(x,'esq'); encabezado(x,'Rota
   const yv=v=>Y1-(v-lo)/(hi-lo)*(Y1-Y0); ejesV(x,X0,Y0,X1,Y1,lo,hi,ps,v=>nf(0).format(Math.abs(v)));
   const bw=(X1-X0)/Math.max(R.length,1);
   R.forEach((r,i)=>{ const xc=X0+bw*i+bw/2, y0=yv(0); const ult=r.semana===h.semana;
-    x.fillStyle=ult?AM:AZ2; x.fillRect(xc-bw*.32,yv(r.sube),bw*.64,y0-yv(r.sube));
-    x.fillStyle=CI; x.fillRect(xc-bw*.32,y0,bw*.64,yv(-r.baja)-y0);
-    x.font=FT(400,20,'m'); x.textAlign='center'; x.fillStyle=AZ2; x.fillText(semCorta(r.semana),xc,Y1+34);
-    if(ult){ x.font=FT(600,22,'m'); x.fillStyle=AM; x.fillText(nf(0).format(r.sube)+'%',xc,yv(r.sube)-10); x.fillStyle=CI; x.fillText(nf(0).format(r.baja)+'%',xc,yv(-r.baja)+28); }
+    x.fillStyle=ult?T.am:T.ser; x.fillRect(xc-bw*.32,yv(r.sube),bw*.64,y0-yv(r.sube));
+    x.fillStyle=T.ci; x.fillRect(xc-bw*.32,y0,bw*.64,yv(-r.baja)-y0);
+    x.font=FT(400,20,'m'); x.textAlign='center'; x.fillStyle=T.t2; x.fillText(semCorta(r.semana),xc,Y1+34);
+    if(ult){ x.font=FT(600,22,'m'); x.fillStyle=T.am; x.fillText(nf(0).format(r.sube)+'%',xc,yv(r.sube)-10); x.fillStyle=T.ci; x.fillText(nf(0).format(r.baja)+'%',xc,yv(-r.baja)+28); }
     x.textAlign='left'; });
-  const u=R[R.length-1]; if(u){ const xe=X0+bw*(R.length-1)+bw/2+bw*.32+16; x.font=FT(600,24); x.fillStyle=AZ2; x.fillText('Subieron',xe,yv(u.sube/2)+8); x.fillStyle=CI; x.fillText('Bajaron',xe,yv(-u.baja/2)+8); }
+  const u=R[R.length-1]; if(u){ const xe=X0+bw*(R.length-1)+bw/2+bw*.32+16; x.font=FT(600,24); x.fillStyle=T.ser; x.fillText('Subieron',xe,yv(u.sube/2)+8); x.fillStyle=T.ci; x.fillText('Bajaron',xe,yv(-u.baja/2)+8); }
   pieC(x,'IPCEER · semana '+h.rango,'Fuente: CEER en base a SEPA'); }
 
 function barrasH(x,items,fmt,titulo,unidad,h,fuente){ const {W,H,M}=IMG; fondo(x,'esq'); encabezado(x,titulo,unidad);
-  const n=items.length, Y0=310, Y1=H-120, fila=Math.min(56,(Y1-Y0)/Math.max(n,1)), X0=M+330, X1=W-M-200;
+  const n=items.length, Yt=310, Yb=H-120, fila=Math.min(64,(Yb-Yt)/Math.max(n,1)), Y0=Yt+((Yb-Yt)-fila*n)/2+fila*.19, X0=M+330, X1=W-M-200;
   const vals=items.map(i=>i.v), lo=Math.min(0,...vals), hi=Math.max(0,...vals), xv=v=>X0+(v-lo)/(hi-lo||1)*(X1-X0);
-  items.forEach((it,k)=>{ const y=Y0+k*fila, bh=fila*.62; x.fillStyle=it.dest?AM:AZ2; const a=xv(Math.min(0,it.v)), b=xv(Math.max(0,it.v)); x.fillRect(a,y,Math.max(2,b-a),bh);
-    x.textBaseline='middle'; x.font=FT(500,26); x.fillStyle='#fff'; x.textAlign='right'; x.fillText(it.l.length>24?it.l.slice(0,23)+'…':it.l,X0-(lo<0?(X0-xv(lo))+18:18),y+bh/2);
-    x.textAlign='left'; x.font=FT(600,24,'m'); x.fillStyle=it.dest?AM:'#fff'; x.fillText(fmt(it.v),b+14,y+bh/2); x.textBaseline='alphabetic'; });
+  items.forEach((it,k)=>{ const y=Y0+k*fila, bh=fila*.62; x.fillStyle=it.dest?T.am:T.ser; const a=xv(Math.min(0,it.v)), b=xv(Math.max(0,it.v)); x.fillRect(a,y,Math.max(2,b-a),bh);
+    x.textBaseline='middle'; x.font=FT(500,26); x.fillStyle=T.txt; x.textAlign='right'; x.fillText(it.l.length>24?it.l.slice(0,23)+'…':it.l,X0-(lo<0?(X0-xv(lo))+18:18),y+bh/2);
+    x.textAlign='left'; x.font=FT(600,24,'m'); x.fillStyle=it.dest?T.am:T.txt; x.fillText(fmt(it.v),b+14,y+bh/2); x.textBaseline='alphabetic'; });
   pieC(x,'IPCEER · semana '+h.rango,fuente||'Fuente: CEER en base a SEPA'); }
 
 function imgCadenas(x,h){ const reg=h.region_cadenas||'GBA', C=((IND().cba||{}).cadenas||[]).filter(c=>c.semana===h.semana&&c.region===reg&&c.en_ranking).sort((a,b)=>a.costo-b.costo).slice(0,10);
@@ -1070,6 +1120,7 @@ async function bajar(nombre,blob){
 const aBlob = c => new Promise(r=>c.toBlob(r,'image/png'));
 let _fuentes=null;
 function fuentes(){ return _fuentes||(_fuentes=Promise.all(["700 54px 'Cascadia Code'","600 54px 'Cascadia Code'","400 22px 'Cascadia Code'","400 30px Inter","500 30px Inter","600 30px Inter"].map(f=>document.fonts.load(f).catch(()=>null))).then(()=>document.fonts.ready)); }
+const hst={tema:'azul'};
 async function renderHilo(){
   const h=D.hilo, L=document.getElementById('hilo-lista');
   if(!h||!h.tuits){ document.getElementById('hilo-sub').textContent='Todavía no hay una semana completa para armar el hilo.'; L.innerHTML=''; return; }
@@ -1079,13 +1130,20 @@ async function renderHilo(){
     <div class="pie"><button class="btn sm" data-copiar="${t.n}">Copiar</button><span class="mono ${t.excede?'exc':''}">${t.largo}/280</span>${t.excede?'<span style="color:var(--neg)">Supera el límite: acortalo o publicalo con X Premium.</span>':''}</div></div>
     <div>${t.imagen?`<canvas width="${IMG.W}" height="${IMG.H}" data-img="${t.imagen}" data-n="${t.n}"></canvas><div class="pie" style="margin-top:8px"><button class="btn sm" data-png="${t.n}">Descargar imagen</button><span>${IMG.W} × ${IMG.H} px</span></div>`:'<div class="sinimg">Sin imagen</div>'}</div></div>`).join('');
   await fuentes();
-  L.querySelectorAll('canvas[data-img]').forEach(c=>{ const f=DIBUJOS[c.dataset.img]; if(f){ try{ f(c.getContext('2d'),h); }catch(e){ console.error(e); } } });
+  const dibujar=()=>L.querySelectorAll('canvas[data-img]').forEach(c=>{ const f=DIBUJOS[c.dataset.img]; if(f){ try{ c.getContext('2d').clearRect(0,0,c.width,c.height); f(c.getContext('2d'),h); }catch(e){ console.error(e); } } });
+  T=TEMAS[hst.tema]; dibujar();
+  document.querySelectorAll('#seg-tema button').forEach(b=>{ b.setAttribute('aria-pressed',b.dataset.v===hst.tema); b.onclick=()=>{ hst.tema=b.dataset.v; document.querySelectorAll('#seg-tema button').forEach(x=>x.setAttribute('aria-pressed',x===b)); T=TEMAS[hst.tema]; dibujar(); }; });
   L.querySelectorAll('[data-copiar]').forEach(b=>b.onclick=()=>{ copiar(h.tuits[+b.dataset.copiar-1].texto); b.textContent='Copiado'; setTimeout(()=>b.textContent='Copiar',1500); });
-  L.querySelectorAll('[data-png]').forEach(b=>b.onclick=async()=>{ const c=L.querySelector(`canvas[data-n="${b.dataset.png}"]`); await bajar(nombre(b.dataset.png)+'-'+c.dataset.img+'.png',await aBlob(c)); });
+  L.querySelectorAll('[data-png]').forEach(b=>b.onclick=async()=>{ const c=L.querySelector(`canvas[data-n="${b.dataset.png}"]`); await bajar(nombre(b.dataset.png)+'-'+c.dataset.img+(hst.tema==='blanco'?'-blanca':'')+'.png',await aBlob(c)); });
   const todo=h.tuits.map(t=>`${t.n}/${tot}\n${t.texto}`).join('\n\n---\n\n');
   document.getElementById('hilo-copiar').onclick=e=>{ copiar(todo); e.target.textContent='Copiado'; setTimeout(()=>e.target.textContent='Copiar el hilo completo',1500); };
   document.getElementById('hilo-txt').onclick=()=>bajar(`ipceer-${h.semana}-hilo.txt`,new Blob([todo+'\n'],{type:'text/plain;charset=utf-8'}));
-  document.getElementById('hilo-png').onclick=async()=>{ for(const c of L.querySelectorAll('canvas[data-img]')){ const ok=await bajar(nombre(c.dataset.n)+'-'+c.dataset.img+'.png',await aBlob(c)); if(!ok) break; await new Promise(r=>setTimeout(r,300)); } };
+  document.getElementById('hilo-png').onclick=async()=>{
+    const previo=hst.tema;
+    for(const tema of ['azul','blanco']){ T=TEMAS[tema];
+      for(const c of L.querySelectorAll('canvas[data-img]')){ const off=document.createElement('canvas'); off.width=c.width; off.height=c.height; DIBUJOS[c.dataset.img](off.getContext('2d'),h);
+        const ok=await bajar(nombre(c.dataset.n)+'-'+c.dataset.img+(tema==='blanco'?'-blanca':'')+'.png',await aBlob(off)); if(!ok){ T=TEMAS[previo]; return; } await new Promise(r=>setTimeout(r,300)); } }
+    T=TEMAS[previo]; };
 }
 
 /* ---------- combustibles ---------- */
@@ -1214,7 +1272,7 @@ Chart.register(lineaEventos);
 const DIA=()=>D.diario||{};
 function renderDia(){
   const Q=DIA(), S=(Q.series||{})[st.reg], sub=document.getElementById('dia-sub');
-  sub.innerHTML = Q.base ? `Índice de precios de bienes por día, base ${diaLbl(Q.base)} = 100, hasta el ${diaLbl(Q.hasta)}. Cada día se compara directo con el día base (no se encadena día a día) usando solo los productos presentes en los dos días; una clase sin productos comparables queda afuera ese día y su peso se reparte entre las demás de su rubro. No se completa ningún día sin datos. Región: <b>${esc(st.reg)}</b>.` : 'Todavía no hay datos diarios: se calculan al correr <span class="mono">ipceer calcular</span> con el panel diario.';
+  sub.innerHTML = Q.base ? `Base ${diaLbl(Q.base)} = 100, hasta el ${diaLbl(Q.hasta)}, ${esc(st.reg)}. Cada día se compara con el día base usando los mismos productos; los días sin datos quedan vacíos.` : 'Todavía no hay datos diarios: se calculan al correr <span class="mono">ipceer calcular</span> con el panel diario.';
   if(!S){ sinDatos('c-dia', Q.base?'Sin datos diarios para esta región (el nacional necesita las seis regiones el mismo día).':undefined); document.getElementById('t-ev').innerHTML=''; return; }
   const nom=Q.nombres||{}, rubs=Object.keys(S).sort((a,b)=>a==='TOTAL'?-1:b==='TOTAL'?1:a.localeCompare(b));
   const sel=document.getElementById('d-rub');
@@ -1296,63 +1354,110 @@ function renderMun(){
 }
 
 /* ---------- PNG con logo de cada gráfico ---------- */
-async function svgAImagen(svg){
-  const r=svg.getBoundingClientRect(), cl=svg.cloneNode(true);
-  // los colores del mapa vienen de CSS: se copian como atributos para que la imagen los conserve
-  const orig=svg.querySelectorAll('*'), copia=cl.querySelectorAll('*');
-  orig.forEach((e,i)=>{ const cs=getComputedStyle(e); ['fill','stroke','stroke-width','opacity','font-family','font-size'].forEach(k=>{ const v=cs.getPropertyValue(k); if(v) copia[i].setAttribute(k,v); }); }); cl.setAttribute('width',r.width); cl.setAttribute('height',r.height); cl.setAttribute('xmlns','http://www.w3.org/2000/svg');
-  const u=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(cl)],{type:'image/svg+xml'}));
-  const im=new Image(); await new Promise((ok,mal)=>{im.onload=ok; im.onerror=mal; im.src=u;}); URL.revokeObjectURL(u); return {im,w:r.width,h:r.height};
-}
+/* la imagen sale igual a la tarjeta que se ve en la página (mismo tamaño y proporciones), a 3x */
+let _h2c=null;
+function h2c(){ return _h2c||(_h2c=new Promise((ok,mal)=>{ if(window.html2canvas) return ok(window.html2canvas); const sc=document.createElement('script');
+  sc.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'; sc.onload=()=>ok(window.html2canvas); sc.onerror=()=>{ _h2c=null; mal(new Error('No se pudo cargar html2canvas')); }; document.head.appendChild(sc); })); }
 async function pngTarjeta(card){
-  await fuentes();
+  const [f]=await Promise.all([h2c(),document.fonts.ready]);
+  const tip=card.querySelector('.mtip'); if(tip) tip.hidden=true;
+  const c=await f(card,{scale:3,backgroundColor:css('--panel'),useCORS:true,logging:false,
+    ignoreElements:el=>el.classList&&el.classList.contains('btnpng'),
+    onclone:doc=>{ doc.querySelectorAll('svg rect[fill^="var("]').forEach(r=>{ const v=getComputedStyle(r.closest('[style]')||r).getPropertyValue('--cursor').trim(); r.setAttribute('fill',v||'#d6810c'); }); }});
   const h3=card.querySelector('h3'), tit=((h3.querySelector('span:not(.seg)')||h3).childNodes[0]||{}).textContent||h3.textContent;
-  const cap=(card.querySelector('.cap')||{}).textContent||'', src=((card.querySelector('.src span')||{}).textContent||'').trim();
-  const leg=[...card.querySelectorAll('.legend span')].map(s=>({t:s.textContent.trim(),c:getComputedStyle(s.querySelector('i')).backgroundColor}));
-  const cv=card.querySelector('.chart canvas'), svg=card.querySelector('svg#mapa');
-  let fig, ch=cv&&window.Chart&&Chart.getChart(cv), dpr0;
-  if(ch){ dpr0=ch.options.devicePixelRatio; ch.options.devicePixelRatio=3; ch.options.animation=false; ch.resize(); ch.update('none'); }
-  if(cv) fig={im:cv,w:cv.clientWidth,h:cv.clientHeight}; else if(svg) fig=await svgAImagen(svg); else return;
-  const W=1600, M=64, fw=W-2*M, fh=Math.round(fig.h*fw/fig.w);
-  const x0=document.createElement('canvas').getContext('2d'); x0.font=`400 26px ${css('--font')}`; const capL=cap?envolver(x0,cap,fw):[];
-  const top=M+70+capL.length*36+(leg.length?46:0)+16, H=top+fh+130;
-  const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
-  x.fillStyle=css('--panel'); x.fillRect(0,0,W,H); x.fillStyle=css('--accent'); x.fillRect(0,0,W,10);
-  x.textBaseline='alphabetic'; x.fillStyle=css('--fg'); x.font=`700 44px ${css('--title')}`; x.fillText(tit.trim(),M,M+44);
-  x.font=`400 26px ${css('--font')}`; x.fillStyle=css('--muted'); capL.forEach((l,i)=>x.fillText(l,M,M+90+i*36));
-  let lx=M; const ly=M+70+capL.length*36+28; x.font=`500 24px ${css('--font')}`;
-  leg.forEach(l=>{ x.fillStyle=l.c; x.fillRect(lx,ly-16,22,16); x.fillStyle=css('--fg2'); x.fillText(l.t,lx+30,ly); lx+=30+x.measureText(l.t).width+34; });
-  x.drawImage(fig.im,M,top,fw,fh);
-  if(ch){ ch.options.devicePixelRatio=dpr0; ch.resize(); ch.update('none'); }
-  x.strokeStyle=css('--line'); x.lineWidth=2; x.beginPath(); x.moveTo(M,H-100); x.lineTo(W-M,H-100); x.stroke();
-  x.font=`400 22px ${css('--font')}`; x.fillStyle=css('--muted'); const sl=envolver(x,src,fw-300); sl.slice(0,2).forEach((l,i)=>x.fillText(l,M,H-62+i*28));
-  const lw=210, sc=lw/469; x.save(); x.translate(W-M-lw,H-78); x.scale(sc,sc); x.fillStyle=css('--accent'); x.fill(new Path2D(document.querySelector('.logo svg path').getAttribute('d'))); x.fillStyle=css('--ambar'); x.fillRect(417,87,52,21); x.restore();
-  const n=(tit.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'grafico');
+  const n=(tit.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'grafico');
   await bajar(`ipceer-${n}.png`,await aBlob(c));
 }
 document.querySelectorAll('.card').forEach(card=>{ if(!card.querySelector('.chart canvas, svg#mapa')) return; const h3=card.querySelector('h3'); if(!h3) return;
   const b=document.createElement('button'); b.className='btnpng'; b.type='button'; b.textContent='PNG'; b.title='Descargar el gráfico en PNG con el logo del CEER'; b.onclick=()=>pngTarjeta(card); h3.appendChild(b); });
 
+/* ---------- mapa: región, provincia y municipio ---------- */
+const gst={niv:'region',met:'prom4m',sem:null,init:false};
+const REG_PROV={'02':'GBA','06':'Pampeana','14':'Pampeana','30':'Pampeana','42':'Pampeana','82':'Pampeana','18':'Noreste','22':'Noreste','34':'Noreste','54':'Noreste','10':'Noroeste','38':'Noroeste','46':'Noroeste','66':'Noroeste','86':'Noroeste','90':'Noroeste','50':'Cuyo','70':'Cuyo','74':'Cuyo','26':'Patagonia','58':'Patagonia','62':'Patagonia','78':'Patagonia','94':'Patagonia'};
+function GEOM(){ return ((D.geo||{}).geometria)||((D.combustibles||{}).geo)||{}; }
+function regionDe(id){ const d=((D.geo||{}).depto||{})[id]; if(d&&d.r) return d.r; return REG_PROV[id.slice(0,2)]||null; }
+function valoresRegion(sem){ const out={};
+  Object.keys(D.series||{}).filter(r=>r!=='Nacional').forEach(r=>{ const s=((D.series[r]||{}).TOTAL||{}).semanal||[]; const w=s.find(x=>x.semana===sem);
+    const nv=(IND().regiones||[]).find(x=>x.region===r&&x.semana===sem); out[r]={var:w?w.var:null,prom4m:w?w.prom4_mensualizada:null,nivel:nv?nv.nivel:null,parcial:w?w.parcial:false}; });
+  return out; }
+function renderGeo(){
+  const G=D.geo||{}, M=GEOM(), sub=document.getElementById('g-sub');
+  const semR=(((D.series.Nacional||{}).TOTAL||{}).semanal||[]).map(s=>s.semana);
+  const sems=gst.niv==='region'?semR:(G.semanas||[]);
+  if(!gst.init){ gst.init=true;
+    document.querySelectorAll('#seg-gniv button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('#seg-gniv button').forEach(x=>x.setAttribute('aria-pressed',x===b)); gst.niv=b.dataset.v; gst.sem=null; renderGeo(); });
+    document.getElementById('g-met').onchange=e=>{gst.met=e.target.value; renderGeo();};
+    document.getElementById('g-sem').onchange=e=>{gst.sem=e.target.value; renderGeo();}; }
+  const ss=document.getElementById('g-sem'); ss.innerHTML=[...sems].reverse().map(s=>`<option value="${s}">${semCorta(s)}</option>`).join('');
+  if(!gst.sem||!sems.includes(gst.sem)){ const comp=[...sems].reverse().find(s=>{ if(gst.niv==='region'){ const w=(((D.series.Nacional||{}).TOTAL||{}).semanal||[]).find(x=>x.semana===s); return w&&!w.parcial; } return true; }); gst.sem=comp||sems[sems.length-1]; }
+  ss.value=gst.sem;
+  sub.innerHTML = gst.niv==='region' ? 'Las seis regiones del IPC. Elegí provincias o municipios para ver más detalle.' :
+    (G.semanas&&G.semanas.length ? `Provincias y departamentos o partidos con sucursales que informan precios a SEPA. Los lugares en gris no tienen productos suficientes para medir.` : 'El detalle por provincia y municipio se arma a partir de las próximas corridas en la PC: cada día guarda los precios por departamento o partido.');
+  if(!M.provincias){ document.getElementById('g-mapa').innerHTML=''; return; }
+  // unidades a dibujar
+  const capa=gst.niv==='provincia'?M.provincias:M.departamentos||[];
+  const VR=gst.niv==='region'?valoresRegion(gst.sem):null, src=gst.niv==='region'?null:(G[gst.niv]||{});
+  const U=capa.map(g=>{ let o, nom=g.n, prov=null;
+    if(gst.niv==='region'){ const r=regionDe(g.id); o=r?VR[r]:null; nom=r||g.n; }
+    else { const u=src[g.id]; o=u?(u.s||[]).find(x=>x.semana===gst.sem):null; if(gst.niv==='depto') prov=((M.provincias||[]).find(p=>p.id===g.p)||{}).n; }
+    return {g,nom,prov,v:o?o[gst.met]:null}; });
+  const ref=gst.met==='nivel'?100:(()=>{ const w=(((D.series.Nacional||{}).TOTAL||{}).semanal||[]).find(x=>x.semana===gst.sem); return w?(gst.met==='var'?w.var:w.prom4_mensualizada):null; })();
+  const dif=v=>v==null||ref==null?null:v-ref;
+  const vals=U.map(u=>dif(u.v)).filter(v=>v!=null&&isFinite(v)).map(Math.abs).sort((a,b)=>a-b);
+  const max=vals.length?vals[Math.floor(vals.length*0.95)]||vals[vals.length-1]||1:1;
+  const todos=(M.provincias||[]).flatMap(g=>g.a); let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  todos.forEach(a=>{for(let k=0;k<a.length;k+=2){x0=Math.min(x0,a[k]);x1=Math.max(x1,a[k]);y0=Math.min(y0,a[k+1]);y1=Math.max(y1,a[k+1]);}});
+  const kx=Math.cos(38.5*Math.PI/180), W=(x1-x0)*kx, H=(y1-y0);
+  const path=a=>{let d='';for(let k=0;k<a.length;k+=2){d+=(k?'L':'M')+((a[k]-x0)*kx).toFixed(1)+' '+((y1-a[k+1])).toFixed(1);}return d+'Z';};
+  const svg=document.getElementById('g-mapa'); svg.setAttribute('viewBox',`-5 -5 ${W+10} ${H+10}`);
+  const fmt=v=>v==null?'–':gst.met==='nivel'?num(v,1):pct(v,2);
+  svg.innerHTML=U.map((u,k)=>`<path data-k="${k}" d="${u.g.a.map(path).join('')}" fill="${colorDiv(dif(u.v),max)}"${gst.niv==='region'?' style="stroke:'+colorDiv(dif(u.v),max)+'"':''}/>`).join('')+
+    (gst.niv!=='provincia'?(M.provincias||[]).map(g=>`<path class="prov" d="${g.a.map(path).join('')}"${gst.niv==='region'?' style="stroke-width:.5;opacity:.35"':''}/>`).join(''):'');
+  const tip=document.getElementById('g-tip'), box=svg.parentElement;
+  svg.querySelectorAll('path[data-k]').forEach(pth=>{ pth.onmousemove=e=>{ const u=U[+pth.dataset.k], r=box.getBoundingClientRect();
+      tip.hidden=false; tip.style.left=Math.min(e.clientX-r.left+14,r.width-200)+'px'; tip.style.top=(e.clientY-r.top+14)+'px';
+      tip.innerHTML=`<b>${esc(u.nom)}</b>${u.prov?'<br>'+esc(u.prov):''}<br>`+(u.v==null?'Sin datos suficientes':`${esc(document.querySelector('#g-met option:checked').textContent)}: <span class="mono">${fmt(u.v)}</span><br>País: <span class="mono">${fmt(ref)}</span>`); };
+    pth.onmouseleave=()=>{tip.hidden=true;}; });
+  document.getElementById('g-leg').innerHTML=ref==null?'':`<span class="mono">${fmt(ref-max)}</span><i style="background:linear-gradient(90deg,${colorDiv(-max,max)},${colorDiv(0,max)},${colorDiv(max,max)})"></i><span class="mono">${fmt(ref+max)}</span><span>centrado en el dato del país (${fmt(ref)})</span>`;
+  // ranking y tabla, sin repetir regiones
+  const vistos=new Set(), lista=U.filter(u=>u.v!=null&&isFinite(u.v)&&!vistos.has(u.nom+(u.prov||''))&&vistos.add(u.nom+(u.prov||''))).sort((a,b)=>b.v-a.v);
+  const li=u=>`<li>${esc(u.nom)}${u.prov&&u.prov!==u.nom?' <span style="color:var(--muted)">('+esc(u.prov)+')</span>':''} <span class="mono">${fmt(u.v)}</span></li>`;
+  document.getElementById('g-top').innerHTML=lista.slice(0,8).map(li).join('');
+  document.getElementById('g-bot').innerHTML=lista.length>8?lista.slice(-8).reverse().map(li).join(''):'';
+  const nombre={region:'regiones',provincia:'provincias',depto:'municipios'}[gst.niv];
+  document.getElementById('g-resp').innerHTML=lista.length?`Semana del ${semCorta(gst.sem)}: ${lista.length} ${nombre} con dato. Más alto: <b>${esc(lista[0].nom)}</b> (<span class="mono">${fmt(lista[0].v)}</span>); más bajo: <b>${esc(lista[lista.length-1].nom)}</b> (<span class="mono">${fmt(lista[lista.length-1].v)}</span>).`:'Sin datos para esta semana.';
+  document.getElementById('g-tit').textContent={region:'Por región',provincia:'Por provincia',depto:'Por municipio (departamento o partido)'}[gst.niv];
+  document.getElementById('g-ttab').textContent='Detalle por '+{region:'región',provincia:'provincia',depto:'municipio'}[gst.niv];
+  document.getElementById('t-geo').innerHTML=`<thead><tr><th>${{region:'Región',provincia:'Provincia',depto:'Municipio'}[gst.niv]}</th>${gst.niv==='depto'?'<th>Provincia</th>':''}<th class="n">${esc(document.querySelector('#g-met option:checked').textContent)}</th><th class="n">Diferencia con el país</th></tr></thead><tbody>`+
+    lista.map(u=>`<tr><td>${esc(u.nom)}</td>${gst.niv==='depto'?`<td>${esc(u.prov||'')}</td>`:''}<td class="n">${fmt(u.v)}</td><td class="n">${dif(u.v)==null?'–':num(dif(u.v),gst.met==='nivel'?1:2)+(gst.met==='nivel'?'':' pp')}</td></tr>`).join('')+'</tbody>';
+}
 function render(){
   const tab=document.querySelector('.tabs button[aria-selected="true"]').dataset.tab;
   renderKpis();
-  if(tab==='res'){ renderSemanal(); renderMensual(); }
+  if(tab==='res'){ renderDia(); renderSemanal(); renderMensual(); }
   if(tab==='sem') renderTablaSemanal();
   if(tab==='men') renderTablaMensual();
   if(tab==='rub') renderRubros();
   if(tab==='reg'){ renderRegiones(); renderNivReg(); }
   if(tab==='rot') renderRot();
   if(tab==='comb') renderComb();
+  if(tab==='mapa') renderGeo();
   if(tab==='cad') renderCad();
   if(tab==='hilo') renderHilo();
   if(tab==='met') renderMetodo();
   if(tab==='val') renderVal();
-  if(tab==='dia') renderDia();
   if(tab==='ext') renderExt();
   if(tab==='mun') renderMun();
 }
 if(window.Chart){ Chart.defaults.font.family=css('--font'); Chart.defaults.color=css('--muted'); }
 initControles(); render();
+/* flechas de la barra de pestañas: aparecen solo si hay más pestañas a un costado */
+(function(){ const n=document.querySelector('.tabs'), iz=document.querySelector('.tabflecha.izq'), de=document.querySelector('.tabflecha.der');
+  const act=()=>{ iz.hidden=n.scrollLeft<=2; de.hidden=n.scrollLeft+n.clientWidth>=n.scrollWidth-2; };
+  iz.onclick=()=>n.scrollBy({left:-Math.max(160,n.clientWidth*.6)}); de.onclick=()=>n.scrollBy({left:Math.max(160,n.clientWidth*.6)});
+  n.addEventListener('scroll',act,{passive:true}); window.addEventListener('resize',act); act();
+  n.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>b.scrollIntoView({inline:'nearest',block:'nearest'}))); })();
+
 </script>
 </body>
 </html>

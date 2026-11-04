@@ -128,6 +128,49 @@ def _municipios(cfg: Config):
     return res
 
 
+_DEPTOS_CACHE: dict = {}
+
+
+def _deptos(cfg: Config):
+    """(árbol de geometrías, ids) de todos los departamentos y partidos del país (Georef), o None."""
+    ruta = cfg.ruta("panel_diario").parent.parent / "combustibles" / "geo" / "departamentos.geojson"
+    if not ruta.exists():
+        return None
+    if str(ruta) in _DEPTOS_CACHE:
+        return _DEPTOS_CACHE[str(ruta)]
+    import json
+    import shapely
+    from shapely.geometry import shape
+    feats = json.loads(ruta.read_text(encoding="utf-8"))["features"]
+    res = (shapely.STRtree([shape(f["geometry"]) for f in feats]), [f["properties"]["id"] for f in feats])
+    _DEPTOS_CACHE[str(ruta)] = res
+    return res
+
+
+def _puntos(suc: pl.DataFrame):
+    import numpy as np
+    lat = suc["sucursales_latitud"].cast(pl.Utf8).str.replace(",", ".").cast(pl.Float64, strict=False).to_numpy()
+    lon = suc["sucursales_longitud"].cast(pl.Utf8).str.replace(",", ".").cast(pl.Float64, strict=False).to_numpy()
+    return lat, lon, np.where(np.isfinite(lat) & np.isfinite(lon))[0]
+
+
+def _sucursales_depto(suc: pl.DataFrame, cfg: Config) -> pl.DataFrame | None:
+    """id_comercio, id_bandera, id_sucursal, depto (id Georef) de cada sucursal con coordenadas."""
+    d = _deptos(cfg)
+    if d is None or "sucursales_latitud" not in suc.columns:
+        return None
+    import shapely
+    arbol, ids = d
+    lat, lon, ok = _puntos(suc)
+    if not len(ok):
+        return None
+    pi, gi = arbol.query(shapely.points(lon[ok], lat[ok]), predicate="within")
+    if not len(pi):
+        return None
+    return suc[ok[pi]].select("id_comercio", "id_bandera", "id_sucursal").with_columns(
+        pl.Series("depto", [ids[g] for g in gi], dtype=pl.Utf8)).unique(["id_comercio", "id_bandera", "id_sucursal"])
+
+
 def _sucursales_municipio(suc: pl.DataFrame, cfg: Config) -> pl.DataFrame | None:
     """id_comercio, id_bandera, id_sucursal, municipio (id Georef) de las sucursales que caen
     dentro de un municipio configurado (por coordenadas)."""
@@ -150,7 +193,8 @@ def _sucursales_municipio(suc: pl.DataFrame, cfg: Config) -> pl.DataFrame | None
     return filas
 
 
-def procesar_comercio(archivos: dict[str, bytes], cfg: Config, municipal: list | None = None) -> pl.DataFrame | None:
+def procesar_comercio(archivos: dict[str, bytes], cfg: Config, municipal: list | None = None,
+                      geo: list | None = None) -> pl.DataFrame | None:
     """Precios del día de un comercio por producto-cadena-región. Si se pasa `municipal`, le agrega
     los mismos precios de las sucursales de cada municipio configurado (región = id del municipio)."""
     if "productos.csv" not in archivos or "sucursales.csv" not in archivos:
@@ -162,6 +206,7 @@ def procesar_comercio(archivos: dict[str, bytes], cfg: Config, municipal: list |
         return None
 
     suc_muni = _sucursales_municipio(suc, cfg) if municipal is not None else None
+    suc_geo = _sucursales_depto(suc, cfg) if geo is not None else None
     suc = asignar_regiones(suc, cfg).select("id_comercio", "id_bandera", "id_sucursal", "region")
     opcionales = {
         "productos_descripcion": "descripcion",
@@ -218,7 +263,28 @@ def procesar_comercio(archivos: dict[str, bytes], cfg: Config, municipal: list |
                .rename({"municipio": "region"}))
         if mdf.height:
             municipal.append(mdf.group_by(CLAVE).agg(*aggs))
+    if suc_geo is not None and suc_geo.height:
+        # precios por departamento o partido (para el mapa): solo lo necesario, para que pese poco
+        gdf = df.join(suc_geo, on=["id_comercio", "id_bandera", "id_sucursal"], how="inner")
+        if gdf.height:
+            geo.append(gdf.group_by(*CLAVE, "depto").agg(
+                pl.col("precio_lista").log().mean().exp().alias("precio_lista"),
+                pl.col("id_sucursal").n_unique().cast(pl.UInt16).alias("n_sucursales")))
     return df.group_by(CLAVE).agg(*aggs)
+
+
+def dir_geo(cfg: Config) -> Path:
+    d = cfg.ruta("panel_diario").parent.parent / "geo"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _guardar_geo(geo: list, fecha: date, cfg: Config) -> None:
+    if not geo:
+        return
+    d = dir_geo(cfg) / "diario"
+    d.mkdir(parents=True, exist_ok=True)
+    pl.concat(geo, how="vertical_relaxed").write_parquet(d / f"{fecha.isoformat()}.parquet", compression="zstd")
 
 
 def _nombres_cadenas(archivos: dict[str, bytes]) -> list[dict]:
@@ -270,18 +336,24 @@ def _guardar_municipal(municipal: list, fecha: date, cfg: Config) -> None:
             d / f"{fecha.isoformat()}.parquet", compression="zstd")
 
 
-def procesar_zip_diario(ruta_zip: Path, fecha: date, cfg: Config, solo_municipios: bool = False) -> Path:
+def procesar_zip_diario(ruta_zip: Path, fecha: date, cfg: Config, solo_municipios: bool = False,
+                        geo: bool | None = None) -> Path:
     partes, nombres, municipal = [], [], []
+    if geo is None:
+        geo = bool((cfg.datos.get("geo") or {}).get("activo", True))
+    lista_geo = [] if geo else None
     for nombre, archivos in _iterar_comercios(ruta_zip):
         nombres += _nombres_cadenas(archivos)
         try:
-            df = procesar_comercio(archivos, cfg, municipal)
+            df = procesar_comercio(archivos, cfg, municipal, lista_geo)
         except Exception as e:  # un comercio mal formado no debe frenar el día
             log.warning("No se pudo procesar %s: %s", nombre, e)
             continue
         if df is not None:
             partes.append(df)
     _guardar_municipal(municipal, fecha, cfg)
+    if lista_geo:
+        _guardar_geo(lista_geo, fecha, cfg)
     if solo_municipios:
         return ruta_zip
     if not partes:

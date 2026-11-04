@@ -26,9 +26,11 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
 } else { Write-Warning "git no está instalado: instalalo con 'winget install Git.Git' y volvé a correr este script." }
 
 Write-Host "2/4  Tu usuario y contraseña de Windows (la de la cuenta, no el PIN), para que las tareas corran con la PC bloqueada"
-$cred = Get-Credential -UserName "$env:USERDOMAIN\$env:USERNAME" -Message "IPCEER: contraseña de tu cuenta de Windows (no el PIN)"
-$usuario = $cred.UserName
-$clave = $cred.GetNetworkCredential().Password
+# se pide en esta misma ventana (sin cuadro de diálogo, que a veces queda escondido detrás)
+$usuario = "$env:USERDOMAIN\$env:USERNAME"
+Write-Host "   Usuario: $usuario"
+$seg = Read-Host "   Contraseña (no se ve mientras escribís; Enter al terminar)" -AsSecureString
+$clave = [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($seg))
 
 $ajustes = New-ScheduledTaskSettingsSet -StartWhenAvailable -WakeToRun -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
   -RunOnlyIfNetworkAvailable -MultipleInstances IgnoreNew -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 30) `

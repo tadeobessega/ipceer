@@ -1,0 +1,25 @@
+codigo,nombre,region
+AR-C,Ciudad Autónoma de Buenos Aires,GBA
+AR-B,Buenos Aires,Pampeana
+AR-X,Córdoba,Pampeana
+AR-E,Entre Ríos,Pampeana
+AR-L,La Pampa,Pampeana
+AR-S,Santa Fe,Pampeana
+AR-H,Chaco,Noreste
+AR-W,Corrientes,Noreste
+AR-P,Formosa,Noreste
+AR-N,Misiones,Noreste
+AR-K,Catamarca,Noroeste
+AR-Y,Jujuy,Noroeste
+AR-F,La Rioja,Noroeste
+AR-A,Salta,Noroeste
+AR-G,Santiago del Estero,Noroeste
+AR-T,Tucumán,Noroeste
+AR-M,Mendoza,Cuyo
+AR-J,San Juan,Cuyo
+AR-D,San Luis,Cuyo
+AR-U,Chubut,Patagonia
+AR-Q,Neuquén,Patagonia
+AR-R,Río Negro,Patagonia
+AR-Z,Santa Cruz,Patagonia
+AR-V,Tierra del Fuego,Patagonia

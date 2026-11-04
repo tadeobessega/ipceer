@@ -1,0 +1,92 @@
+# Parámetros del pipeline. Las rutas son relativas a la raíz del repo.
+
+rutas:
+  # Archivo histórico de los zips diarios de SEPA, tal como los publica el portal.
+  # Puede ser una ruta absoluta (ej. D:/SEPA o /Users/tadeo/SEPA). La variable de
+  # entorno IPCEER_ARCHIVO, si está definida, tiene prioridad.
+  crudos: data/crudos
+  panel_diario: data/panel/diario
+  panel_semanal: data/panel/semanal
+  panel_mensual: data/panel/mensual
+  resultados: resultados         # CSV publicables (sí se versionan)
+
+descarga:
+  ckan_api: https://datos.produccion.gob.ar/api/3/action/package_show
+  dataset: sepa-precios
+  timeout_segundos: 60
+  reintentos: 3
+  # El portal solo publica los últimos días: los zips se guardan siempre.
+  # Respaldo diario en GitHub (lo llena .github/workflows/respaldo_sepa.yml); la PC baja de
+  # ahí los días que le falten.
+  respaldo_github:
+    repo: tadeobessega/ipceer
+    tag: sepa-archivo
+
+regiones:
+  # Una sucursal de la provincia de Buenos Aires se asigna a GBA si está a menos de
+  # este radio del Obelisco. Si no tiene coordenadas válidas, se usa la lista de
+  # localidades de config/gba_localidades.csv. Es una aproximación a los 24 partidos.
+  radio_gba_km: 40
+  centro_gba: [-34.6037, -58.3816]
+
+limpieza:
+  # Dentro de cada producto-cadena-región-día se descartan precios de sucursal
+  # que estén más de este factor por encima o por debajo de la mediana.
+  factor_atipico_sucursal: 4.0
+  # Relativos mensuales fuera de este rango se descartan (errores de carga,
+  # cambios de presentación no informados).
+  relativo_min: 0.33
+  relativo_max: 3.0
+
+indice:
+  # Precio que se usa: "lista" (precio de góndola sin promociones) o
+  # "efectivo" (el menor entre lista y promo 1 unitaria).
+  precio: lista
+  # Mínimo de días con precio en el mes para que un producto entre en la comparación.
+  min_dias_mes: 5
+  # Mínimo de días con precio en la semana (se relaja si la semana tiene pocos días descargados).
+  min_dias_semana: 2
+  # Mínimo de productos apareados para calcular el relativo de una clase en una región.
+  # Si no se alcanza, se usa el relativo nacional de esa clase.
+  min_productos_clase: 8
+  # Primer mes del índice (= 100). Si se deja vacío, se usa el primer mes con datos.
+  mes_base: null
+  # Si entre dos períodos con datos pasan más meses que esto, la serie se corta en tramos
+  # (ej. la base 2016-2018 de Zenodo y la actual). Por debajo se compara a través del hueco.
+  max_meses_salto: 24
+
+indicadores:
+  # Semanas que se muestran en los indicadores complementarios (rotación, cadenas, CBA).
+  semanas: 13
+  # Un precio "cambió" de una semana a otra si se movió más que este porcentaje.
+  umbral_cambio_pct: 0.5
+  # Un producto (código de barras) entra en la comparación entre cadenas si lo venden al
+  # menos estas cadenas en la región; una cadena entra si tiene al menos estos productos.
+  min_cadenas_producto: 3
+  min_productos_cadena: 30
+  # Una cadena entra en el ranking de la CBA si tiene precio propio para esta parte del costo.
+  cobertura_min_cba: 0.6
+
+# Base histórica 2016-2018 (Zenodo): días que se bajan y procesan a la vez.
+historico:
+  paralelo: 4
+
+# Mapa por provincia y por departamento o partido (sucursales ubicadas con Georef).
+geo:
+  activo: true
+  min_productos: 5         # productos comparables por clase y lugar para medir su variación
+  cobertura_min: 0.2       # parte de la canasta de la región que tiene que estar medida
+  min_productos_nivel: 30  # productos para estimar el nivel de precios de un lugar
+
+# Municipios con índice propio: las sucursales se asignan por polígono (Georef) y el índice usa los
+# ponderadores de la región del IPC indicada. id = código Georef del partido.
+municipios:
+  - id: "06568"
+    nombre: Morón
+    region: GBA
+
+hilo:
+  # Enlace que va en el último tuit del hilo.
+  url: https://claude.ai/artifact/C3tPXgBGkjWig3PiRWFDs9
+  # Región de referencia para el tuit de cadenas y la CBA (la CBA del INDEC es la de GBA).
+  region_cadenas: GBA

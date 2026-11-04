@@ -1,0 +1,29 @@
+id_comercio,id_bandera,cadena,empresa
+10,1,Carrefour Hipermercado,INC S.A. (Carrefour)
+10,2,Carrefour Market,INC S.A. (Carrefour)
+10,3,Carrefour Express,INC S.A. (Carrefour)
+10,4,Carrefour Maxi,INC S.A. (Carrefour)
+11,1,SuperChangomas,Dorinka SRL
+11,2,Changomas,Dorinka SRL
+11,3,SuperChangomas (bandera 3),Dorinka SRL
+11,4,SuperChangomas (bandera 4),Dorinka SRL
+11,5,HiperChangomas,Dorinka SRL
+12,1,Coto,Coto CICSA
+13,1,Cooperativa Obrera,Cooperativa Obrera Ltda. de Consumo y Vivienda
+15,1,Día,DIA Argentina S.A.
+2,1,La Anónima,S.A. Imp. y Exp. de la Patagonia
+2,2,Topsy (La Anónima),S.A. Imp. y Exp. de la Patagonia
+2,3,Bomba (La Anónima),S.A. Imp. y Exp. de la Patagonia
+20,1,La Agrícola Regional,La Agrícola Regional Coop. Ltda.
+21,1,Toledo,Supermercados Toledo S.A.
+23,1,Axion (tiendas),Pan American Energy
+3,1,Deheza,Deheza S.A.I.C.F. e I.
+4,1,Estación Lima,Estación Lima S.A.
+47,1,Unicoop,Coop. Agrícola Ganadera e Industrial
+5,1,California,California S.A.
+6,1,Comodín,Alberdi S.A.
+6,2,Maxi Comodín,Alberdi S.A.
+8,1,Mariano Max,
+9,1,Vea,Cencosud S.A.
+9,2,Disco,Cencosud S.A.
+9,3,Jumbo,Cencosud S.A.

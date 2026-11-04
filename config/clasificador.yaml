@@ -1,0 +1,276 @@
+# Clasificador de productos SEPA en clases COICOP (versión INDEC).
+#
+# Cómo funciona:
+#   - Se normaliza la descripción del producto: minúsculas, sin tildes, "ñ" -> "n",
+#     y todo lo que no sea letra o número pasa a ser espacio.
+#   - Las reglas se evalúan EN ORDEN. Gana la primera regla en la que algún patrón
+#     de "incluir" matchea y ningún patrón de "excluir" matchea.
+#   - Los patrones son expresiones regulares de Python sobre el texto normalizado.
+#   - Lo que no matchea ninguna regla queda como "sin_clasificar" y no entra al índice.
+#     `ipceer reporte-clasificacion` lista los más frecuentes para ir mejorando las reglas.
+#   - Para casos puntuales, usar config/clasificacion_manual.csv (tiene prioridad).
+#
+# El orden importa: las reglas no alimentarias van primero para que, por ejemplo,
+# "jabón en polvo" no caiga en otra clase, y las golosinas van antes que los lácteos
+# para que "chocolate con leche" no termine en lácteos.
+
+# Abreviaturas que usan las cadenas en las descripciones (ej. "ALF CHO 60G", "QSO CREMA").
+# Se expanden palabra por palabra antes de aplicar las reglas. Solo agregar las que no
+# sean ambiguas: "AC" puede ser aceite o acondicionador, así que no está.
+abreviaturas:
+  ddl: dulce de leche
+  alf: alfajor
+  cho: chocolate
+  choc: chocolate
+  choco: chocolate
+  yog: yogur
+  yogh: yogur
+  qso: queso
+  deo: desodorante
+  sh: shampoo
+  shamp: shampoo
+  acond: acondicionador
+  rav: ravioles
+  mila: milanesa
+  milan: milanesas
+  gall: galletitas
+  galle: galletitas
+  gallet: galletitas
+  gllt: galletitas
+  tost: tostadas
+  merm: mermelada
+  mayon: mayonesa
+  gaseos: gaseosa
+  deterg: detergente
+  jab: jabon
+  suav: suavizante
+  bomb: bombones
+  gom: gomitas
+  azuc: azucar
+  yerb: yerba
+  caf: cafe
+  lche: leche
+  cerv: cerveza
+  harin: harina
+  fid: fideos
+  salch: salchichas
+  hamb: hamburguesas
+  hig: higienico
+  lavand: lavandina
+  liq: liquido
+  mant: manteca
+  marg: margarina
+  galletit: galletitas
+  desod: desodorante
+  sha: shampoo
+  shamp: shampoo
+  aromat: aromatizante
+  arom: aromatizante
+  limp: limpiador
+
+reglas:
+
+  - clase: "09.3.4"
+    nombre: Alimentos y productos para mascotas
+    incluir:
+      - '\b(perro|perros|gato|gatos|cachorro|cachorros|felino|felinos|canino|caninos|mascota|mascotas)\b'
+      - '\b(piedras?|arena) sanitarias?\b'
+    excluir:
+      - '\b(pancho|panchos|salchicha|salchichas)\b'
+
+  - clase: "09.5.4"
+    nombre: Artículos de papelería
+    incluir:
+      - '\b(cuaderno|cuadernos|lapicera|lapiceras|birome|biromes|boligrafo|resaltador|resaltadores|cartulina|resma|crayones|crayon|plasticola|liquid paper|corrector|sacapuntas|abrochadora|broches mariposa)\b'
+      - '\blapiz(ces)?\b'
+      - '\bgoma de borrar\b'
+      - '\brepuesto (de )?hojas\b'
+      - '\bpapel (glase|afiche|madera|crepe|barrilete)\b'
+      - '\bmarcadores?\b'
+
+  - clase: "05.6.1"
+    nombre: Artículos de limpieza y otros bienes no duraderos del hogar
+    incluir:
+      - '\b(lavandina|lejia|cloro|detergente|detergentes|suavizante|suavizantes|quitamanchas|desengrasante|desinfectante|aromatizante|lustramuebles|insecticida|insecticidas|cucarachicida|raticida|hormiguicida|abrillantador|lavavajillas|limpiador|limpiadores|limpiavidrios|esponja|esponjas|rejilla|rejillas|virulana|fosforos|escoba|escobillon|secador de piso|balde|broches para ropa|servilletas|blanqueador|apresto|almidon para ropa|desodorizante)\b'
+      - '\bjabon (en polvo|liquido para (la )?ropa|para (la )?ropa|en pan|blanco|para lavar|de lavar|rallado)\b'
+      - '\blimpia ?(vidrios|pisos|muebles|hornos|banos|inodoros|metales|alfombras)\b'
+      - '\bdesodorante (de|para) (ambiente|ambientes|inodoro|inodoros|bano)\b'
+      - '\b(pastillas?|bloque|bloques|gel) (para|de) (inodoro|inodoros|bano|mochila)\b'
+      - '\btrapo (de|para) piso\b'
+      - '\b(bolsas?) (de|para) (residuos|basura|freezer|consorcio)\b'
+      - '\b(rollo|rollos|papel|toallas?) de cocina\b'
+      - '\bpapel (de )?aluminio\b'
+      - '\b(film|papel) (adherente|film|de cocina)\b'
+      - '\b(espiral|espirales|tabletas?) (para )?mosquitos?\b'
+      - '\bsal para lavavajillas\b'
+      - '\bcera (para pisos|liquida|autobrillo)\b'
+      - '\bvelas?\b'
+      - '\b(difusor|aromatizador|autobrillo|residuos|repuesto aromatizante)\b'
+      - '\b(ayudin|lysoform|glade|poett|cif|harpic|procenex|vivere|comfort|skip|ariel|magistral|raid|fuyi|mr musculo|odex|vanish|drive)\b'
+
+  - clase: "12.1.3"
+    nombre: Artículos para el cuidado personal
+    incluir:
+      - '\b(shampoo|shampu|champu|acondicionador|acondicionadores|antitranspirante|desodorante|desodorantes|dentifrico|tampones|tampon|panales|pañales|preservativos|preservativo|hisopos|talco|maquillaje|esmalte|quitaesmalte|labial|rimel|bronceador|perfume|fragancia|colonia|tintura|coloracion|afeitadora|maquinita|maquinitas|depilatoria|depilatorio|protectores diarios|protector diario)\b'
+      - '\bcrema (de enjuague|para peinar|de peinar|dental|corporal|facial|de manos|para manos|hidratante|antiarrugas|antiage|de afeitar|para afeitar|para pies|de dia|de noche|nutritiva|desmaquillante|para el cuerpo)\b'
+      - '\b(pasta|gel) dental\b'
+      - '\bcepillo (dental|de dientes|para dientes)\b'
+      - '\benjuague bucal\b'
+      - '\bhilo dental\b'
+      - '\b(espuma|gel|hojas|cartuchos|repuestos?) (de|para) afeitar\b'
+      - '\bjabon (de tocador|tocador|de glicerina|glicerina|liquido para manos|de manos|para manos|liquido corporal|corporal|en barra|antibacterial|neutro|facial|exfoliante|intimo|de avena|de coco)\b'
+      - '\b(gel|crema|espuma) (de|para) (ducha|bano|cabello|peinar|el pelo)\b'
+      - '\b(toallas|toallitas) (femeninas|higienicas|humedas|intimas|desmaquillantes)\b'
+      - '\bpapel higienico\b'
+      - '\bpanuelos (descartables|desechables|de papel|tissue)\b'
+      - '\balgodon\b'
+      - '\bprotector solar\b'
+      - '\bleche (corporal|de limpieza|hidratante|desmaquillante|limpiadora)\b'
+      - '\baceite (corporal|para bebe|para bebes|de bebe|capilar|para el cuerpo)\b'
+      - '\bagua (micelar|oxigenada|de colonia)\b'
+      - '\bfijador (para el cabello|capilar)\b'
+      - '\bgel fijador\b'
+      - '\b(mascarilla|serum|peinar|capilar|repelente|pomada para peinar|oleo calcareo|toallitas)\b'
+      - '\b(dove|elvive|pantene|sedal|rexona|nivea|dermaglos|tresemme|plusbelle|axe|colgate|gillette|always|kotex|huggies|pampers|babysec|carefree|lady soft|head shoulders|dove men|garnier|loreal|veet|johnson|algabo|lux|rexona men|speed stick|oral b|sensodyne|listerine)\b'
+
+  - clase: "02.2.1"
+    nombre: Tabaco
+    incluir:
+      - '\b(cigarrillos|cigarrillo|cigarros|tabaco|habanos|habano|cigarritos)\b'
+    excluir:
+      - '\b(chocolate|chicle|golosina|caramelo|confites)\b'
+
+  # El INDEC pondera por separado espirituosas (02.1.1), vinos (02.1.2) y cerveza (02.1.3).
+  - clase: "02.1.3"
+    nombre: Cerveza
+    incluir:
+      - '\b(cerveza|cervezas|chopp|ipa|lager|stout)\b'
+    excluir:
+      - '\bsin alcohol\b'
+      - '\b0 0\b'
+      - '\bvinagre\b'
+      - '\b(bombon|bombones|chocolate|caramelo|caramelos|helado|torta)\b'
+
+  - clase: "02.1.2"
+    nombre: Vinos (incluye espumantes, sidras y vermut)
+    incluir:
+      - '\b(vino|vinos|espumante|espumantes|champagne|champana|sidra|vermouth|vermut|moscato|frizzante)\b'
+      - '\b(malbec|cabernet|sauvignon|chardonnay|torrontes|merlot|syrah|bonarda|pinot|tempranillo|moscatel|blend|tinto|rosado)\b'
+    excluir:
+      - '\bsin alcohol\b'
+      - '\b0 0\b'
+      - '\bvinagre\b'
+      - '\b(bombon|bombones|chocolate|caramelo|caramelos|helado|torta)\b'
+
+  - clase: "02.1.1"
+    nombre: Bebidas espirituosas, destiladas y licores
+    incluir:
+      - '\b(fernet|vodka|whisky|whiskey|gin|ron|licor|licores|aperitivo|grappa|tequila|cognac|conac|brandy|anis|amaretto|caipirinha|cachaza|aguardiente|bitter)\b'
+    excluir:
+      - '\bsin alcohol\b'
+      - '\b0 0\b'
+      - '\bvinagre\b'
+      - '\b(bombon|bombones|chocolate|caramelo|caramelos|helado|torta)\b'
+
+  - clase: "01.2.2"
+    nombre: Aguas minerales, bebidas gaseosas y jugos
+    incluir:
+      - '\b(gaseosa|gaseosas|soda|jugo|jugos|nectar|tonica|energizante|isotonica|isotonico)\b'
+      - '\bagua\b'
+      - '\bbebida (isotonica|energizante|deportiva|saborizada|a base de|con jugo|de soja|de almendras|de avena|de arroz|vegetal|sin alcohol)\b'
+      - '\bpolvo para preparar (jugo|bebida|refresco)\b'
+      - '\b(cerveza|sidra|fernet|aperitivo) sin alcohol\b'
+      - '\b(coca cola|pepsi|sprite|fanta|seven up|7up|manaos|schweppes|cunnington|levite|aquarius|cepita|baggio|tang|clight|powerade|gatorade|red bull|speed unlimited|monster energy)\b'
+      - '\bamargo serrano\b'
+    excluir:
+      - '\b(gelatina|helado|caldo|sopa|salsa|vinagre|jabon|limpiador)\b'
+      - '\bjugo de limon\b'
+      - '\b(cuadril|vacuna|cerdo)\b'
+      - '\b(atun|caballa|sardina|sardinas|jurel|arvejas|choclo|garbanzos|porotos|lentejas)\b'
+      - '\b(en|al) agua\b'
+
+  - clase: "01.2.1"
+    nombre: Café, té, yerba y cacao
+    incluir:
+      - '\b(cafe|yerba|te|cacao|capuccino|cappuccino|malta|nescafe|saquitos|infusion|infusiones|mate cocido|cascarilla)\b'
+    excluir:
+      - '\b(galletita|galletitas|alfajor|alfajores|torta|tortas|bizcochuelo|budin|helado|yogur|yogurt|leche|bombon|bombones|turron|caramelo|caramelos|licor|crema|dulce|filtro|filtros|cafetera|taza|tazas|cuchara|bombilla|mate de|termo|chocolate)\b'
+
+  - clase: "01.1.8"
+    nombre: Azúcar, dulces, chocolate, golosinas, etc.
+    incluir:
+      - '\b(azucar|edulcorante|sucralosa|stevia|sacarina|mermelada|mermeladas|jalea|miel|chocolate|chocolates|bombon|bombones|alfajor|alfajores|caramelo|caramelos|chicle|chicles|chupetin|chupetines|turron|turrones|gomitas|confites|garrapinada|mantecol|helado|helados|golosina|golosinas|obleas|bocadito|bocaditos)\b'
+      - '\bdulce de (batata|membrillo|zapallo|higo|cayote|frutilla|durazno)\b'
+      - '\b(postre|gelatina|flan) en polvo\b'
+      - '\bpastillas? (de menta|frutales|refrescantes)\b'
+      - '\bhuevo de pascua\b'
+      - '\bgelatina\b'
+    excluir:
+      - '\b(sin|bajo en|reducido en|cero|0) azucar\b'
+      - '\bleche chocolatada\b'
+      - '\bchocolatada\b'
+      - '\b(yogur|yogurt|yoghurt|postre lacteo|bebida lactea)\b'
+      - '\b(galletita|galletitas|budin|bizcochuelo|cereal|cereales|copos)\b'
+
+  - clase: "01.1.4"
+    nombre: Leche, productos lácteos y huevos
+    incluir:
+      - '\b(leche|yogur|yogurt|yoghurt|queso|quesos|ricota|ricotta|mozzarella|muzzarella|muzarella|reggianito|provolone|cremoso|chocolatada|postre lacteo|dulce de leche|kefir|huevo|huevos)\b'
+      - '\bcrema (de leche|doble|para batir|chantilly|liviana)\b'
+      - '\bpostre\b'
+    excluir:
+      - '\b(pan|galletita|galletitas|budin|bizcochuelo|bizcochos|alfajor|medialunas|cereal|cereales|pizza|pizzas|prepizza|empanada|empanadas|tarta|tartas|ravioles|sorrentinos|canelones|capeletinis|fideos|fideo|pasta|pastas|tallarines|spaghetti|tirabuzon|tirabuzones|mostachol|mostacholes|coditos|cintas|nidos|panqueques)\b'
+      - '\b(de coco|de almendras|de soja|de avena|de arroz)\b'
+
+  - clase: "01.1.5"
+    nombre: Aceites, grasas y manteca
+    incluir:
+      - '\b(aceite|aceites|margarina|manteca|rocio vegetal)\b'
+      - '\bgrasa (vacuna|bovina|de cerdo|de pella)\b'
+    excluir:
+      - '\ben aceite\b'
+      - '\b(atun|caballa|sardina|sardinas|jurel|anchoas|galletita|galletitas|budin|tapas|masa|bizcocho|bizcochos|croissant|medialuna|medialunas|pan|motor|lubricante|2t|corporal|bebe|capilar)\b'
+      - '\bmanteca de (mani|cacao|karite)\b'
+
+  - clase: "01.1.1"
+    nombre: Pan y cereales
+    incluir:
+      - '\b(pan|panes|galletita|galletitas|galletas|crackers|bizcochos|tostadas|grisines|budin|bizcochuelo|magdalenas|medialunas|facturas|harina|harinas|arroz|fideos|fideo|tallarines|spaghetti|spaghettis|tirabuzones|mostacholes|coditos|nidos|ravioles|sorrentinos|canelones|capeletinis|noquis|polenta|avena|copos|cereal|cereales|granola|muesli|salvado|semola|premezcla|maicena|trigo|quinoa|prepizza|pizza|pizzas|rebozador|vainillas|pionono|tostaditas|pochoclo|pochoclos)\b'
+      - '\btapas (de|para) (empanadas|empanada|tarta|tartas|pascualina)\b'
+      - '\bmasa (para|de) (pizza|tarta|empanadas|hojaldre)\b'
+      - '\bpastas? (secas?|frescas?|rellenas?|al huevo)\b'
+      - '\bpan rallado\b'
+
+  - clase: "01.1.3"
+    nombre: Pescados y mariscos
+    incluir:
+      - '\b(atun|caballa|sardina|sardinas|jurel|merluza|salmon|pescado|pescados|langostino|langostinos|calamar|calamares|mejillon|mejillones|camarones|bacalao|anchoas|kani|surimi|abadejo|trucha|tilapia|pejerrey|mariscos|centolla|lenguado)\b'
+      - '\bfilet(e)? de (merluza|abadejo|pescado|pollo de mar|salmon|lenguado)\b'
+
+  - clase: "01.1.9"
+    nombre: Sal, condimentos, salsas y otros alimentos
+    incluir:
+      - '\b(salsa|salsas|ketchup|mayonesa|mostaza|caldo|caldos|sopa|sopas|condimento|condimentos|pimienta|oregano|pimenton|comino|nuez moscada|vinagre|aderezo|aderezos|levadura|bicarbonato|esencia|provenzal|chimichurri|adobo|curry|laurel|canela|savora|aceto|polvo de hornear|ajo en polvo|aji molido)\b'
+      - '\bsal\b'
+    excluir:
+      - '\bsal de frutas\b'
+
+  - clase: "01.1.2"
+    nombre: Carnes y derivados
+    incluir:
+      - '\b(carne|carnes|vacuna|vacuno|cerdo|pollo|pollos|pechuga|pechugas|suprema|supremas|muslo|muslos|milanesa|milanesas|asado|vacio|matambre|nalga|peceto|cuadril|lomo|paleta|carre|bondiola|costilla|costillas|costeleta|costeletas|picada|chorizo|chorizos|morcilla|morcillas|salchicha|salchichas|hamburguesa|hamburguesas|jamon|salame|salamin|salamines|mortadela|fiambre|fiambres|panceta|lomito|leberwurst|pate|picadillo|chinchulines|molleja|mollejas|higado|mondongo|osobuco|roast beef|pavo|nuggets|medallones|cordero|bife|bifes|entrana|tapa de asado|colita|tortuguita|aguja|falda|garron|blanco de pollo|patitas)\b'
+    excluir:
+      - '\b(soja|vegetal|vegetales|vegana|veganas|vegano|veganos|caldo|sopa|sabor)\b'
+
+  - clase: "01.1.6"
+    nombre: Frutas
+    incluir:
+      - '\b(manzana|manzanas|banana|bananas|naranja|naranjas|mandarina|mandarinas|pera|peras|durazno|duraznos|uva|uvas|frutilla|frutillas|kiwi|limon|limones|pomelo|pomelos|anana|ciruela|ciruelas|cereza|cerezas|melon|sandia|palta|paltas|mango|arandanos|frambuesas|higos|damasco|damascos|pasas|nuez|nueces|almendra|almendras|mani|castanas|avellanas|pistachos|frutos secos|fruta|frutas|coco rallado|ensalada de frutas|frutos rojos)\b'
+    excluir:
+      - '\b(galletita|galletitas|cereal|cereales|barra|barras|alfajor|gelatina|helado|jabon|shampoo|yogur|mermelada)\b'
+      - '\b(sabor|aroma|esencia)\b'
+
+  - clase: "01.1.7"
+    nombre: Verduras, tubérculos y legumbres
+    incluir:
+      - '\b(papa|papas|batata|batatas|cebolla|cebollas|tomate|tomates|lechuga|zanahoria|zanahorias|zapallo|zapallos|zapallito|zapallitos|calabaza|acelga|espinaca|morron|morrones|pimiento|ajo|ajos|choclo|choclos|arveja|arvejas|lenteja|lentejas|poroto|porotos|garbanzo|garbanzos|soja|berenjena|berenjenas|pepino|pepinos|apio|repollo|brocoli|coliflor|remolacha|remolachas|rabanito|puerro|verdeo|champinones|hongos|mandioca|legumbres|vegetales|verduras|ensalada|jardinera|pure|aceitunas|pickles|palmitos|chauchas|esparragos|alcauciles|rucula|radicheta)\b'

@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ipceer"
+version = "0.1.0"
+description = "Índice de precios de bienes construido con la base SEPA (Precios Claros)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "polars>=1.0",
+    "pyarrow>=14",
+    "pyyaml>=6",
+    "requests>=2.31",
+    "fastexcel>=0.11",
+    "shapely>=2.0",
+]
+
+[project.optional-dependencies]
+ponderadores = ["pdfplumber>=0.10"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+ipceer = "ipceer.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

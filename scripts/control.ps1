@@ -1,4 +1,4 @@
-# Control de la base del IPCEER: ¿está al día?
+﻿# Control de la base del IPCEER: ¿está al día?
 # - Escribe resultados\estado_pc.json (último día con datos, última corrida, pasos con errores).
 # - Si la base está atrasada (último día con datos de hace 2 días o más) o la última corrida tuvo
 #   errores, muestra un aviso de Windows (cuando hay alguien con la sesión iniciada).

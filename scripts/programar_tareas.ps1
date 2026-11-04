@@ -1,4 +1,4 @@
-# Programa las tareas del IPCEER en Windows para que corran solas todos los días, también con la
+﻿# Programa las tareas del IPCEER en Windows para que corran solas todos los días, también con la
 # PC bloqueada o sin la sesión iniciada (usan tu usuario y tu contraseña; Windows la guarda cifrada).
 #
 # Uso (una sola vez, en PowerShell):

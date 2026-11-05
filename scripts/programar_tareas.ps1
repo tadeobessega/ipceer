@@ -5,7 +5,7 @@
 #   powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\Documents\ipceer\scripts\programar_tareas.ps1"
 #
 # Qué deja:
-#   - "IPCEER diario": 07:30 y 19:30, todos los días. Trae el código nuevo de GitHub, baja SEPA,
+#   - "IPCEER diario": lunes a viernes a las 06:00 y 14:00; sábados y domingos a las 06:00. Trae el código nuevo de GitHub, baja SEPA,
 #     INDEC y Energía, procesa, calcula, arma el tablero y deja el estado. Si la PC estaba apagada
 #     a esa hora, corre apenas se prende; si está suspendida, la despierta.
 #   - "IPCEER historico": 01:30, sigue con la base 2016-2018 en lotes de 30 días hasta terminar.
@@ -39,7 +39,10 @@ $ajustes = New-ScheduledTaskSettingsSet -StartWhenAvailable -WakeToRun -AllowSta
 Write-Host "3/4  Tareas"
 $diario = New-ScheduledTaskAction -Execute $ps -WorkingDirectory $Repo `
   -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Repo\scripts\actualizar_todo.ps1`" -Archivo `"$Archivo`""
-$tDiario = @((New-ScheduledTaskTrigger -Daily -At "07:30"), (New-ScheduledTaskTrigger -Daily -At "19:30"))
+$habiles = "Monday","Tuesday","Wednesday","Thursday","Friday"
+$tDiario = @((New-ScheduledTaskTrigger -Weekly -DaysOfWeek $habiles -At "06:00"),
+             (New-ScheduledTaskTrigger -Weekly -DaysOfWeek $habiles -At "14:00"),
+             (New-ScheduledTaskTrigger -Weekly -DaysOfWeek "Saturday","Sunday" -At "06:00"))
 Register-ScheduledTask -TaskName "IPCEER diario" -Action $diario -Trigger $tDiario -Settings $ajustes `
   -User $usuario -Password $clave -RunLevel Limited -Description "Actualiza la base y el tablero del IPCEER" -Force | Out-Null
 

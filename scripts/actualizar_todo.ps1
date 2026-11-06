@@ -115,4 +115,4 @@ if (Test-Path "$Repo\resultados\estado.json") {
 }
 Write-Host ""
 Write-Host "Listo. Log completo: $Log"
-Write-Host "El tablero quedó en $Repo\sitio\index.html. Avisale a Claude para que publique la versión nueva."
+Write-Host "El tablero quedó en $Repo\sitio\index.html y se publica solo en https://ipceer.tadeobessega.workers.dev"

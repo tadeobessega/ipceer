@@ -1,0 +1,8 @@
+{
+  // Tablero del IPCEER. La PC arma sitio/index.html y lo sube al release "sepa-archivo"
+  // como tablero.html (scripts/control.ps1); este Worker lo sirve con caché corta.
+  "name": "ipceer",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-01",
+  "observability": { "enabled": true }
+}

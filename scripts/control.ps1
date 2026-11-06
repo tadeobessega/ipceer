@@ -41,5 +41,10 @@ if ($Subir -and (Get-Command gh -ErrorAction SilentlyContinue)) {
   if ($LASTEXITCODE -eq 0) {
     Copy-Item $destino "$env:TEMP\estado_pc.json" -Force
     gh release upload sepa-archivo "$env:TEMP\estado_pc.json" --clobber -R tadeobessega/ipceer 2>&1 | Write-Output
+    # tablero: lo sirve el Worker "ipceer" de Cloudflare (ipceer.tadeobessega.workers.dev)
+    if (Test-Path "$Repo\sitio\index.html") {
+      Copy-Item "$Repo\sitio\index.html" "$env:TEMP\tablero.html" -Force
+      gh release upload sepa-archivo "$env:TEMP\tablero.html" --clobber -R tadeobessega/ipceer 2>&1 | Write-Output
+    }
   } else { Write-Output "gh no está conectado: el estado no se sube a GitHub (correr 'gh auth login')." }
 }

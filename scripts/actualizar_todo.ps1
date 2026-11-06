@@ -14,7 +14,8 @@
 #   7. reconsolida semanas y meses (reclasifica todo con las reglas nuevas), salvo que esté corriendo
 #      la base histórica: en ese caso solo consolida lo que falta;
 #   8. calcula índices, rotación, cadenas, regiones, CBA, combustibles, validación e hilo;
-#   9. arma el tablero (sitio\index.html) y deja un resumen en resultados\estado.json.
+#   9. arma el tablero (sitio\index.html) y deja un resumen en resultados\estado.json;
+#  10. backup de todos los repos de GitHub en OneDrive (scripts\backup_repos.ps1, una vez por día).
 
 param(
   [string]$Archivo = "$env:USERPROFILE\Documents\SEPA"
@@ -104,6 +105,7 @@ if (-not $historico) {
 }
 
 # 11. estado para el control: archivo local, aviso en Windows y copia en GitHub (si gh está conectado)
+Paso "Backup de repos (OneDrive)" { & powershell -NoProfile -ExecutionPolicy Bypass -File "$Repo\scripts\backup_repos.ps1" 2>&1 | AlLog }
 Paso "Estado de la base" { & powershell -NoProfile -ExecutionPolicy Bypass -File "$Repo\scripts\control.ps1" -Subir -Pasos ($Pasos | ConvertTo-Json -Compress) 2>&1 | AlLog }
 
 Log "Fin. Resumen de pasos:"

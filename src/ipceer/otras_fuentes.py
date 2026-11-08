@@ -1,0 +1,137 @@
+"""Otras fuentes de precios que no están en SEPA, bajadas en cada corrida de la tarea programada.
+
+Solo fuentes públicas y que se pueden bajar sin saltear protecciones ni condiciones de uso:
+
+- Alquileres: informe mensual "Index Zonaprop" de la Ciudad de Buenos Aires (PDF público). Se
+  archiva cada informe y se extrae la variación mensual del precio de alquiler publicado.
+  (Los portales de avisos no permiten bajar sus listados con robots; por eso se usa el informe.)
+- Medicamentos: listado de precios de medicamentos para afiliados de PAMI (datos abiertos, CKAN).
+  Se archiva cada versión; con dos versiones se puede medir la variación de los mismos productos.
+
+Todo queda en data/otras/<fuente>/ y un resumen en resultados/otras_fuentes.json. Si una fuente no
+responde, se anota el error y se sigue: nunca se completa un dato que no se bajó.
+"""
+from __future__ import annotations
+
+import io
+import json
+import logging
+import re
+from datetime import date, datetime
+from pathlib import Path
+
+import requests
+
+from .config import Config
+
+log = logging.getLogger(__name__)
+UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/130.0 Safari/537.36"}
+
+
+def _dir(cfg: Config, fuente: str) -> Path:
+    d = cfg.ruta("panel_diario").parent.parent / "otras" / fuente
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _meses_atras(n: int) -> list[tuple[int, int]]:
+    hoy = date.today()
+    out, a, m = [], hoy.year, hoy.month
+    for _ in range(n):
+        m -= 1
+        if m == 0:
+            a, m = a - 1, 12
+        out.append((a, m))
+    return out
+
+
+def zonaprop(cfg: Config, meses: int = 6) -> list[dict]:
+    """Baja los informes Index Zonaprop CABA de los últimos meses y extrae la variación mensual del
+    alquiler. El informe del mes M se sube en la carpeta del mes M+1."""
+    d = _dir(cfg, "zonaprop")
+    filas = []
+    for a, m in _meses_atras(meses):
+        ruta = d / f"INDEX_CABA_REPORTE_{a}-{m:02d}.pdf"
+        if not ruta.exists():
+            sa, sm = (a + (m == 12), 1 if m == 12 else m + 1)
+            url = (f"https://www.zonaprop.com.ar/blog/wp-content/uploads/{sa}/{sm:02d}/"
+                   f"INDEX_CABA_REPORTE_{a}-{m:02d}.pdf")
+            try:
+                r = requests.get(url, headers=UA, timeout=60)
+                if r.status_code != 200 or not r.content.startswith(b"%PDF"):
+                    continue
+                ruta.write_bytes(r.content)
+                log.info("Zonaprop: %s", ruta.name)
+            except requests.RequestException as e:
+                log.warning("Zonaprop %s-%02d: %s", a, m, e)
+                continue
+        filas.append({"mes": f"{a}-{m:02d}", "archivo": ruta.name, **_zonaprop_alquiler(ruta)})
+    return sorted(filas, key=lambda x: x["mes"])
+
+
+def _zonaprop_alquiler(ruta: Path) -> dict:
+    """Variación mensual del precio de alquiler publicado (en pesos), si el texto la dice."""
+    try:
+        import pdfplumber
+    except ImportError:
+        return {"error": "falta pdfplumber"}
+    try:
+        with pdfplumber.open(ruta) as pdf:
+            txt = "\n".join((p.extract_text() or "") for p in pdf.pages[:12])
+    except Exception as e:
+        return {"error": str(e)}
+    t = re.sub(r"\s+", " ", txt)
+    # p. ej. "El precio de alquiler sube 1.4% en junio" / "alquileres ... registró una suba de 2,1%"
+    m = re.search(r"alquiler[^.]{0,120}?(sube|aumenta|crece|baja|cae|registra[^.]{0,20}?)\s*(-?\d+[.,]\d+)\s*%", t, re.I)
+    if not m:
+        return {"var_alquiler": None}
+    v = float(m.group(2).replace(",", "."))
+    if m.group(1).lower() in ("baja", "cae"):
+        v = -abs(v)
+    return {"var_alquiler": v, "texto": m.group(0)[:200]}
+
+
+def pami(cfg: Config) -> dict:
+    """Archiva la última versión del listado de precios de medicamentos de PAMI (CKAN)."""
+    d = _dir(cfg, "pami")
+    api = "https://datos.pami.org.ar/api/3/action/package_show"
+    try:
+        r = requests.get(api, params={"id": "medicamentos-para-afiliados"}, headers=UA, timeout=60)
+        r.raise_for_status()
+        res = r.json()["result"]["resources"]
+    except Exception as e:
+        log.warning("PAMI: %s", e)
+        return {"error": str(e)}
+    out = {"versiones": []}
+    for rec in res:
+        url = rec.get("url") or ""
+        if not url.lower().endswith((".csv", ".xlsx", ".xls")):
+            continue
+        mod = (rec.get("last_modified") or rec.get("created") or "")[:10]
+        nombre = f"pami_{mod or date.today().isoformat()}_{Path(url).name}"
+        destino = d / nombre
+        if not destino.exists():
+            try:
+                rr = requests.get(url, headers=UA, timeout=180)
+                rr.raise_for_status()
+                destino.write_bytes(rr.content)
+                log.info("PAMI: %s", nombre)
+            except requests.RequestException as e:
+                log.warning("PAMI %s: %s", url, e)
+                continue
+        out["versiones"].append({"archivo": nombre, "modificado": mod})
+    return out
+
+
+def actualizar(cfg: Config) -> dict:
+    res = {"actualizado": datetime.now().isoformat(timespec="seconds")}
+    for nombre, f in (("alquileres_zonaprop", zonaprop), ("medicamentos_pami", pami)):
+        try:
+            res[nombre] = f(cfg)
+        except Exception as e:  # una fuente que falla no frena las demás
+            log.warning("%s: %s", nombre, e)
+            res[nombre] = {"error": str(e)}
+    (cfg.ruta("resultados") / "otras_fuentes.json").write_text(json.dumps(res, ensure_ascii=False, indent=1),
+                                                               encoding="utf-8")
+    return res

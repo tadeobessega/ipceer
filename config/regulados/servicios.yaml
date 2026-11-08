@@ -1,0 +1,57 @@
+# Canasta de servicios de un hogar tipo del AMBA, al estilo de la canasta de servicios públicos
+# del Observatorio de Tarifas y Subsidios del IIEP (UBA-CONICET): electricidad, gas natural,
+# agua potable y transporte público.
+#
+# Cada componente se valoriza con las tarifas cargadas en config/regulados/tarifas.csv (columna
+# `concepto`), multiplicadas por la cantidad mensual de esta lista. Un mes tiene costo total solo si
+# TODOS los componentes tienen tarifa vigente todo el mes: si falta una, ese mes queda sin total
+# (se muestran los componentes que sí están). Nada se completa con el mes anterior.
+#
+# Las cantidades son supuestos de consumo de un hogar tipo y tienen que llevar su fuente. Las que
+# no tienen fuente todavía están marcadas `pendiente: true` y no se usan.
+referencia:
+  nombre: Canasta de servicios públicos del AMBA, IIEP (UBA-CONICET)
+  url: https://economicas.uba.ar/iiep/
+componentes:
+  - id: colectivo_caba
+    nombre: Colectivo (líneas de la Ciudad)
+    concepto: "Colectivo líneas de la Ciudad: boleto mínimo (0-3 km) con SUBE registrada"
+    cantidad: 22
+    unidad: viajes por mes
+    pendiente: true
+    nota: falta definir con fuente la cantidad de viajes del hogar tipo
+  - id: colectivo_pba
+    nombre: Colectivo (líneas provinciales)
+    concepto: "Colectivo líneas provinciales (200 en adelante): boleto mínimo (0-3 km) con SUBE registrada"
+    cantidad: 22
+    unidad: viajes por mes
+    pendiente: true
+    nota: falta definir con fuente la cantidad de viajes del hogar tipo
+  - id: subte
+    nombre: Subte
+    concepto: "Subte: pasaje de 1 a 20 viajes mensuales con SUBE registrada"
+    cantidad: 10
+    unidad: viajes por mes
+    pendiente: true
+    nota: falta definir con fuente la cantidad de viajes del hogar tipo
+  - id: electricidad
+    nombre: Electricidad (Edenor/Edesur, usuario N1)
+    concepto: null
+    cantidad: null
+    unidad: kWh por mes
+    pendiente: true
+    nota: falta cargar el cuadro tarifario del ENRE (cargo fijo y variable por escalón) y el consumo
+  - id: gas
+    nombre: Gas natural (Metrogas/Naturgy, usuario N1)
+    concepto: null
+    cantidad: null
+    unidad: m3 por mes
+    pendiente: true
+    nota: falta cargar el cuadro tarifario del ENARGAS y el consumo estacional
+  - id: agua
+    nombre: Agua potable (AySA)
+    concepto: null
+    cantidad: null
+    unidad: factura mensual
+    pendiente: true
+    nota: falta cargar la tarifa de AySA (cargo fijo por zona y coeficiente K)

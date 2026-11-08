@@ -135,6 +135,8 @@ td.n{font-family:var(--mono)}
 
 /* metodología */
 .met{display:grid;grid-template-columns:220px minmax(0,1fr);gap:36px;align-items:start}
+.valmet .valcuerpo{min-width:0}
+.valmet section:first-child{padding-top:0}
 .toc{position:sticky;top:120px;font-size:13px;border-top:2px solid var(--fg);padding-top:10px}
 .toc a{display:block;color:var(--fg2);text-decoration:none;padding:4px 0}
 .toc a:hover{color:var(--accent)}
@@ -215,8 +217,8 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <button role="tab" data-tab="comb" aria-selected="false">Combustibles</button>
       <button role="tab" data-tab="rot" aria-selected="false">Rotación</button>
       <button role="tab" data-tab="cad" aria-selected="false">Cadenas</button>
-      <button role="tab" data-tab="ext" aria-selected="false">Consultoras</button>
-      <button role="tab" data-tab="mun" aria-selected="false">Morón</button>
+      <button role="tab" data-tab="can" aria-selected="false">Canastas</button>
+      <button role="tab" data-tab="regu" aria-selected="false">Regulados</button>
       <button role="tab" data-tab="val" aria-selected="false">Validación</button>
       <button role="tab" data-tab="hilo" aria-selected="false">Hilo</button>
       <button role="tab" data-tab="met" aria-selected="false">Metodología</button>
@@ -420,43 +422,48 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
     </section>
   </div>
 
-  <!-- CONSULTORAS Y REGULADOS -->
-  <div data-panel="ext" hidden>
+  <!-- REGULADOS -->
+  <div data-panel="regu" hidden>
     <section>
-      <h2>Consultoras y otras mediciones</h2>
-      <p class="sub">Lo que publican otras mediciones de alta frecuencia, puesto al lado de nuestro dato equivalente: mismo rubro, misma semana o mes, misma medida (semanal, promedio de 4 semanas o mes). Las consultoras relevan canastas, fuentes y métodos distintos, así que importa más la dirección que el decimal. Cada dato externo lleva su enlace; se cargan en <span class="mono">config/externos.csv</span>.</p>
-      <div class="grid">
-        <div class="card s12"><h3>Ellos y nosotros</h3><div class="legend"><span><i style="background:var(--ambar)"></i>Medición externa</span><span><i style="background:var(--accent)"></i>IPCEER equivalente</span></div><div class="chart"><canvas id="c-ext"></canvas></div><div class="src">Fuente: CEER en base a SEPA y a lo publicado por cada consultora (enlaces en la tabla).</div></div>
-        <div class="card s12"><h3>Detalle</h3><div class="tablewrap"><table id="t-ext"></table></div></div>
-      </div>
-    </section>
-    <section>
-      <h2>Tarifas y salarios fijados por norma</h2>
+      <h2>Precios regulados: tarifas y salarios fijados por norma</h2>
       <p class="sub">Precios que no están en SEPA y que fija una norma pública: se registran con su valor, vigencia, norma y fuente. Un mes entra solo si todos sus días tienen una tarifa vigente registrada; si falta un mes, la serie se corta ahí y no se completa. La variación se compara con el rubro equivalente del IPC del INDEC en la pestaña Validación.</p>
       <div class="grid">
         <div class="card s6"><h3>Variación mensual de los regulados</h3><div class="chart short"><canvas id="c-regu"></canvas></div><div class="src">Fuente: CEER en base a las normas citadas en la tabla.</div></div>
         <div class="card s6"><h3>Registro de tarifas</h3><div class="tablewrap" style="max-height:420px;overflow-y:auto"><table id="t-regu"></table></div></div>
       </div>
     </section>
+    <section>
+      <h2>Canasta de servicios</h2>
+      <p class="sub" id="cs-sub"></p>
+      <div class="grid">
+        <div class="card s12"><h3>Costo mensual de la canasta de servicios de un hogar tipo</h3><div class="chart"><canvas id="c-cs"></canvas></div><div class="src">Fuente: CEER en base a las tarifas y normas citadas en el registro.</div></div>
+        <div class="card s12"><h3>Componentes, valor y variación</h3><div class="tablewrap"><table id="t-cs"></table></div></div>
+      </div>
+    </section>
   </div>
 
-  <!-- MUNICIPIOS -->
-  <div data-panel="mun" hidden>
+  <!-- CANASTAS -->
+  <div data-panel="can" hidden>
     <section>
-      <h2><span id="mun-titulo">Morón</span></h2>
-      <p class="sub" id="mun-sub"></p>
-      <div class="grid" id="mun-grid">
-        <div class="card s12"><h3>Inflación semanal: municipio y su región</h3><p class="cap">Promedio de 4 semanas, mensualizado.</p><div class="chart"><canvas id="c-mun1"></canvas></div><div class="src">Fuente: CEER en base a SEPA y Georef (IGN). Mismos ponderadores que la región del IPC.</div></div>
-        <div class="card s6"><h3>Inflación mensual</h3><div class="chart short"><canvas id="c-mun2"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
-        <div class="card s6"><h3>Comparación con otras mediciones del municipio</h3><div id="mun-ext"></div></div>
+      <h2>Canasta básica alimentaria y total</h2>
+      <p class="sub" id="can-sub"></p>
+      <div class="grid">
+        <div class="card s12"><h3>Costo mensual de la CBA de un adulto equivalente</h3><div class="legend"><span><i style="background:var(--accent)"></i>IPCEER</span><span><i style="background:var(--ambar)"></i>INDEC</span></div><div class="chart"><canvas id="c-can1"></canvas></div><div class="src">Fuente: CEER en base a SEPA e INDEC (canasta básica alimentaria, GBA).</div></div>
+        <div class="card s6"><h3>Variación mensual de la CBA</h3><div class="chart short"><canvas id="c-can2"></canvas></div><div class="src">Fuente: CEER en base a SEPA e INDEC.</div></div>
+        <div class="card s6"><h3>Canasta básica total</h3><p class="cap" id="cbt-cap"></p><div class="chart short"><canvas id="c-can3"></canvas></div><div class="src">Fuente: CEER en base a SEPA e INDEC (inversa del coeficiente de Engel).</div></div>
+        <div class="card s12"><h3>Mes a mes</h3><div class="tablewrap"><table id="t-can"></table></div></div>
+        <div class="card s12"><h3>Componentes de la CBA</h3><p class="cap">Cantidad mensual por adulto equivalente (INDEC, GBA) y precio mediano del mes en SEPA.</p><div class="tablewrap"><table id="t-can-comp"></table></div></div>
       </div>
     </section>
   </div>
 
   <!-- VALIDACIÓN -->
   <div data-panel="val" hidden>
+    <div class="met valmet">
+      <nav class="toc" id="toc-val"></nav>
+      <div class="valcuerpo">
     <section>
-      <h2>¿La estamos pegando?</h2>
+      <h2 id="v-sec-indec">Contra el INDEC</h2>
       <p class="sub" id="val-sub">Comparamos el IPCEER con el IPC oficial del INDEC en el mismo mes, la misma región y el mismo rubro. Para el total usamos dos referencias: los <b>bienes</b> del INDEC (que incluyen ropa, combustibles, medicamentos y otros que acá no están) y una <b>réplica del INDEC con nuestra misma canasta</b>: los índices oficiales de los mismos rubros, ponderados igual. La réplica es la comparación justa: si difiere, es por la fuente de precios y no por la cobertura.</p>
       <div class="filters" style="display:flex;gap:14px;flex-wrap:wrap;margin:0 0 16px">
         <label class="f">Comparación <select id="v-par"></select></label>
@@ -479,6 +486,33 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
         <div class="card s12"><h3>Todas las comparaciones</h3><p class="cap">Para la región elegida arriba. A nivel nacional el INDEC solo publica el total y las divisiones; para ver grupos y clases, elegí una región.</p><div class="tablewrap"><table id="t-pares"></table></div></div>
       </div>
     </section>
+    <section>
+      <h2 id="v-sec-var">Variantes de método</h2>
+      <p class="sub" id="var-sub">Las mismas fuentes y ponderadores, calculados de varias formas, contra la réplica del INDEC en el tramo 2016-2018. Sirve para elegir el método con evidencia.</p>
+      <div class="grid">
+        <div class="card s12"><h3>Qué variante se acerca más al INDEC</h3><div class="tablewrap"><table id="t-var"></table></div></div>
+        <div class="card s12"><h3>Variación mensual de cada variante y del INDEC</h3><div class="chart"><canvas id="c-var"></canvas></div><div class="src">Fuente: CEER en base a SEPA (base de Zenodo 2016-2018) e INDEC.</div></div>
+      </div>
+    </section>
+    <section>
+      <h2 id="v-sec-cons">Contra las consultoras</h2>
+      <p class="sub">Lo que publican otras mediciones de alta frecuencia, puesto al lado de nuestro dato equivalente: mismo rubro, misma semana o mes, misma medida (semanal, promedio de 4 semanas o mes). Las consultoras relevan canastas, fuentes y métodos distintos, así que importa más la dirección que el decimal. Cada dato externo lleva su enlace; se cargan en <span class="mono">config/externos.csv</span>.</p>
+      <div class="grid">
+        <div class="card s12"><h3>Ellos y nosotros</h3><div class="legend"><span><i style="background:var(--ambar)"></i>Medición externa</span><span><i style="background:var(--accent)"></i>IPCEER equivalente</span></div><div class="chart"><canvas id="c-ext"></canvas></div><div class="src">Fuente: CEER en base a SEPA y a lo publicado por cada consultora (enlaces en la tabla).</div></div>
+        <div class="card s12"><h3>Detalle</h3><div class="tablewrap"><table id="t-ext"></table></div></div>
+      </div>
+    </section>
+    <section>
+      <h2 id="v-sec-mun"><span id="mun-titulo">Morón</span>: municipio contra su región</h2>
+      <p class="sub" id="mun-sub"></p>
+      <div class="grid" id="mun-grid">
+        <div class="card s12"><h3>Inflación semanal: municipio y su región</h3><p class="cap">Promedio de 4 semanas, mensualizado.</p><div class="chart"><canvas id="c-mun1"></canvas></div><div class="src">Fuente: CEER en base a SEPA y Georef (IGN). Mismos ponderadores que la región del IPC.</div></div>
+        <div class="card s6"><h3>Inflación mensual</h3><div class="chart short"><canvas id="c-mun2"></canvas></div><div class="src">Fuente: CEER en base a SEPA.</div></div>
+        <div class="card s6"><h3>Comparación con otras mediciones del municipio</h3><div id="mun-ext"></div></div>
+      </div>
+    </section>
+      </div>
+    </div>
   </div>
 
   <!-- HILO -->
@@ -774,6 +808,17 @@ prom. 4 mens.  = (1 + prom. 4 sem.)^(30,44 / 7) − 1</div>
     <ul><li><b>En cada cadena:</b> con la mediana del precio por kilo de los productos de la cadena en la región. Si una cadena no vende un componente, se imputa el precio mediano de la región ajustado por el nivel de precios de la cadena; entran al ranking las cadenas con al menos el ${num(100*(((D.indicadores||{}).parametros||{}).cobertura_min_cba??0.6),0)}% del costo con precios propios.</li>
     <li><b>Para comparar con el INDEC:</b> con la mediana entre cadenas, todos los meses, en Gran Buenos Aires. Solo se valorizan los componentes que tienen precio ese mes: nunca se arrastra el de un mes anterior. Por eso la variación mensual se calcula solo con los componentes que tienen precio en los dos meses, y el tablero muestra cuántos de los 30 tienen precio. La pestaña Validación compara ese costo con la CBA oficial, en pesos y en variación mensual.</li></ul>
     <p>Diferencias esperables con el INDEC: el INDEC valoriza con los precios promedio que releva para el IPC en todo tipo de comercios (incluidos almacenes, verdulerías y carnicerías), y para algunos componentes (pan francés, carne, verduras) los supermercados informan pocos productos o ninguno. Por eso el nivel puede diferir y lo más informativo es la variación.</p>`],
+  ['indec','Cómo se compara con el método del INDEC',`
+    <p>El IPC del INDEC compara el <b>promedio del mes contra el promedio del mes anterior</b>: para cada variedad calcula un precio promedio del mes (en supermercados, la media de las dos visitas del mes; después, la media geométrica entre negocios) y el índice elemental es el cociente de esos promedios. El IPCEER mensual hace lo mismo con más datos: el precio de cada producto de cada cadena y región en el mes es el promedio (geométrico) de todos los días con datos, y la variación es el cociente con el promedio del mes anterior, con los mismos productos (Jevons). No se compara punta contra punta.</p>
+    <p>Diferencias que quedan: (1) el INDEC <b>imputa</b> los precios faltantes con la variación de los demás; acá un producto que falta un mes simplemente no entra en la comparación, que es equivalente. (2) Cuando un artículo desaparece, el INDEC lo <b>reemplaza</b> por uno comparable y cuenta la diferencia de precio como variación, o ajusta por cantidad si cambió el envase; acá eso se prueba como variante B2 en Validación. (3) El INDEC releva también comercios tradicionales, ferias, carnicerías y verdulerías; SEPA solo grandes cadenas.</p>
+    <p>La correlación de nuestro mes con el mes <i>siguiente</i> del INDEC es más alta que con el mismo mes: los precios de lista de los supermercados se mueven antes que el promedio de todos los comercios. No viene de comparar puntas.</p>`],
+  ['canastas','Canastas básicas (CBA y CBT)',`
+    <p>La CBA usa la composición del INDEC para un adulto equivalente de Gran Buenos Aires (30 componentes, cantidades mensuales). Cada componente sigue la variación de los mismos productos de la misma cadena y región entre un mes y el anterior, y los componentes se agregan con las cantidades del INDEC. El nivel arranca en el costo propio del primer mes de cada tramo (mediana del precio por kilo entre cadenas), así que conviene comparar variaciones más que niveles: SEPA tiene pocos frescos por kilo y el precio por kilo de un envasado no es el de la verdulería o la carnicería.</p>
+    <p>La CBT es la CBA por la inversa del coeficiente de Engel que publica el INDEC para el mismo mes. Si el INDEC no lo publicó todavía, no hay CBT: no se usa el del mes anterior.</p>`],
+  ['servicios','Regulados y canasta de servicios',`
+    <p>Los precios fijados por norma (salario del servicio doméstico, transporte, y lo que se vaya sumando) se cargan con su valor, vigencia, norma y fuente. La canasta de servicios sigue la idea de la canasta de servicios públicos del AMBA del Observatorio de Tarifas y Subsidios del IIEP (UBA-CONICET): electricidad, gas, agua y transporte de un hogar tipo, valorizados con los cuadros tarifarios. Un mes tiene costo total solo si están todos los componentes con su tarifa y su cantidad con fuente.</p>`],
+  ['otras','Alquileres y medicamentos',`
+    <p>Las fuentes que no están en SEPA se bajan en cada corrida de la tarea programada, solo si son públicas y se pueden bajar sin saltear protecciones: el informe mensual Index Zonaprop de la Ciudad (alquileres publicados) y el listado de precios de medicamentos de PAMI (datos abiertos). Los portales de avisos inmobiliarios no permiten bajar sus listados con robots, por eso se usa el informe que publican.</p>`],
   ['diario','Índice diario y eventos',`
     <p>Para ver cómo reaccionan los precios a un evento puntual se arma un índice por día y por rubro. Cada día se compara <b>directamente con el día base</b> (el primero de la ventana, hoy los últimos ${((D.indicadores||{}).parametros||{}).diario_dias||120} días sin cortes) con un Jevons sobre los mismos productos de la misma cadena y región en los dos días. No se encadena día a día porque los ruidos diarios se acumularían.</p>
     <p>Si un rubro no tiene productos comparables un día, ese día no tiene dato para ese rubro. Las clases sin datos quedan afuera y su peso se reparte entre las que tienen; el nacional existe solo si están las seis regiones ese día. No se completa ni se arrastra nada.</p>
@@ -1313,12 +1358,6 @@ function renderExt(){
   else sinDatos('c-ext','Todavía no hay mediciones externas con un dato nuestro equivalente.');
   document.getElementById('t-ext').innerHTML=`<thead><tr><th>Fuente</th><th>Período</th><th>Medida</th><th>Rubro</th><th class="n">Ellos</th><th class="n">IPCEER</th><th class="n">Diferencia</th><th>Nuestro equivalente</th><th>Publicado</th></tr></thead><tbody>`+
     F.map(f=>`<tr><td><a href="${esc(f.x.url)}" target="_blank" rel="noopener">${esc(f.x.fuente)}</a></td><td class="mono">${esc(f.x.periodo)}</td><td>${esc((f.x.medida||'').replace(/_/g,' '))}</td><td>${esc(f.x.rubro)}${f.cod==='TOTAL'?' <span class="muted">(el nuestro: solo bienes de góndola)</span>':''}</td><td class="n">${pct(f.x.valor,2)}</td><td class="n">${pct(f.n.v,2)}</td><td class="n">${f.n.v!=null&&f.x.valor!=null?num(f.n.v-f.x.valor,2)+' pp':'–'}</td><td class="compl">${esc(f.n.txt)}${f.x.nota?` · <span class="muted">${esc(f.x.nota)}</span>`:''}</td><td class="mono">${esc(f.x.publicado||'')}</td></tr>`).join('')+'</tbody>';
-  const R=D.regulados||{}, I=(R.indice||[]).filter(r=>r.region==='Nacional'&&r.var_pct!=null);
-  const cods=[...new Set(I.map(r=>r.codigo))], meses=[...new Set(I.map(r=>r.periodo))].sort();
-  if(I.length) draw('c-regu',{type:'bar',data:{labels:meses.map(mesLbl),datasets:cods.map((c,i)=>({label:(I.find(r=>r.codigo===c)||{}).nombre||c,data:meses.map(m=>(I.find(r=>r.codigo===c&&r.periodo===m)||{}).var_pct??null),backgroundColor:PAL()[i]}))},options:baseOpts({})});
-  else sinDatos('c-regu','Sin meses consecutivos con tarifa registrada.');
-  document.getElementById('t-regu').innerHTML=`<thead><tr><th>Concepto</th><th>Región</th><th class="n">Valor</th><th>Vigencia</th><th>Norma y fuente</th></tr></thead><tbody>`+
-    (R.tarifas||[]).map(t=>`<tr><td>${esc(t.concepto)} <span class="muted">(${esc(t.rubro.replace(/_/g,' '))}, ${esc(t.codigo)})</span></td><td>${esc(t.region)}</td><td class="n">$ ${num(t.valor,2)} <span class="muted">${esc(t.unidad.replace('$',''))}</span></td><td class="mono">${esc(t.vigente_desde)} a ${esc(t.vigente_hasta||'')}</td><td><a href="${esc(t.fuente_url)}" target="_blank" rel="noopener">${esc(t.norma)}</a></td></tr>`).join('')+'</tbody>';
 }
 
 /* ---------- municipios ---------- */
@@ -1428,6 +1467,80 @@ function renderGeo(){
   document.getElementById('t-geo').innerHTML=`<thead><tr><th>${{region:'Región',provincia:'Provincia',depto:'Municipio'}[gst.niv]}</th>${gst.niv==='depto'?'<th>Provincia</th>':''}<th class="n">${esc(document.querySelector('#g-met option:checked').textContent)}</th><th class="n">Diferencia con el país</th></tr></thead><tbody>`+
     lista.map(u=>`<tr><td>${esc(u.nom)}</td>${gst.niv==='depto'?`<td>${esc(u.prov||'')}</td>`:''}<td class="n">${fmt(u.v)}</td><td class="n">${dif(u.v)==null?'–':num(dif(u.v),gst.met==='nivel'?1:2)+(gst.met==='nivel'?'':' pp')}</td></tr>`).join('')+'</tbody>';
 }
+
+/* ---------- validación: índice de secciones ---------- */
+function tocVal(){
+  const hs=[...document.querySelectorAll('[data-panel="val"] .valcuerpo h2[id]')];
+  document.getElementById('toc-val').innerHTML=hs.map((h,i)=>`<a href="#${h.id}"><span class="mono">${String(i+1).padStart(2,'0')}</span> ${esc(h.textContent)}</a>`).join('');
+}
+/* ---------- variantes de método ---------- */
+const VAR_NOM={base:'Método actual',A:'A · Sin carnes, pescados, frutas ni verduras',B1:'B1 · Base fija (contra dic-2016)',B2:'B2 · Con reemplazos comparables',C:'C · Sin cadenas con precios quietos','A+B2+C':'A + B2 + C'};
+function renderVariantes(){
+  const V=(D.variantes||{}).variantes; const t=document.getElementById('t-var');
+  if(!V){ t.innerHTML='<tbody><tr><td class="muted">Todavía no se corrió la comparación (scripts/variantes.py).</td></tr></tbody>'; sinDatos('c-var'); return; }
+  const ks=Object.keys(V).filter(k=>V[k].n);
+  const mejor=k=>ks.reduce((a,b)=>Math.abs(V[b][k])<Math.abs(V[a][k])?b:a);
+  const mR=mejor('rmse'), mS=mejor('sesgo');
+  t.innerHTML=`<thead><tr><th>Variante</th><th class="n">Acumulado IPCEER</th><th class="n">Acumulado INDEC</th><th class="n">Sesgo mensual (pp)</th><th class="n">Error (RMSE, pp)</th><th class="n">Correlación mismo mes</th><th class="n">Correlación con el mes siguiente del INDEC</th></tr></thead><tbody>`+
+    ks.map(k=>{const v=V[k]; return `<tr><td>${esc(VAR_NOM[k]||k)}</td><td class="n">${pct(v.acum_propio,1)}</td><td class="n">${pct(v.acum_indec,1)}</td><td class="n">${num(v.sesgo,2)}${k===mS?' <span class="muted">(mejor)</span>':''}</td><td class="n">${num(v.rmse,2)}${k===mR?' <span class="muted">(mejor)</span>':''}</td><td class="n">${num(v.r_mismo_mes,2)}</td><td class="n">${num(v.r_un_mes_antes,2)}</td></tr>`;}).join('')+'</tbody>';
+  const ms=(V.base.meses||[]).map(x=>x.mes);
+  const ser=['base','A','B1','B2','C'].filter(k=>V[k]&&V[k].meses);
+  draw('c-var',{type:'line',data:{labels:ms.map(mesLbl),datasets:[...ser.map((k,i)=>{const m=Object.fromEntries(V[k].meses.map(x=>[x.mes,x.propio])); return {label:VAR_NOM[k]||k,data:ms.map(x=>m[x]??null),borderColor:PAL()[[0,2,3,4,5][i]],backgroundColor:PAL()[[0,2,3,4,5][i]],borderWidth:k==='base'?2.5:1.5,pointRadius:0};}),
+    {label:'INDEC (réplica)',data:V.base.meses.map(x=>x.indec),borderColor:css('--ambar'),backgroundColor:css('--ambar'),borderWidth:3,pointRadius:2}]},
+    options:baseOpts({layout:{padding:{right:200}},plugins:{legend:{display:false},etiquetasFinales:{on:true}}})});
+  document.getElementById('var-sub').innerHTML=`Las mismas fuentes y ponderadores calculados de varias formas, contra la réplica del INDEC (mismas clases y ponderadores), de ${mesLbl(V.base.desde)} a ${mesLbl(V.base.hasta)}. Cadenas excluidas en C (más del ${pct(100*(D.variantes.umbral_quietos||0),0)} de sus precios sin cambios en 4 meses): ${esc((D.variantes.excluidas_C||[]).map(c=>nombreCadena(c)).join(', ')||'ninguna')}.`;
+}
+function nombreCadena(id){ const c=((IND().cadenas||[]).find(x=>x.cadena_id===id)||{}).cadena; return c||('comercio '+id.replace('-',', bandera ')); }
+
+/* ---------- regulados ---------- */
+function renderRegu(){
+  const R=D.regulados||{}, I=(R.indice||[]).filter(r=>r.region==='Nacional'&&r.var_pct!=null);
+  const cods=[...new Set(I.map(r=>r.codigo))], meses=[...new Set(I.map(r=>r.periodo))].sort();
+  if(I.length) draw('c-regu',{type:'bar',data:{labels:meses.map(mesLbl),datasets:cods.map((c,i)=>({label:(I.find(r=>r.codigo===c)||{}).nombre||c,data:meses.map(m=>(I.find(r=>r.codigo===c&&r.periodo===m)||{}).var_pct??null),backgroundColor:PAL()[i]}))},options:baseOpts({})});
+  else sinDatos('c-regu','Sin meses consecutivos con tarifa registrada.');
+  document.getElementById('t-regu').innerHTML=`<thead><tr><th>Concepto</th><th>Región</th><th class="n">Valor</th><th>Vigencia</th><th>Norma y fuente</th></tr></thead><tbody>`+
+    (R.tarifas||[]).map(t=>`<tr><td>${esc(t.concepto)} <span class="muted">(${esc(t.rubro.replace(/_/g,' '))}, ${esc(t.codigo)})</span></td><td>${esc(t.region)}</td><td class="n">$ ${num(t.valor,2)} <span class="muted">${esc(t.unidad.replace('$',''))}</span></td><td class="mono">${esc(t.vigente_desde)} a ${esc(t.vigente_hasta||'')}</td><td><a href="${esc(t.fuente_url)}" target="_blank" rel="noopener">${esc(t.norma)}</a></td></tr>`).join('')+'</tbody>';
+
+  const S=D.servicios||{}, M=S.meses||[], C=(S.componentes||[]);
+  const pend=C.filter(c=>c.pendiente);
+  document.getElementById('cs-sub').innerHTML=`Electricidad, gas natural, agua potable y transporte público de un hogar tipo del AMBA, siguiendo la ${S.referencia?`<a href="${esc(S.referencia.url)}" target="_blank" rel="noopener">${esc(S.referencia.nombre)}</a>`:'canasta del IIEP (UBA-CONICET)'}. Cada componente se valoriza con las tarifas del registro de arriba por una cantidad mensual con fuente; un mes tiene total solo si están todos los componentes.`+
+    (pend.length?` <b>Todavía falta:</b> ${pend.map(c=>esc(c.nombre)+' ('+esc(c.nota||'')+')').join('; ')}.`:'');
+  const tot=M.filter(m=>m.total!=null);
+  if(tot.length) draw('c-cs',{type:'bar',data:{labels:tot.map(m=>mesLbl(m.mes)),datasets:[{label:'Canasta',data:tot.map(m=>m.total),backgroundColor:css('--accent')}]},options:baseOpts({})});
+  else sinDatos('c-cs','La canasta todavía no tiene todos sus componentes cargados con fuente: no se muestra un total incompleto.');
+  document.getElementById('t-cs').innerHTML=`<thead><tr><th>Componente</th><th>Cantidad</th>${M.map(m=>`<th class="n">${mesLbl(m.mes)}</th>`).join('')}<th>Estado</th></tr></thead><tbody>`+
+    C.map(c=>`<tr><td>${esc(c.nombre)}</td><td>${c.cantidad!=null?num(c.cantidad,0)+' '+esc(c.unidad||''):'–'}</td>${M.map(m=>{const p=(m.precios||{})[c.id]; return `<td class="n">${p!=null?'$ '+num(p,2):'–'}</td>`;}).join('')}<td class="muted">${c.pendiente?esc(c.nota||'pendiente'):'con fuente'}</td></tr>`).join('')+
+    `<tr><td><b>Total</b></td><td></td>${M.map(m=>`<td class="n"><b>${m.total!=null?pesos(m.total):'–'}</b></td>`).join('')}<td></td></tr></tbody>`;
+}
+
+/* ---------- canastas (CBA y CBT) ---------- */
+function renderCan(){
+  const K=D.canastas||{}, M=(K.mensual||[]).filter(r=>r.region==='GBA'), I=K.indec||[];
+  const iM=Object.fromEntries(I.map(r=>[r.mes,r]));
+  document.getElementById('can-sub').innerHTML=`Canasta básica alimentaria (CBA) de un adulto equivalente de Gran Buenos Aires, con las cantidades del INDEC. Cada componente sigue la variación de los mismos productos de la misma cadena entre un mes y el anterior (promedio del mes contra promedio del mes, como el IPC). El nivel parte del costo propio del primer mes de cada tramo: compará sobre todo las variaciones. La canasta básica total (CBT) es la CBA por la inversa del coeficiente de Engel que publica el INDEC para ese mes; si el INDEC todavía no la publicó, no hay CBT.`;
+  if(!M.length){ ['c-can1','c-can2','c-can3'].forEach(i=>sinDatos(i)); return; }
+  const meses=[...new Set([...M.map(r=>r.mes),...I.filter(r=>r.mes>=M[0].mes).map(r=>r.mes)])].sort();
+  const mM=Object.fromEntries(M.map(r=>[r.mes,r]));
+  draw('c-can1',{type:'line',data:{labels:meses.map(mesLbl),datasets:[
+    {label:'IPCEER',data:meses.map(m=>(mM[m]||{}).cba??null),borderColor:css('--accent'),backgroundColor:css('--accent'),borderWidth:2.5,pointRadius:0,spanGaps:false},
+    {label:'INDEC',data:meses.map(m=>(iM[m]||{}).cba??null),borderColor:css('--ambar'),backgroundColor:css('--ambar'),borderWidth:2,pointRadius:0}]},
+    options:baseOpts({plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'$ '+num(v,0)}}}})});
+  const vi=m=>{ const a=iM[m], k=meses.indexOf(m), b=k>0?iM[meses[k-1]]:null; return a&&b?(a.cba/b.cba-1)*100:null; };
+  draw('c-can2',{type:'bar',data:{labels:meses.map(mesLbl),datasets:[
+    {label:'IPCEER',data:meses.map(m=>(mM[m]||{}).var??null),backgroundColor:css('--accent')},
+    {label:'INDEC',data:meses.map(vi),backgroundColor:css('--ambar')}]},options:baseOpts({})});
+  const cbt=meses.map(m=>(mM[m]&&mM[m].cba!=null&&iM[m]&&iM[m].ice)?mM[m].cba*iM[m].ice:null);
+  document.getElementById('cbt-cap').textContent='CBA del IPCEER por la inversa del coeficiente de Engel del INDEC del mismo mes, contra la CBT oficial.';
+  draw('c-can3',{type:'line',data:{labels:meses.map(mesLbl),datasets:[
+    {label:'IPCEER',data:cbt,borderColor:css('--accent'),backgroundColor:css('--accent'),borderWidth:2.5,pointRadius:0},
+    {label:'INDEC',data:meses.map(m=>(iM[m]||{}).cbt??null),borderColor:css('--ambar'),backgroundColor:css('--ambar'),borderWidth:2,pointRadius:0}]},
+    options:baseOpts({plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'$ '+num(v,0)}}}})});
+  document.getElementById('t-can').innerHTML=`<thead><tr><th>Mes</th><th class="n">CBA IPCEER</th><th class="n">Var. IPCEER</th><th class="n">Componentes con variación</th><th class="n">CBA INDEC</th><th class="n">Var. INDEC</th><th class="n">ICE (INDEC)</th><th class="n">CBT IPCEER</th><th class="n">CBT INDEC</th></tr></thead><tbody>`+
+    [...meses].reverse().map((m,j)=>{const r=mM[m]||{}, o=iM[m]||{}, k=meses.indexOf(m); return `<tr><td>${mesLbl(m)}${r.inicio_tramo?' <span class="muted">(inicio de tramo)</span>':''}</td><td class="n">${r.cba!=null?pesos(r.cba):'–'}</td><td class="n">${pct(r.var,2,true)}</td><td class="n">${r.componentes?r.componentes_con_var+' de '+r.componentes:'–'}</td><td class="n">${o.cba!=null?pesos(o.cba):'–'}</td><td class="n">${pct(vi(m),2,true)}</td><td class="n">${o.ice!=null?num(o.ice,2):'–'}</td><td class="n">${cbt[k]!=null?pesos(cbt[k]):'–'}</td><td class="n">${o.cbt!=null?pesos(o.cbt):'–'}</td></tr>`;}).join('')+'</tbody>';
+  const comp=K.componentes||[];
+  document.getElementById('t-can-comp').innerHTML=`<thead><tr><th>Componente</th><th class="n">Cantidad mensual</th><th class="n">Precio mediano (${comp[0]&&comp[0].mes?mesLbl(comp[0].mes):''})</th><th class="n">Productos</th><th class="n">Costo</th></tr></thead><tbody>`+
+    comp.map(c=>`<tr><td>${esc(c.nombre)}</td><td class="n">${num(c.cantidad_g,0)} ${c.base==='l'?'cm³':'g'}</td><td class="n">${c.precio!=null?'$ '+num(c.precio,2)+' / '+esc(c.base):'–'}</td><td class="n">${c.productos||0}</td><td class="n">${c.precio!=null?pesos(c.precio*c.cantidad_g/1000):'–'}</td></tr>`).join('')+'</tbody>';
+}
 function render(){
   const tab=document.querySelector('.tabs button[aria-selected="true"]').dataset.tab;
   renderKpis();
@@ -1442,9 +1555,9 @@ function render(){
   if(tab==='cad') renderCad();
   if(tab==='hilo') renderHilo();
   if(tab==='met') renderMetodo();
-  if(tab==='val') renderVal();
-  if(tab==='ext') renderExt();
-  if(tab==='mun') renderMun();
+  if(tab==='val'){ renderVal(); renderExt(); renderMun(); renderVariantes(); tocVal(); }
+  if(tab==='regu') renderRegu();
+  if(tab==='can') renderCan();
 }
 if(window.Chart){ Chart.defaults.font.family=css('--font'); Chart.defaults.color=css('--muted'); }
 initControles(); render();

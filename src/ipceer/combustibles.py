@@ -76,6 +76,7 @@ ALIAS = {
     "producto": ["producto", "descripcion_producto"],
     "horario": ["tipohorario", "tipo_horario"],
     "precio": ["precio", "precio_surtidor"],
+    "canal": ["canal_de_comercializacion", "canal", "destino"],
     "volumen": ["volumen", "volumen_m3"],
     "lat": ["latitud", "lat"],
     "lon": ["longitud", "lon", "lng"],
@@ -407,6 +408,10 @@ def leer(ruta: Path) -> pl.DataFrame:
         pl.col("provincia").map_elements(_texto, return_dtype=pl.Utf8).alias("prov_txt"),
         pl.col("localidad").map_elements(_texto, return_dtype=pl.Utf8).alias("loc_txt"),
     ).filter(pl.col("prod").is_not_null() & (pl.col("precio") > 0) & pl.col("anio").is_not_null() & pl.col("mes").is_between(1, 12))
+    # solo venta al público: los archivos de Energía traen también otros canales (mayorista, agro,
+    # transporte...), con otros precios, y mezclarlos movía el índice cuando cambiaba la composición
+    if df["canal"].drop_nulls().len():
+        df = df.filter(pl.col("canal").map_elements(_texto, return_dtype=pl.Utf8).fill_null("").str.contains("publico"))
     # precio diurno cuando la estación informa ambos turnos
     if df["horario"].drop_nulls().str.contains("diurn").any():
         df = df.filter(~pl.col("horario").str.contains("noct").fill_null(False))

@@ -123,3 +123,34 @@ def externos(cfg: Config) -> list[dict]:
     if not ruta.exists():
         return []
     return pl.read_csv(ruta, schema_overrides={"valor": pl.Float64, "periodo": pl.Utf8, "region": pl.Utf8}).to_dicts()
+
+
+def canasta_servicios(cfg: Config) -> dict:
+    """Costo mensual de la canasta de servicios (config/regulados/servicios.yaml). Solo usa
+    componentes con cantidad y tarifa con fuente; un mes tiene total solo si están todos."""
+    import yaml
+    ruta = cfg.dir_config / "regulados" / "servicios.yaml"
+    if not ruta.exists():
+        return {}
+    conf = yaml.safe_load(ruta.read_text(encoding="utf-8")) or {}
+    comps = conf.get("componentes", [])
+    t = tarifas(cfg)
+    pm = precio_mensual(t) if not t.is_empty() else pl.DataFrame()
+    precios = {}
+    if not pm.is_empty():
+        for concepto, mes, precio in pm.select("concepto", "mes", "precio").iter_rows():
+            precios.setdefault(concepto, {})[mes] = precio
+    activos = [c for c in comps if not c.get("pendiente") and c.get("concepto") and c.get("cantidad")]
+    meses = sorted({m for c in comps if c.get("concepto") for m in precios.get(c["concepto"], {})})
+    filas = []
+    for mes in meses:
+        costo = {c["id"]: precios.get(c["concepto"], {}).get(mes, None) for c in comps if c.get("concepto")}
+        valor = {c["id"]: (costo[c["id"]] * c["cantidad"]) if (c in activos and costo.get(c["id"]) is not None) else None
+                 for c in comps if c.get("concepto")}
+        total = sum(valor[c["id"]] for c in activos) if activos and all(valor[c["id"]] is not None for c in activos) else None
+        filas.append({"mes": mes, "precios": costo, "valores": valor, "total": total})
+    for a, b in zip(filas, filas[1:]):
+        if a["total"] and b["total"]:
+            b["var"] = (b["total"] / a["total"] - 1) * 100
+    return {"referencia": conf.get("referencia"), "componentes": comps, "meses": filas,
+            "completa": bool(activos) and len(activos) == len(comps)}

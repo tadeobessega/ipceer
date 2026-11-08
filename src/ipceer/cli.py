@@ -23,7 +23,7 @@ from pathlib import Path
 
 import polars as pl
 
-from . import combustibles, diario, externos, geo, descarga, hilo, municipios, historico, indec, indicadores, indice, lectura, panel, resumen, sitio, validacion
+from . import combustibles, diario, otras_fuentes, externos, geo, descarga, hilo, municipios, historico, indec, indicadores, indice, lectura, panel, resumen, sitio, validacion
 from .clasificador import SIN_CLASIFICAR
 from .config import cargar_config
 
@@ -126,6 +126,33 @@ def cmd_calcular(cfg, args):
         except Exception as e:
             log.warning("IPCEER con combustibles: %s", e)
         datos["combustibles"] = resumen._limpio(comb_datos)
+    try:
+        can = indicadores.canasta_mensual(cfg)
+        cba_of = indec.leer_cba(indec.directorio(cfg))
+        datos["canastas"] = resumen._limpio({
+            "mensual": can.to_dicts() if not can.is_empty() else [],
+            "componentes": indicadores.componentes_cba(cfg),
+            "indec": cba_of.to_dicts() if cba_of is not None and not cba_of.is_empty() else []})
+        if not can.is_empty():
+            can.write_csv(cfg.ruta("resultados") / "canasta_mensual.csv")
+    except Exception as e:
+        log.warning("Canastas: %s", e)
+    try:
+        ro = cfg.ruta("resultados") / "otras_fuentes.json"
+        if ro.exists():
+            datos["otras"] = json.loads(ro.read_text(encoding="utf-8"))
+    except Exception as e:
+        log.warning("Otras fuentes: %s", e)
+    try:
+        rv = cfg.ruta("resultados") / "variantes.json"
+        if rv.exists():
+            datos["variantes"] = json.loads(rv.read_text(encoding="utf-8"))
+    except Exception as e:
+        log.warning("Variantes: %s", e)
+    try:
+        datos["servicios"] = resumen._limpio(externos.canasta_servicios(cfg))
+    except Exception as e:
+        log.warning("Canasta de servicios: %s", e)
     try:
         datos["regulados"] = resumen._limpio(externos.datos_regulados(cfg))
         datos["externos"] = resumen._limpio(externos.externos(cfg))
@@ -283,6 +310,10 @@ def main(argv=None):
         fn=lambda cfg, args: combustibles.actualizar(cfg))
     sub.add_parser("cadenas", help="nombres de las cadenas desde los últimos zips").set_defaults(fn=cmd_cadenas)
     sub.add_parser("estado", help="resumen de datos y resultados").set_defaults(fn=cmd_estado)
+    sub.add_parser("otras", help="alquileres (Index Zonaprop) y medicamentos (PAMI)").set_defaults(
+        fn=lambda cfg, a: otras_fuentes.actualizar(cfg))
+    sub.add_parser("variantes", help="compara variantes de método contra el INDEC (2016-2018)").set_defaults(
+        fn=lambda cfg, a: __import__("runpy").run_path(str(Path(__file__).resolve().parents[2] / "scripts" / "variantes.py"), run_name="__main__"))
     sub.add_parser("municipios", help="paneles e índices por municipio").set_defaults(
         fn=lambda cfg, args: log.info("Municipios: %d días reprocesados", municipios.reprocesar(cfg)))
     i = sub.add_parser("indec")

@@ -386,7 +386,8 @@ def _cantidad_base(cantidad: str, unidad: str, base: str, gpu: float | None) -> 
 def precios_cba(cfg: Config, panel: pl.DataFrame) -> pl.DataFrame:
     """Precio por kilo o litro de cada producto que entra en un componente de la CBA."""
     cba = cargar_cba(cfg)
-    df = panel.select(*CLAVE, "clase", "descripcion", "precio_lista").with_columns(
+    df = panel.filter(pl.col("precio_lista").is_not_nan() & (pl.col("precio_lista") > 0)).select(
+        *CLAVE, "clase", "descripcion", "precio_lista").with_columns(
         pl.col("descripcion").map_elements(_normalizar, return_dtype=pl.Utf8).alias("desc"))
     partes = []
     for c in cba["componentes"]:
@@ -510,6 +511,90 @@ def cba_mensual(cfg: Config, regiones: tuple[str, ...] = ("GBA", NACIONAL)) -> p
             filas.append({"mes": r.stem, "region": reg, "costo": sum(precios[k] * q[k] for k in q if k in precios),
                           "componentes": len(precios), "total_componentes": len(q), "var_comun": var, "dias": dias})
     return pl.DataFrame(filas, infer_schema_length=None) if filas else pl.DataFrame()
+
+
+def canasta_mensual(cfg: Config, regiones: tuple[str, ...] = ("GBA", NACIONAL)) -> pl.DataFrame:
+    """CBA mensual de un adulto equivalente con el criterio del IPC: cada componente sigue la
+    variación de los mismos productos de la misma cadena y región entre un mes y el anterior
+    (promedio del mes contra promedio del mes), y los componentes se agregan con las cantidades
+    del INDEC (Laspeyres encadenado sobre el costo del mes anterior).
+
+    El nivel arranca en el costo propio (mediana del precio por kilo entre cadenas) del primer mes
+    de cada tramo. Si un componente no tiene productos comparables en un mes, ese mes la variación
+    se calcula con los demás y se informa cuántos entraron: no se supone que su precio no cambió.
+    Un salto de más de 2 meses entre paneles empieza un tramo nuevo."""
+    cba = cargar_cba(cfg)
+    q = {c["id"]: c["cantidad"] / 1000 for c in cba["componentes"]}
+    lim = cfg["limpieza"]
+    filas = []
+    estado: dict = {}
+    prev_pu = None
+    prev_mes = None
+    for r in sorted(cfg.ruta("panel_mensual").glob("*.parquet")):
+        a, m = map(int, r.stem.split("-"))
+        n_mes = a * 12 + m
+        pu = precios_cba(cfg, _cadena_id(pl.read_parquet(r)))
+        if pu.is_empty():
+            continue
+        nuevo_tramo = prev_mes is None or n_mes - prev_mes > 2
+        for reg in regiones:
+            d = pu if reg == NACIONAL else pu.filter(pl.col("region") == reg)
+            if d.is_empty():
+                continue
+            med = dict(d.group_by("componente").agg(pl.col("pu").median()).iter_rows())
+            if nuevo_tramo:
+                estado[reg] = None
+            e = estado.get(reg)
+            if e is None:
+                # costo de partida: precios propios del mes (solo si están casi todos los componentes)
+                if len(med) >= len(q) * 0.8:
+                    estado[reg] = {"costo_comp": {k: med[k] * q[k] for k in q if k in med}, "nivel": None}
+                    costo = sum(estado[reg]["costo_comp"].values()) * len(q) / max(len(med), 1)
+                    estado[reg]["nivel"] = costo
+                    filas.append({"mes": r.stem, "region": reg, "cba": costo, "var": None, "componentes_con_var": 0,
+                                  "componentes": len(q), "inicio_tramo": True})
+                continue
+            prev = prev_pu if reg == NACIONAL else prev_pu.filter(pl.col("region") == reg)
+            pares = (prev.select(*CLAVE, "componente", pl.col("pu").alias("p0"))
+                     .join(d.select(*CLAVE, "componente", pl.col("pu").alias("p1")), on=[*CLAVE, "componente"])
+                     .with_columns((pl.col("p1") / pl.col("p0")).alias("rel"))
+                     .filter(pl.col("rel").is_between(lim["relativo_min"], lim["relativo_max"])))
+            rel = dict(pares.group_by("componente").agg(pl.col("rel").log().mean().exp(), pl.len().alias("n"))
+                       .filter(pl.col("n") >= 3).select("componente", "rel").iter_rows())
+            cc = e["costo_comp"]
+            con = [k for k in cc if k in rel]
+            if not con:
+                filas.append({"mes": r.stem, "region": reg, "cba": None, "var": None, "componentes_con_var": 0,
+                              "componentes": len(q), "inicio_tramo": False})
+                e["nivel"] = None
+                continue
+            var = sum(cc[k] * rel[k] for k in con) / sum(cc[k] for k in con) - 1
+            for k in con:
+                cc[k] *= rel[k]
+            # los componentes sin dato conservan su peso pero no su precio: no entran en la variación
+            e["nivel"] = e["nivel"] * (1 + var) if e["nivel"] is not None else None
+            filas.append({"mes": r.stem, "region": reg, "cba": e["nivel"], "var": var * 100,
+                          "componentes_con_var": len(con), "componentes": len(q), "inicio_tramo": False})
+        prev_pu, prev_mes = pu, n_mes
+    return pl.DataFrame(filas, infer_schema_length=None) if filas else pl.DataFrame()
+
+
+def componentes_cba(cfg: Config) -> list[dict]:
+    """Cantidad mensual de cada componente y su precio mediano en el último mes con datos (GBA)."""
+    cba = cargar_cba(cfg)
+    rutas = sorted(cfg.ruta("panel_mensual").glob("*.parquet"))
+    med = {}
+    mes = None
+    for r in reversed(rutas):
+        pu = precios_cba(cfg, _cadena_id(pl.read_parquet(r)))
+        if not pu.is_empty():
+            g = pu.filter(pl.col("region") == "GBA")
+            med = dict(g.group_by("componente").agg(pl.col("pu").median()).iter_rows())
+            n = dict(g.group_by("componente").agg(pl.len()).iter_rows())
+            mes = r.stem
+            break
+    return [{"id": c["id"], "nombre": c["nombre"], "cantidad_g": c["cantidad"], "base": c["base"], "mes": mes,
+             "precio": med.get(c["id"]), "productos": n.get(c["id"], 0) if med else 0} for c in cba["componentes"]]
 
 
 # ---------------------------------------------------------------- todo junto

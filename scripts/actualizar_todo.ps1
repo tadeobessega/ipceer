@@ -87,11 +87,13 @@ Paso "SEPA: descarga" { Ipceer descargar }
 Paso "SEPA: procesamiento" { Ipceer procesar }
 Paso "Nombres de las cadenas" { Ipceer cadenas }
 Paso "Municipios (Morón)" { Ipceer municipios }
+Paso "Alquileres y medicamentos" { Ipceer otras }
 if ($historico) {
   Paso "Consolidación de semanas y meses" { Ipceer consolidar }
 } else {
   Paso "Consolidación de semanas y meses (todo)" { Ipceer consolidar --todos }
 }
+Paso "Variantes de método" { Ipceer variantes }
 Paso "Cálculo" { Ipceer calcular }
 Paso "Tablero" { Ipceer sitio }
 Paso "Resumen" { Ipceer estado }

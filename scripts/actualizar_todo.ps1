@@ -53,7 +53,15 @@ Log "Inicio. Repo: $Repo. Archivo SEPA: $Archivo"
 # 1. código nuevo: primero desde GitHub (tadeobessega/ipceer); si no, desde un paquete .bundle
 $conGit = [bool](Get-Command git -ErrorAction SilentlyContinue)
 if ($conGit -and ((git remote get-url origin 2>$null) -match "tadeobessega/ipceer")) {
+  $antes = (Get-FileHash $PSCommandPath).Hash
   Paso "Código nuevo (GitHub)" { git pull --ff-only origin main 2>&1 | AlLog }
+  # si este mismo script cambió, se vuelve a lanzar la versión nueva (PowerShell ya leyó la vieja)
+  if ((Get-FileHash $PSCommandPath).Hash -ne $antes -and -not $env:IPCEER_RELANZADO) {
+    Log "El script cambió: se relanza la versión nueva."
+    $env:IPCEER_RELANZADO = "1"
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $PSCommandPath -Archivo $Archivo
+    exit $LASTEXITCODE
+  }
 }
 $bundle = Get-ChildItem -Path $Repo -Filter "ipceer-*.bundle" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime | Select-Object -Last 1
 if ($bundle -and (Get-Command git -ErrorAction SilentlyContinue)) {

@@ -38,6 +38,8 @@ log = logging.getLogger(__name__)
 
 CODIGO = "07.2.2"
 CKAN = "http://datos.energia.gob.ar/api/3/action/"
+# cambia cuando cambia cómo se arma el panel, para que se rehaga solo (v2: solo venta al público)
+VERSION_PANEL = "v2-al-publico"
 DATASET_VOLUMENES = "708f9ab4-829b-4f02-b507-f303c5bc4800"
 URL_VOLUMENES = ("http://datos.energia.gob.ar/dataset/708f9ab4-829b-4f02-b507-f303c5bc4800/resource/"
                  "d6ecf302-049b-459d-bca2-b638ea70518b/download/precios-y-volumenes-a-partir-de-2018.csv")
@@ -441,7 +443,9 @@ def procesar(cfg: Config) -> Path | None:
     destino = d / "panel.parquet"
     surt = sorted((d / "surtidor").glob("*.csv.gz"))
     ultimo = max([a.stat().st_mtime for a in archivos] + [s.stat().st_mtime for s in surt[-1:]])
-    if destino.exists() and destino.stat().st_mtime > ultimo:
+    marca = d / "panel.version"
+    if destino.exists() and destino.stat().st_mtime > ultimo and marca.exists() \
+            and marca.read_text(encoding="utf-8").strip() == VERSION_PANEL:
         return destino
     partes = []
     for a in archivos:
@@ -466,6 +470,7 @@ def procesar(cfg: Config) -> Path | None:
                                                 est.select("prov_id", "lat", "lon").iter_rows()], dtype=pl.Utf8))
     df = df.drop("lat", "lon").join(est.select("est", "depto_id", "prov_id", "region"), on="est", how="left")
     df.write_parquet(destino, compression="zstd")
+    marca.write_text(VERSION_PANEL, encoding="utf-8")
     log.info("Combustibles: panel con %d filas (%s a %s)", df.height, df["mes_id"].min(), df["mes_id"].max())
     return destino
 

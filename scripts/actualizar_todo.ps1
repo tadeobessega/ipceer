@@ -88,10 +88,15 @@ Paso "SEPA: procesamiento" { Ipceer procesar }
 Paso "Nombres de las cadenas" { Ipceer cadenas }
 Paso "Municipios (Morón)" { Ipceer municipios }
 Paso "Alquileres y medicamentos" { Ipceer otras }
-if ($historico) {
+# Reconsolidar todo (2016 en adelante) tarda más de media hora: solo se hace si cambiaron las reglas
+# de clasificación; si no, se consolidan solo las semanas y meses nuevos.
+$reglas = (Get-FileHash "$Repo\config\clasificador.yaml").Hash + (Get-FileHash "$Repo\config\clasificacion_manual.csv" -ErrorAction SilentlyContinue).Hash
+$marcaReglas = "$Repo\resultados\reglas_clasificacion.hash"
+$reglasPrevias = if (Test-Path $marcaReglas) { Get-Content $marcaReglas -Raw } else { "" }
+if ($historico -or ($reglasPrevias.Trim() -eq $reglas)) {
   Paso "Consolidación de semanas y meses" { Ipceer consolidar }
 } else {
-  Paso "Consolidación de semanas y meses (todo)" { Ipceer consolidar --todos }
+  Paso "Consolidación de semanas y meses (todo: cambiaron las reglas)" { Ipceer consolidar --todos; if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq $null) { $reglas | Out-File -Encoding ascii $marcaReglas } }
 }
 Paso "Variantes de método" { Ipceer variantes }
 Paso "Cálculo" { Ipceer calcular }

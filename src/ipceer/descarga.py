@@ -54,11 +54,28 @@ def listar_recursos(cfg: Config) -> list[Recurso]:
     return sorted(recursos, key=lambda x: x.fecha)
 
 
-def _bajar(url: str, destino: Path, timeout: int, reintentos: int) -> None:
+def _token_github() -> str | None:
+    """Token para leer el respaldo si el repo es privado: variable GITHUB_TOKEN o el de la CLI gh, si está instalada."""
+    import os
+    import shutil
+    import subprocess
+    t = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if t:
+        return t
+    if shutil.which("gh"):
+        try:
+            r = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, timeout=20)
+            return r.stdout.strip() or None
+        except (OSError, subprocess.SubprocessError):
+            return None
+    return None
+
+
+def _bajar(url: str, destino: Path, timeout: int, reintentos: int, headers: dict | None = None) -> None:
     tmp = destino.with_suffix(".parcial")
     for intento in range(1, reintentos + 1):
         try:
-            with requests.get(url, stream=True, timeout=timeout, headers=UA) as r:
+            with requests.get(url, stream=True, timeout=timeout, headers={**UA, **(headers or {})}) as r:
                 r.raise_for_status()
                 with open(tmp, "wb") as f:
                     for bloque in r.iter_content(chunk_size=1 << 20):
@@ -231,8 +248,10 @@ def desde_github(cfg: Config) -> list[Path]:
     repo, tag = rr
     d = cfg["descarga"]
     try:
+        token = _token_github()
+        auth = {"Authorization": f"Bearer {token}"} if token else {}
         r = requests.get(f"https://api.github.com/repos/{repo}/releases/tags/{tag}", timeout=d["timeout_segundos"],
-                         headers={"Accept": "application/vnd.github+json"})
+                         headers={"Accept": "application/vnd.github+json", **auth})
         if r.status_code == 404:
             return []
         r.raise_for_status()
@@ -250,7 +269,11 @@ def desde_github(cfg: Config) -> list[Path]:
             continue
         log.info("Respaldo en GitHub: bajando %s (%.0f MB)", nombre, a.get("size", 0) / 1e6)
         try:
-            _bajar(a["browser_download_url"], destino, d["timeout_segundos"] * 5, d["reintentos"])
+            # con token se baja por la API (sirve aunque el repo sea privado); sin token, por el enlace público
+            if auth:
+                _bajar(a["url"], destino, d["timeout_segundos"] * 5, d["reintentos"], {**auth, "Accept": "application/octet-stream"})
+            else:
+                _bajar(a["browser_download_url"], destino, d["timeout_segundos"] * 5, d["reintentos"])
         except Exception as e:
             log.warning("Respaldo en GitHub: no se pudo bajar %s: %s", nombre, e)
             continue

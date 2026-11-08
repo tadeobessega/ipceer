@@ -1,6 +1,20 @@
 // Sirve el tablero del IPCEER desde el release "sepa-archivo" de GitHub (tablero.html),
 // que sube la PC al terminar cada corrida. Caché de 10 minutos en el borde.
-const ORIGEN = "https://github.com/tadeobessega/ipceer/releases/download/sepa-archivo/tablero.html";
+// Si el worker tiene el secreto GITHUB_TOKEN, lo baja por la API (funciona aunque el repo sea privado).
+const REPO = "tadeobessega/ipceer", TAG = "sepa-archivo", ARCHIVO = "tablero.html";
+const ORIGEN = `https://github.com/${REPO}/releases/download/${TAG}/${ARCHIVO}`;
+
+async function bajarTablero(env) {
+  if (!env.GITHUB_TOKEN) return fetch(ORIGEN, { redirect: "follow", cf: { cacheTtl: 0 } });
+  const h = { authorization: `Bearer ${env.GITHUB_TOKEN}`, "user-agent": "ipceer-worker", "x-github-api-version": "2022-11-28" };
+  const rel = await fetch(`https://api.github.com/repos/${REPO}/releases/tags/${TAG}`, { headers: { ...h, accept: "application/vnd.github+json" } });
+  if (!rel.ok) return rel;
+  const a = ((await rel.json()).assets || []).find((x) => x.name === ARCHIVO);
+  if (!a) return new Response(null, { status: 404 });
+  const d = await fetch(`https://api.github.com/repos/${REPO}/releases/assets/${a.id}`, { headers: { ...h, accept: "application/octet-stream" }, redirect: "manual" });
+  const loc = d.headers.get("location");
+  return loc ? fetch(loc) : d;
+}
 const CACHE_SEG = 600;
 
 export default {
@@ -17,7 +31,7 @@ export default {
       const enCache = await cache.match(clave);
       if (enCache) return enCache;
     }
-    const r = await fetch(ORIGEN, { redirect: "follow", cf: { cacheTtl: 0 } });
+    const r = await bajarTablero(env);
     if (!r.ok) return pendiente();
     const resp = new Response(r.body, {
       headers: {

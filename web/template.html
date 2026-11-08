@@ -6,7 +6,10 @@
 <title>IPCEER · Índice de precios del CEER</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cascadia+Code:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cascadia-code@5.3.0/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cascadia-code@5.3.0/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/cascadia-code@5.3.0/700.css">
 <style>
 :root{
   /* Sistema de marca CEER (claro): azul-600 marca, ámbar para el dato, cian para signos */
@@ -24,13 +27,13 @@
 html{scroll-behavior:smooth}
 body{min-height:100vh;display:flex;flex-direction:column;margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
 h1,h2,h3,.title{font-family:var(--title);color:var(--fg);font-weight:700}
-/* títulos de la página en Inter; los de gráficos y tarjetas siguen en Cascadia Code */
-h1,h2,.met h3{font-family:var(--font);font-weight:700;letter-spacing:-.02em}
+/* todos los títulos en Cascadia Code Bold, como pide el sistema de marca */
+h1,h2,.met h3{font-family:var(--title);font-weight:700;letter-spacing:-.01em}
 .mono,.num,td.n,.kpi b,.minik b{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 a{color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
-.top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line)}
 .topin{max-width:1280px;margin:0 auto;padding:0 20px;height:64px;display:flex;align-items:stretch;gap:22px}
 .brand{display:flex;align-items:baseline;align-self:center;gap:12px;flex-shrink:0}
 .logo{display:inline-block;width:102px;height:24px}

@@ -57,6 +57,18 @@ def cmd_procesar(cfg, args):
             log.error("No se pudo procesar %s: %s", z.name, e)
 
 
+def cmd_carrera(cfg, args):
+    from . import carrera
+    if args.historico:
+        h = carrera.historico(cfg, solo=[x for x in args.variante.split(",") if x] or None, forzar=args.forzar)
+        for k, v in h.items():
+            log.info("Histórico %s: contra la réplica %s; contra el nivel general %s", k, v.get("vs_replica"), v.get("vs_general"))
+        return
+    r = carrera.actual(cfg)
+    for v in r["variantes"]:
+        log.info("Carrera %s: %s", v["id"], [(m["mes"], m["var"], "parcial" if m["parcial"] else "") for m in v.get("meses", [])])
+
+
 def cmd_web(cfg, args):
     from . import web
     solo = [x for x in args.tiendas.split(",") if x] or None
@@ -171,6 +183,19 @@ def cmd_calcular(cfg, args):
             datos["variantes"] = json.loads(rv.read_text(encoding="utf-8"))
     except Exception as e:
         log.warning("Variantes: %s", e)
+    try:
+        rc = cfg.ruta("resultados") / "carrera.json"
+        if rc.exists():
+            datos["carrera"] = json.loads(rc.read_text(encoding="utf-8"))
+        rp = cfg.ruta("resultados") / "pronosticos.csv"
+        if rp.exists():
+            datos["pronosticos"] = pl.read_csv(rp, infer_schema_length=None).to_dicts()
+        rh = cfg.ruta("resultados") / "carrera_historico.json"
+        if rh.exists():
+            datos["carrera_historico"] = {k: {x: v[x] for x in ("meses", "vs_general", "vs_replica", "calculado")}
+                                          for k, v in json.loads(rh.read_text(encoding="utf-8")).items()}
+    except Exception as e:
+        log.warning("Carrera de métodos: %s", e)
     try:
         datos["afispop"] = otras_fuentes.afispop(cfg)
     except Exception as e:
@@ -341,6 +366,11 @@ def main(argv=None):
     w.add_argument("--sin-bajar", action="store_true", help="solo rearma los paneles con lo ya bajado")
     w.add_argument("--tiendas", default="", help="ids separados por coma (por defecto, todas)")
     w.set_defaults(fn=cmd_web)
+    c = sub.add_parser("carrera", help="todas las variantes de método, contra el INDEC y las consultoras")
+    c.add_argument("--historico", action="store_true", help="prueba 2016-2018 de las variantes que falten")
+    c.add_argument("--variante", default="", help="con --historico: solo estas (ids separados por coma)")
+    c.add_argument("--forzar", action="store_true")
+    c.set_defaults(fn=cmd_carrera)
     sub.add_parser("otras", help="alquileres (Index Zonaprop) y medicamentos (PAMI)").set_defaults(
         fn=lambda cfg, a: otras_fuentes.actualizar(cfg))
     sub.add_parser("variantes", help="compara variantes de método contra el INDEC (2016-2018)").set_defaults(

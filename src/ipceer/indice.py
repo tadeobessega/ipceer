@@ -76,10 +76,20 @@ def resolver_codigo(clase: str, codigos: set[str], min_niveles: int = 2) -> str 
     return None
 
 
-def _cargar(ruta: Path, col_precio: str, mapa: dict[str, str | None]) -> pl.DataFrame:
-    df = pl.read_parquet(ruta).filter(pl.col("clase") != SIN_CLASIFICAR)
+def _ruta_web(ruta: Path) -> Path:
+    """Panel de precios web del mismo período (data/panel/web_mensual o web_semanal)."""
+    return ruta.parent.parent / f"web_{ruta.parent.name}" / ruta.name
+
+
+def _cargar(ruta: Path, col_precio: str, mapa: dict[str, str | None], web: bool = False) -> pl.DataFrame:
+    cols = [*CLAVE, "clase", col_precio, "n_dias", "dias_con_datos", "n_sucursales"]
+    df = pl.read_parquet(ruta, columns=cols).filter(pl.col("clase") != SIN_CLASIFICAR)
+    if web and _ruta_web(ruta).exists():
+        w = pl.read_parquet(_ruta_web(ruta), columns=cols).filter(pl.col("clase").is_not_null())
+        df = pl.concat([df, w.select(df.columns)], how="vertical_relaxed")
     return df.select(
-        *CLAVE, "clase", pl.col(col_precio).alias("precio"), "n_dias", "dias_con_datos", "dias_periodo"
+        *CLAVE, "clase", pl.col(col_precio).alias("precio"), "n_dias", "dias_con_datos",
+        pl.col("n_sucursales").cast(pl.Float64, strict=False).fill_null(1.0).fill_nan(1.0).alias("n_suc"),
     ).with_columns(
         pl.col("clase").replace_strict(mapa, default=None, return_dtype=pl.Utf8).alias("codigo")
     ).filter(pl.col("codigo").is_not_null())
@@ -109,22 +119,39 @@ def _min_dias(dias_con_datos: int, minimo: int) -> int:
 
 
 def relativos(previo: pl.DataFrame, actual: pl.DataFrame, min_p: int, min_a: int,
-              cfg: Config) -> tuple[pl.DataFrame, pl.DataFrame]:
-    """Relativos de Jevons por código y región (y nacional por código) entre dos períodos."""
+              cfg: Config, agregador: str = "media", peso: str | None = None) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """Relativos por código y región (y nacional por código) entre dos períodos.
+
+    `agregador`: "media" (Jevons: media geométrica simple de los relativos, el método del índice),
+    "recortada" (deja afuera el 5% más bajo y el 5% más alto de cada clase) o "mediana".
+    `peso`: None (cada producto-cadena vale lo mismo) o "sucursales" (pesa por la cantidad de
+    sucursales de la cadena que informan ese producto). Las alternativas se calculan para comparar.
+    """
     lim = cfg["limpieza"]
+    cols_a = [*CLAVE, "codigo", pl.col("precio").alias("p1")] + (["n_suc"] if "n_suc" in actual.columns else [])
     pares = (
         previo.filter(pl.col("n_dias") >= min_p).select(*CLAVE, pl.col("precio").alias("p0"))
-        .join(actual.filter(pl.col("n_dias") >= min_a).select(*CLAVE, "codigo", pl.col("precio").alias("p1")),
-              on=CLAVE, how="inner")
+        .join(actual.filter(pl.col("n_dias") >= min_a).select(cols_a), on=CLAVE, how="inner")
         .with_columns((pl.col("p1") / pl.col("p0")).alias("rel"))
         .filter(pl.col("rel").is_between(lim["relativo_min"], lim["relativo_max"]))
         .with_columns(pl.col("rel").log().alias("logrel"))
     )
-    regional = pares.group_by("codigo", "region").agg(
-        pl.col("logrel").mean().alias("logrel_reg"), pl.len().alias("n_reg"))
-    nacional = pares.group_by("codigo").agg(
-        pl.col("logrel").mean().alias("logrel_nac"), pl.len().alias("n_nac"))
-    return regional, nacional
+    pesar = peso == "sucursales" and "n_suc" in pares.columns
+
+    def agrupar(por: list[str], sufijo: str) -> pl.DataFrame:
+        d = pares
+        if agregador == "recortada":
+            d = d.filter(pl.col("logrel").is_between(pl.col("logrel").quantile(0.05).over(por),
+                                                     pl.col("logrel").quantile(0.95).over(por)))
+        if agregador == "mediana":
+            valor = pl.col("logrel").median()
+        elif pesar:
+            valor = (pl.col("logrel") * pl.col("n_suc")).sum() / pl.col("n_suc").sum()
+        else:
+            valor = pl.col("logrel").mean()
+        return d.group_by(por).agg(valor.alias(f"logrel_{sufijo}"), pl.len().alias(f"n_{sufijo}"))
+
+    return agrupar(["codigo", "region"], "reg"), agrupar(["codigo"], "nac")
 
 
 def _mes_del_periodo(periodo: str, frecuencia: str) -> str:
@@ -156,8 +183,20 @@ def niveles_indec(cfg: Config, codigos: list[str]) -> tuple[pl.DataFrame, list[s
     return niv, sorted(niv["mes"].unique().to_list())
 
 
-def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None = None) -> dict[str, pl.DataFrame]:
-    """`ponderacion`:
+def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None = None, web: bool = False,
+             extra: pl.DataFrame | None = None, solo_tramo_actual: bool = False, solo_tramo: int | None = None,
+             excluir: tuple[str, ...] = (), precio: str | None = None, agregador: str = "media",
+             peso: str | None = None) -> dict[str, pl.DataFrame]:
+    """Las opciones que siguen existen para la carrera de métodos (carrera.py): el índice publicado
+    usa los valores por defecto.
+    `excluir`: clases que se dejan afuera. `precio`: "lista" o "efectivo" (con promociones).
+    `agregador` y `peso`: ver `relativos`. `solo_tramo`: calcula solo ese tramo de la serie.
+    `web`: suma los precios de las tiendas en línea (paneles web_mensual / web_semanal).
+    `extra`: variaciones de clases que no salen de precios relevados sino de fuentes públicas
+    (tarifas por norma, combustibles de Energía, alquileres): columnas periodo, codigo, region,
+    logrel. Solo se usan en las clases y períodos sin dato propio.
+    `solo_tramo_actual`: calcula solo el último tramo de la serie (más rápido, para las variantes).
+    `ponderacion`:
       "indec"  (por defecto) los ponderadores de la canasta del INDEC se actualizan con los índices
                del INDEC hasta su último mes publicado; de ahí en adelante, con las variaciones
                propias. La variación de un agregado es la suma de las variaciones propias de cada
@@ -167,7 +206,7 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
     """
     ic = cfg["indice"]
     ponderacion = ponderacion or ic.get("ponderacion", "indec")
-    col_precio = "precio_lista" if ic["precio"] == "lista" else "precio_efectivo"
+    col_precio = "precio_lista" if (precio or ic["precio"]) == "lista" else "precio_efectivo"
     min_dias = ic["min_dias_mes"] if frecuencia == "mensual" else ic["min_dias_semana"]
     pond = ponderadores_clase(cfg)
     codigos = set(pond["codigo"].unique().to_list())
@@ -175,6 +214,10 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
     w_region = ponderadores_region(cfg)
 
     rutas = sorted(cfg.ruta(f"panel_{frecuencia}").glob("*.parquet"))
+    if (solo_tramo_actual or solo_tramo is not None) and len(rutas) > 2:
+        t0 = tramos([r.stem for r in rutas], frecuencia, ic.get("max_meses_salto", 24))
+        cual = max(t0.values()) if solo_tramo is None else solo_tramo
+        rutas = [r for r in rutas if t0[r.stem] == cual]
     if len(rutas) < 2:
         raise ValueError(f"Se necesitan al menos dos períodos ({frecuencia}) consolidados")
     periodos = [r.stem for r in rutas]
@@ -184,7 +227,13 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
     clases = set()
     for r in rutas:
         clases |= set(pl.read_parquet(r, columns=["clase"])["clase"].unique().to_list())
+        if web and _ruta_web(r).exists():
+            clases |= set(pl.read_parquet(_ruta_web(r), columns=["clase"])["clase"].drop_nulls().unique().to_list())
     clases.discard(SIN_CLASIFICAR)
+    clases -= set(excluir)
+    if extra is not None and not extra.is_empty():
+        # las clases externas entran con su propio código (el más específico que tenga ponderador)
+        clases |= {c for c in extra["codigo"].unique().to_list() if resolver_codigo(c, codigos) and c not in excluir}
     mapa = {c: resolver_codigo(c, codigos) for c in sorted(clases)}
     sin_pond = sorted(c for c, v in mapa.items() if v is None)
     if sin_pond:
@@ -200,9 +249,9 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
     tramo = tramos(periodos, frecuencia, ic.get("max_meses_salto", 24))
     grilla = pl.DataFrame({"codigo": usados}).join(pl.DataFrame({"region": REGIONES}), how="cross")
     filas = []
-    previo, info_p = _cargar(rutas[0], col_precio, mapa), _info(rutas[0])
+    previo, info_p = _cargar(rutas[0], col_precio, mapa, web), _info(rutas[0])
     for ruta, per, per_prev in zip(rutas[1:], periodos[1:], periodos[:-1]):
-        actual, info_a = _cargar(ruta, col_precio, mapa), _info(ruta)
+        actual, info_a = _cargar(ruta, col_precio, mapa, web), _info(ruta)
         if tramo[per] != tramo[per_prev]:  # comienza un tramo nuevo: no se compara con el anterior
             filas.append(grilla.with_columns(
                 pl.lit(per).alias("periodo"), pl.lit(0.0).alias("logrel"), pl.lit("inicio_tramo").alias("origen"),
@@ -210,7 +259,8 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
             ).select("periodo", "codigo", "region", "logrel", "origen", "n_reg", "parcial"))
             previo, info_p = actual, info_a
             continue
-        reg, nac = relativos(previo, actual, _min_dias(info_p[0], min_dias), _min_dias(info_a[0], min_dias), cfg)
+        reg, nac = relativos(previo, actual, _min_dias(info_p[0], min_dias), _min_dias(info_a[0], min_dias), cfg,
+                             agregador=agregador, peso=peso)
         r = (
             grilla.join(reg, on=["codigo", "region"], how="left")
             .join(nac, on="codigo", how="left")
@@ -234,8 +284,18 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
         pl.lit(periodos[0]).alias("periodo"), pl.lit(0.0).alias("logrel"), pl.lit("base").alias("origen"),
         pl.lit(0, dtype=pl.UInt32).alias("n_reg"), pl.lit(_en_curso(periodos[0], frecuencia, ultimo_dia)).alias("parcial"),
     ).select("periodo", "codigo", "region", "logrel", "origen", "n_reg", "parcial")
+    todas = pl.concat([base0, *filas])
+    if extra is not None and not extra.is_empty():
+        ext = (extra.with_columns(pl.col("codigo").replace_strict(mapa, default=None, return_dtype=pl.Utf8))
+               .filter(pl.col("codigo").is_not_null(), pl.col("logrel").is_not_null())
+               .group_by("periodo", "codigo", "region").agg(pl.col("logrel").mean().alias("_lr_ext")))
+        todas = todas.join(ext, on=["periodo", "codigo", "region"], how="left").with_columns(
+            pl.when(pl.col("logrel").is_null() & pl.col("_lr_ext").is_not_null() & (pl.col("origen") == "sin_datos"))
+            .then(pl.lit("externo")).otherwise(pl.col("origen")).alias("origen"),
+            pl.when(pl.col("origen") == "sin_datos").then(pl.coalesce("logrel", "_lr_ext")).otherwise(pl.col("logrel"))
+            .alias("logrel")).drop("_lr_ext")
     elem = (
-        pl.concat([base0, *filas])
+        todas
         .with_columns(pl.col("periodo").replace_strict(tramo, return_dtype=pl.Int32).alias("tramo"))
         .sort("codigo", "region", "periodo")
         .with_columns(pl.col("logrel").fill_null(0.0).cum_sum().over("codigo", "region", "tramo").alias("_acum"))

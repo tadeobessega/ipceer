@@ -237,8 +237,16 @@ def rotacion(cfg: Config, semanas: list[str]) -> list[dict]:
 
 # ---------------------------------------------------------------- 2 y 3. niveles
 
+_COLS_SEMANA = ("clase", "id_comercio", "id_bandera", "id_producto", "cantidad", "unidad", "region",
+                "precio_lista", "es_ean")
+
+
 def _panel_semana(cfg: Config, semana: str, codigos: set[str]) -> pl.DataFrame:
-    df = pl.read_parquet(cfg.ruta("panel_semanal") / f"{semana}.parquet")
+    # solo las columnas que usan los indicadores: leer el panel entero (descripciones, marcas,
+    # sucursales) agotaba la memoria de la PC
+    ruta = cfg.ruta("panel_semanal") / f"{semana}.parquet"
+    cols = [c for c in pl.read_parquet_schema(ruta) if c in _COLS_SEMANA or c in CLAVE]
+    df = pl.read_parquet(ruta, columns=cols)
     df = _con_codigo(df, codigos)
     col = "precio_lista"
     return _cadena_id(df).filter(pl.col(col) > 0).with_columns(pl.col(col).log().alias("y"))

@@ -112,9 +112,17 @@ def correr(cfg: Config, opciones: dict, tramo: int | None) -> dict:
     meses = [{"mes": p, "var": v, "parcial": bool(par), "n": int(n or 0)}
              for p, v, par, n in tot.select("periodo", "var_pct", "parcial", "n_productos").iter_rows()]
     codigos = sorted(set(ind.filter(pl.col("nivel") == "clase", pl.col("var_pct").is_not_null())["codigo"].to_list()))
-    cob = res["cobertura"].filter(pl.col("region") == indice.NACIONAL)
-    return {"meses": meses, "codigos": codigos,
-            "cobertura": float(cob["ponderacion_cubierta_pct"][0]) if cob.height else None}
+    # canasta medida en el último mes: peso de las clases que tienen variación propia ese mes
+    # (una clase con precios pero sin mes anterior para comparar todavía no mide nada)
+    ult = meses[-1]["mes"] if meses else None
+    con = ind.filter(pl.col("nivel") == "clase", pl.col("periodo") == ult, pl.col("var_pct").is_not_null(),
+                     pl.col("region").is_in(REGIONES)).select("codigo", "region")
+    w = ponderadores_clase(cfg).select("codigo", "region", "ponderacion")
+    wr = ponderadores_region(cfg)
+    por_reg = dict(con.join(w, on=["codigo", "region"]).group_by("region").agg(pl.col("ponderacion").sum()).iter_rows())
+    cobertura = sum(wr[r] * por_reg.get(r, 0.0) for r in REGIONES) / sum(wr.values())
+    return {"meses": meses, "codigos": codigos, "cobertura": round(cobertura, 2),
+            "codigos_ultimo": sorted(set(con["codigo"].to_list()))}
 
 
 def referencias(cfg: Config, codigos: list[str]) -> tuple[dict, dict]:
@@ -278,7 +286,8 @@ def actual(cfg: Config) -> dict:
         todos_meses |= set(propio)
         h = hist.get(vid) or {}
         variantes.append({
-            "id": vid, "nombre": nombre, "cobertura_pct": r["cobertura"], "clases": len(r["codigos"]),
+            "id": vid, "nombre": nombre, "cobertura_pct": r["cobertura"], "clases": len(r["codigos_ultimo"]),
+            "codigos": r["codigos_ultimo"],
             "meses": [{"mes": m, "var": round(v, 3), "parcial": parcial[m],
                        "general": round(general[m], 3) if m in general else None,
                        "replica": round(replica[m], 3) if m in replica else None} for m, v in sorted(propio.items())],

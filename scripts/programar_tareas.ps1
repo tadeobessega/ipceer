@@ -9,6 +9,8 @@
 #     INDEC y Energía, procesa, calcula, arma el tablero y deja el estado. Si la PC estaba apagada
 #     a esa hora, corre apenas se prende; si está suspendida, la despierta.
 #   - "IPCEER historico": 01:30, sigue con la base 2016-2018 en lotes de 30 días hasta terminar.
+#   - "IPCEER verificacion 18 h": todos los días a las 18:00 revisa logs\corridas.csv; si hoy no hubo
+#     una corrida sin errores, corre la actualización completa en ese momento.
 #   - "IPCEER control": al iniciar sesión y cada 4 horas, avisa en Windows si la base está atrasada.
 #   - Conecta el repo a github.com/tadeobessega/ipceer (de ahí baja el código nuevo) y, si querés,
 #     GitHub CLI para subir el estado: así GitHub te avisa por correo si la PC deja de actualizar.
@@ -52,6 +54,12 @@ $ajustesH = New-ScheduledTaskSettingsSet -StartWhenAvailable -WakeToRun -AllowSt
   -RunOnlyIfNetworkAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 20)
 Register-ScheduledTask -TaskName "IPCEER historico" -Action $hist -Trigger (New-ScheduledTaskTrigger -Daily -At "01:30") `
   -Settings $ajustesH -User $usuario -Password $clave -RunLevel Limited -Description "Base histórica 2016-2018 del IPCEER" -Force | Out-Null
+# verificación de las 18 h: si hoy no hubo una corrida sin errores, corre en ese momento
+$ver = New-ScheduledTaskAction -Execute $ps -WorkingDirectory $Repo `
+  -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Repo\scripts\verificar.ps1`""
+Register-ScheduledTask -TaskName "IPCEER verificacion 18 h" -Action $ver -Trigger (New-ScheduledTaskTrigger -Daily -At "18:00") `
+  -Settings $ajustes -User $usuario -Password $clave -RunLevel Limited `
+  -Description "Si hoy no hubo una actualización del IPCEER sin errores, la corre a las 18 h" -Force | Out-Null
 $clave = $null
 
 $ctl = New-ScheduledTaskAction -Execute $ps -WorkingDirectory $Repo `

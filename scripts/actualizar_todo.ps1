@@ -48,7 +48,20 @@ function Paso($nombre, [scriptblock]$bloque) {
 }
 function Ipceer { & $Python -m ipceer.cli @args 2>&1 | AlLog }
 
-Log "Inicio. Repo: $Repo. Archivo SEPA: $Archivo"
+# Registro de corridas: una línea por corrida en logs\corridas.csv (inicio, fin, origen, resultado).
+# Sirve para ver cuándo corrió, cuándo no, y qué paso falló. Lo usa la verificación de las 18 h.
+$Corridas = "$Repo\logs\corridas.csv"
+$Inicio = Get-Date
+$Origen = if ($env:IPCEER_ORIGEN) { $env:IPCEER_ORIGEN } elseif ([Environment]::UserInteractive -and $Host.Name -eq "ConsoleHost" -and [Environment]::GetCommandLineArgs() -notcontains "-WindowStyle") { "manual" } else { "tarea" }
+if (-not (Test-Path $Corridas)) { "inicio,fin,origen,resultado,pasos_con_errores,log" | Out-File -Encoding utf8 $Corridas }
+function Cerrar($resultado, $fallidos) {
+  "$($Inicio.ToString('s')),$((Get-Date).ToString('s')),$Origen,$resultado,$($fallidos -join ' | '),$(Split-Path -Leaf $Log)" | Out-File -Append -Encoding utf8 $Corridas
+}
+# si la corrida se corta (se apaga la PC, se cierra la sesión, error no previsto) igual queda anotado
+trap { "$_" | AlLog; Cerrar "cortada: $($_.Exception.Message -replace '[,\r\n]',' ')" @(); break }
+"$($Inicio.ToString('s')),,$Origen,en curso,,$(Split-Path -Leaf $Log)" | Out-File -Encoding utf8 "$Repo\logs\corrida_en_curso.csv"
+
+Log "Inicio ($Origen). Repo: $Repo. Archivo SEPA: $Archivo"
 
 # 1. código nuevo: primero desde GitHub (tadeobessega/ipceer); si no, desde un paquete .bundle
 $conGit = [bool](Get-Command git -ErrorAction SilentlyContinue)
@@ -121,7 +134,12 @@ if (-not $historico) {
 
 # 11. estado para el control: archivo local, aviso en Windows y copia en GitHub (si gh está conectado)
 Paso "Backup de repos (OneDrive)" { & powershell -NoProfile -ExecutionPolicy Bypass -File "$Repo\scripts\backup_repos.ps1" 2>&1 | AlLog }
-Paso "Estado de la base" { & powershell -NoProfile -ExecutionPolicy Bypass -File "$Repo\scripts\control.ps1" -Subir -Pasos ($Pasos | ConvertTo-Json -Compress) 2>&1 | AlLog }
+# los pasos van por archivo (pasados por parámetro se rompían las comillas y el control no veía los errores)
+$Pasos | ConvertTo-Json | Out-File -Encoding utf8 "$Repo\resultados\ultima_corrida_pasos.json"
+Paso "Estado de la base" { & powershell -NoProfile -ExecutionPolicy Bypass -File "$Repo\scripts\control.ps1" -Subir 2>&1 | AlLog }
+$fallidos = @($Pasos.GetEnumerator() | Where-Object { $_.Value -like "con errores*" } | ForEach-Object { $_.Key })
+Cerrar $(if ($fallidos.Count) { "con errores" } else { "ok" }) $fallidos
+Remove-Item "$Repo\logs\corrida_en_curso.csv" -ErrorAction SilentlyContinue
 
 Log "Fin. Resumen de pasos:"
 $Pasos.GetEnumerator() | ForEach-Object { Log ("   {0,-45} {1}" -f $_.Key, $_.Value) }

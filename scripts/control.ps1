@@ -11,7 +11,9 @@ $ultimo = if ($dias) { $dias[-1] } else { "" }
 $atraso = if ($ultimo) { [int]((Get-Date).Date - [datetime]::ParseExact($ultimo, "yyyy-MM-dd", $null)).TotalDays } else { 999 }
 $hist = Get-Content "$Repo\resultados\historico_estado.json" -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json
 $errores = @()
-if ($Pasos) { ($Pasos | ConvertFrom-Json).PSObject.Properties | Where-Object { $_.Value -like "con errores*" } | ForEach-Object { $errores += $_.Name } }
+$archPasos = "$Repo\resultados\ultima_corrida_pasos.json"
+if (-not $Pasos -and (Test-Path $archPasos)) { $Pasos = Get-Content $archPasos -Raw -Encoding UTF8 }
+if ($Pasos) { try { ($Pasos | ConvertFrom-Json).PSObject.Properties | Where-Object { $_.Value -like "con errores*" } | ForEach-Object { $errores += $_.Name } } catch {} }
 $estado = [ordered]@{
   ultimo_dia = $ultimo; atraso_dias = $atraso; corrida = (Get-Date -Format s); pc = $env:COMPUTERNAME
   pasos_con_errores = $errores; historico_faltan = $(if ($hist) { $hist.faltan } else { $null })

@@ -195,6 +195,30 @@ def main() -> None:
               "cadenas_quietas": [{"cadena": f"{a}-{b}", "quietos": round(x, 3), "n": n}
                                   for a, b, x, n in q.iter_rows()],
               "excluidas_C": sorted(f"{a}-{b}" for a, b in malas), "frescos_excluidos_A": list(FRESCOS)}
+    # ¿el IPCEER se atrasa cuando sube el dólar? Diferencia mensual (IPCEER - INDEC) contra la
+    # variación del tipo de cambio mayorista (promedio mensual, BCRA) del mismo mes y del anterior.
+    try:
+        tc_ruta = cfg.ruta("panel_diario").parent.parent / "otras" / "bcra" / "tc_mayorista.csv"
+        if tc_ruta.exists() and res.get("base", {}).get("meses"):
+            tc = pl.read_csv(tc_ruta).with_columns(pl.col("fecha").str.slice(0, 7).alias("mes")).group_by("mes").agg(pl.col("valor").mean()).sort("mes")
+            niv = dict(tc.iter_rows())
+            ms = sorted(niv)
+            dev = {b: (niv[b] / niv[a] - 1) * 100 for a, b in zip(ms, ms[1:])}
+            ant = {b: dev.get(a) for a, b in zip(ms, ms[1:])}
+            filas = [{"mes": x["mes"], "brecha": round(x["propio"] - x["indec"], 3), "dev": dev.get(x["mes"]), "dev_ant": ant.get(x["mes"])}
+                     for x in res["base"]["meses"]]
+
+            def corr(k):
+                v = [(f["brecha"], f[k]) for f in filas if f[k] is not None]
+                if len(v) < 5:
+                    return None
+                mx = sum(a for a, _ in v) / len(v); my = sum(b for _, b in v) / len(v)
+                sx = math.sqrt(sum((a - mx) ** 2 for a, _ in v)); sy = math.sqrt(sum((b - my) ** 2 for _, b in v))
+                return round(sum((a - mx) * (b - my) for a, b in v) / (sx * sy), 3) if sx and sy else None
+            salida["tipo_cambio"] = {"meses": filas, "r_mismo_mes": corr("dev"), "r_mes_anterior": corr("dev_ant")}
+            print("tipo de cambio: r mismo mes", salida["tipo_cambio"]["r_mismo_mes"], "r mes anterior", salida["tipo_cambio"]["r_mes_anterior"])
+    except Exception as e:
+        print("tipo de cambio:", e)
     Path("resultados/variantes.json").write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")
     for k, v in res.items():
         print(f"{k:8s} n={v.get('n')} acum {v.get('acum_propio')} vs {v.get('acum_indec')}  sesgo {v.get('sesgo')}  "

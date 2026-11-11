@@ -440,6 +440,14 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       </div>
     </section>
     <section>
+      <h2>Canasta de servicios públicos del AMBA (IIEP, UBA-CONICET)</h2>
+      <p class="sub" id="af-sub"></p>
+      <div class="grid">
+        <div class="card s7"><h3>Costo mensual publicado por el IIEP</h3><div class="chart short"><canvas id="c-af"></canvas></div><div class="src">Fuente: Observatorio de Tarifas y Subsidios, IIEP (UBA-CONICET). Hogar promedio del AMBA sin subsidios.</div></div>
+        <div class="card s5"><h3>Valores y fuentes</h3><div class="tablewrap" style="max-height:340px;overflow-y:auto"><table id="t-af"></table></div></div>
+      </div>
+    </section>
+    <section>
       <h2>Canasta de servicios</h2>
       <p class="sub" id="cs-sub"></p>
       <div class="grid">
@@ -498,7 +506,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <h2 id="v-sec-var">Variantes de método</h2>
       <p class="sub" id="var-sub">Las mismas fuentes y ponderadores, calculados de varias formas, contra la réplica del INDEC en el tramo 2016-2018. Sirve para elegir el método con evidencia.</p>
       <div class="grid">
-        <div class="card s12"><h3>Qué variante se acerca más al INDEC</h3><div class="tablewrap"><table id="t-var"></table></div></div>
+        <div class="card s12"><h3>Qué variante se acerca más al INDEC</h3><div class="tablewrap"><table id="t-var"></table></div><p class="cap" id="var-tc" style="margin-top:14px"></p></div>
         <div class="card s12"><h3>Variación mensual de cada variante y del INDEC</h3><div class="chart"><canvas id="c-var"></canvas></div><div class="src">Fuente: CEER en base a SEPA (base de Zenodo 2016-2018) e INDEC.</div></div>
       </div>
     </section>
@@ -1494,6 +1502,8 @@ function renderVariantes(){
   const mR=mejor('rmse'), mS=mejor('sesgo');
   t.innerHTML=`<thead><tr><th>Variante</th><th class="n">Acumulado IPCEER</th><th class="n">Acumulado INDEC</th><th class="n">Sesgo mensual (pp)</th><th class="n">Error (RMSE, pp)</th><th class="n">Correlación mismo mes</th><th class="n">Correlación con el mes siguiente del INDEC</th></tr></thead><tbody>`+
     ks.map(k=>{const v=V[k]; return `<tr><td>${esc(VAR_NOM[k]||k)}</td><td class="n">${pct(v.acum_propio,1)}</td><td class="n">${pct(v.acum_indec,1)}</td><td class="n">${num(v.sesgo,2)}${k===mS?' <span class="muted">(mejor)</span>':''}</td><td class="n">${num(v.rmse,2)}${k===mR?' <span class="muted">(mejor)</span>':''}</td><td class="n">${num(v.r_mismo_mes,2)}</td><td class="n">${num(v.r_un_mes_antes,2)}</td></tr>`;}).join('')+'</tbody>';
+  const TC=(D.variantes||{}).tipo_cambio, tcEl=document.getElementById('var-tc');
+  if(tcEl) tcEl.innerHTML=TC?`<b>¿Nos atrasamos cuando sube el dólar?</b> Correlación entre nuestra diferencia mensual con el INDEC y la suba del tipo de cambio mayorista (BCRA): mismo mes <span class="mono">${num(TC.r_mismo_mes,2)}</span>, mes anterior <span class="mono">${num(TC.r_mes_anterior,2)}</span>. Un valor negativo y grande quiere decir que quedamos más abajo del INDEC cuando el dólar sube.`:'La prueba contra el tipo de cambio (BCRA) aparece después de la próxima corrida.';
   const ms=(V.base.meses||[]).map(x=>x.mes);
   const ser=['base','A','B1','B2','C'].filter(k=>V[k]&&V[k].meses);
   draw('c-var',{type:'line',data:{labels:ms.map(mesLbl),datasets:[...ser.map((k,i)=>{const m=Object.fromEntries(V[k].meses.map(x=>[x.mes,x.propio])); return {label:VAR_NOM[k]||k,data:ms.map(x=>m[x]??null),borderColor:PAL()[[0,2,3,4,5][i]],backgroundColor:PAL()[[0,2,3,4,5][i]],borderWidth:k==='base'?2.5:1.5,pointRadius:0};}),
@@ -1512,6 +1522,10 @@ function renderRegu(){
   document.getElementById('t-regu').innerHTML=`<thead><tr><th>Concepto</th><th>Región</th><th class="n">Valor</th><th>Vigencia</th><th>Norma y fuente</th></tr></thead><tbody>`+
     (R.tarifas||[]).map(t=>`<tr><td>${esc(t.concepto)} <span class="muted">(${esc(t.rubro.replace(/_/g,' '))}, ${esc(t.codigo)})</span></td><td>${esc(t.region)}</td><td class="n">$ ${num(t.valor,2)} <span class="muted">${esc(t.unidad.replace('$',''))}</span></td><td class="mono">${esc(t.vigente_desde)} a ${esc(t.vigente_hasta||'')}</td><td><a href="${esc(t.fuente_url)}" target="_blank" rel="noopener">${esc(t.norma)}</a></td></tr>`).join('')+'</tbody>';
 
+  const AF=D.afispop||[], aft=AF.filter(r=>r.componente==='total').sort((a,b)=>a.mes<b.mes?-1:1);
+  document.getElementById('af-sub').innerHTML='Es la referencia pública para servicios: luz, gas, agua y transporte de un hogar promedio del AMBA sin subsidios. Cargamos los valores que el IIEP publicó (no todos los meses están relevados todavía; los que faltan quedan vacíos). El empalme con una serie propia funciona igual que con el INDEC: su dato mientras exista y, después del último mes publicado, la variación de nuestra canasta. Para eso nuestra canasta de abajo tiene que estar completa; hoy tiene solo transporte parcial, así que todavía no se extiende.';
+  if(aft.length) draw('c-af',{type:'bar',data:{labels:aft.map(r=>mesLbl(r.mes)),datasets:[{label:'Canasta IIEP',data:aft.map(r=>r.valor),backgroundColor:css('--ambar')}]},options:baseOpts({scales:{y:{ticks:{callback:v=>'$ '+num(v,0)}}}})}); else sinDatos('c-af');
+  document.getElementById('t-af').innerHTML='<thead><tr><th>Mes</th><th>Componente</th><th class="n">Valor</th><th>Fuente</th></tr></thead><tbody>'+[...AF].sort((a,b)=>a.mes<b.mes?1:-1).map(r=>`<tr><td>${mesLbl(r.mes)}</td><td>${esc(r.componente)}</td><td class="n">${pesos(r.valor)}</td><td><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.fuente)}</a></td></tr>`).join('')+'</tbody>';
   const S=D.servicios||{}, M=S.meses||[], C=(S.componentes||[]);
   const pend=C.filter(c=>c.pendiente);
   document.getElementById('cs-sub').innerHTML=`Electricidad, gas natural, agua potable y transporte público de un hogar tipo del AMBA, siguiendo la ${S.referencia?`<a href="${esc(S.referencia.url)}" target="_blank" rel="noopener">${esc(S.referencia.nombre)}</a>`:'canasta del IIEP (UBA-CONICET)'}. Cada componente se valoriza con las tarifas del registro de arriba por una cantidad mensual con fuente; un mes tiene total solo si están todos los componentes.`+

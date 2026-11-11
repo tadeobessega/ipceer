@@ -124,9 +124,68 @@ def pami(cfg: Config) -> dict:
     return out
 
 
+BCRA = "https://api.bcra.gob.ar/estadisticas/v3.0/monetarias"
+# series del BCRA que se buscan por su descripción (no por número, que puede cambiar)
+BCRA_SERIES = {"tc_mayorista": ("mayorista", "3500"), "icl": ("contratos de locaci",),
+               "cer": ("coeficiente de estabilizaci",), "uva": ("unidad de valor adquisitivo",)}
+
+
+def bcra(cfg: Config, desde: str = "2016-01-01") -> dict:
+    """Series diarias del BCRA (API pública): tipo de cambio mayorista (Com. A 3500), ICL (índice
+    para contratos de locación, que ajusta alquileres), CER y UVA. Quedan en data/otras/bcra/*.csv."""
+    d = _dir(cfg, "bcra")
+    out = {}
+    try:
+        r = requests.get(BCRA, headers=UA, timeout=60, verify=True)
+        r.raise_for_status()
+        variables = r.json().get("results", [])
+    except Exception as e:
+        log.warning("BCRA: %s", e)
+        return {"error": str(e)}
+    for clave, palabras in BCRA_SERIES.items():
+        v = next((x for x in variables if all(w in (x.get("descripcion") or "").lower() for w in palabras)), None)
+        if v is None:
+            out[clave] = {"error": "no está en la lista de variables"}
+            continue
+        filas, hasta = [], date.today()
+        try:
+            # la API devuelve hasta 1 año por pedido: se pide por tramos
+            a = date.fromisoformat(desde)
+            while a <= hasta:
+                b = min(date(a.year + 1, a.month, a.day) if not (a.month == 2 and a.day == 29) else date(a.year + 1, 2, 28), hasta)
+                rr = requests.get(f"{BCRA}/{v['idVariable']}", params={"desde": a.isoformat(), "hasta": b.isoformat(), "limit": 3000},
+                                  headers=UA, timeout=60)
+                rr.raise_for_status()
+                res = rr.json().get("results", [])
+                if res and isinstance(res[0], dict) and "detalle" in res[0]:
+                    res = res[0]["detalle"]
+                filas += [(x["fecha"], x["valor"]) for x in res]
+                a = date.fromordinal(b.toordinal() + 1)
+        except Exception as e:
+            out[clave] = {"error": str(e), "id": v.get("idVariable")}
+            continue
+        filas = sorted(set(filas))
+        (d / f"{clave}.csv").write_text("fecha,valor\n" + "\n".join(f"{f},{x}" for f, x in filas), encoding="utf-8")
+        out[clave] = {"id": v.get("idVariable"), "descripcion": v.get("descripcion"), "n": len(filas),
+                      "desde": filas[0][0] if filas else None, "hasta": filas[-1][0] if filas else None}
+        log.info("BCRA %s: %d datos hasta %s", clave, len(filas), out[clave]["hasta"])
+    return out
+
+
+def afispop(cfg: Config) -> list[dict]:
+    """Canasta de servicios públicos del AMBA del IIEP (UBA-CONICET): valores publicados, cargados
+    a mano con su fuente en config/regulados/afispop.csv."""
+    import csv
+    ruta = cfg.dir_config / "regulados" / "afispop.csv"
+    if not ruta.exists():
+        return []
+    with open(ruta, encoding="utf-8") as f:
+        return [dict(r, valor=float(r["valor"])) for r in csv.DictReader(f)]
+
+
 def actualizar(cfg: Config) -> dict:
     res = {"actualizado": datetime.now().isoformat(timespec="seconds")}
-    for nombre, f in (("alquileres_zonaprop", zonaprop), ("medicamentos_pami", pami)):
+    for nombre, f in (("alquileres_zonaprop", zonaprop), ("medicamentos_pami", pami), ("bcra", bcra)):
         try:
             res[nombre] = f(cfg)
         except Exception as e:  # una fuente que falla no frena las demás

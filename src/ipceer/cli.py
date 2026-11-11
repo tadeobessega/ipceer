@@ -159,6 +159,10 @@ def cmd_calcular(cfg, args):
     except Exception as e:
         log.warning("Variantes: %s", e)
     try:
+        datos["afispop"] = otras_fuentes.afispop(cfg)
+    except Exception as e:
+        log.warning("Canasta del IIEP: %s", e)
+    try:
         datos["servicios"] = resumen._limpio(externos.canasta_servicios(cfg))
     except Exception as e:
         log.warning("Canasta de servicios: %s", e)

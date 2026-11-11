@@ -43,13 +43,6 @@ jobs:
         run: |
           shopt -s nullglob
           for f in archivo/sepa_*.zip; do gh release upload "$TAG" "$f" --clobber; done
-      - name: Borrar copias de más de 60 días
-        run: |
-          limite=$(date -d '60 days ago' +%F)
-          gh release view "$TAG" --json assets -q '.assets[].name' | grep -E '^sepa_[0-9-]+\.zip$' | while read n; do
-            f=${n#sepa_}; f=${f%.zip}
-            if [[ "$f" < "$limite" ]]; then gh release delete-asset "$TAG" "$n" -y; fi
-          done
       - name: Controlar la PC
         id: pc
         run: |
@@ -63,6 +56,17 @@ jobs:
           else
             echo "La PC todavía no informó su estado"; echo "atraso=-1" >> "$GITHUB_OUTPUT"
           fi
+      - name: Borrar copias viejas que la PC ya tiene
+        run: |
+          # Una copia se borra solo si tiene más de 60 días Y la PC informó que ya procesó ese día.
+          # Si la PC no informó su estado, no se borra nada.
+          ult="${{ steps.pc.outputs.ultimo }}"
+          if [ -z "$ult" ]; then echo "La PC no informó su estado: no se borra nada"; exit 0; fi
+          limite=$(date -d '60 days ago' +%F)
+          gh release view "$TAG" --json assets -q '.assets[].name' | grep -E '^sepa_[0-9-]+\.zip$' | while read n; do
+            f=${n#sepa_}; f=${f%.zip}
+            if [[ "$f" < "$limite" && ! "$f" > "$ult" ]]; then echo "Borro $n"; gh release delete-asset "$TAG" "$n" -y; fi
+          done
       - name: Avisar si algo no anda
         if: always()
         run: |

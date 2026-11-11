@@ -515,6 +515,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <p class="sub">Lo que publican otras mediciones de alta frecuencia, puesto al lado de nuestro dato equivalente: mismo rubro, misma semana o mes, misma medida (semanal, promedio de 4 semanas o mes). Las consultoras relevan canastas, fuentes y métodos distintos, así que importa más la dirección que el decimal. Cada dato externo lleva su enlace; se cargan en <span class="mono">config/externos.csv</span>.</p>
       <div class="grid">
         <div class="card s12"><h3>Ellos y nosotros</h3><div class="legend"><span><i style="background:var(--ambar)"></i>Medición externa</span><span><i style="background:var(--accent)"></i>IPCEER equivalente</span></div><div class="chart"><canvas id="c-ext"></canvas></div><div class="src">Fuente: CEER en base a SEPA y a lo publicado por cada consultora (enlaces en la tabla).</div></div>
+        <div class="card s12"><h3>Alimentos, semana por semana: cada punto es una medición</h3><p class="cap">Variación semanal de alimentos y bebidas que publicó cada consultora (puntos ámbar) y la del IPCEER para la misma semana (rombo azul). Las semanas de las consultoras no siempre coinciden con las nuestras.</p><div class="chart"><canvas id="c-dots"></canvas></div><div class="src">Fuente: CEER en base a SEPA y a lo publicado por cada consultora (enlaces en la tabla).</div></div>
         <div class="card s12"><h3>Detalle</h3><div class="tablewrap"><table id="t-ext"></table></div></div>
       </div>
     </section>
@@ -1375,6 +1376,18 @@ function renderExt(){
       {label:'Medición externa',data:C.map(f=>f.x.valor),backgroundColor:css('--ambar'),barPercentage:.7},
       {label:'IPCEER',data:C.map(f=>f.n.v),backgroundColor:css('--accent'),barPercentage:.7}]},options:baseOpts({plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+c.dataset.label+': '+pct(c.parsed.y,2)}}}})});
   else sinDatos('c-ext','Todavía no hay mediciones externas con un dato nuestro equivalente.');
+  // gráfico de puntos por semana (como el de proyecciones de la Fed)
+  const W=E.filter(x=>x.medida==='semanal'&&(x.rubro||'').toLowerCase()==='alimentos'&&x.valor!=null);
+  const semsD=[...new Set(W.map(x=>x.periodo))].sort();
+  if(semsD.length){ const sN=((D.series.Nacional||{})['01']||{}).semanal||[];
+    const pts=W.map(x=>({x:semsD.indexOf(x.periodo)+((x.fuente.length%5)-2)*0.06,y:x.valor,f:x.fuente}));
+    const nos=semsD.map((w,i)=>{const r=sN.find(y=>y.semana===w); return r&&r.var!=null?{x:i,y:r.var,f:'IPCEER'+(r.parcial?' (semana incompleta)':'')}:null;}).filter(Boolean);
+    draw('c-dots',{type:'scatter',data:{datasets:[
+      {label:'Consultoras',data:pts,backgroundColor:css('--ambar'),pointRadius:7,pointHoverRadius:9},
+      {label:'IPCEER',data:nos,backgroundColor:css('--accent'),pointStyle:'rectRot',pointRadius:9,pointHoverRadius:11}]},
+      options:baseOpts({plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{title:t=>semCorta(semsD[Math.round(t[0].parsed.x)]),label:c=>' '+c.raw.f+': '+pct(c.parsed.y,2)}}},
+        scales:{x:{type:'linear',min:-0.5,max:semsD.length-0.5,grid:{display:false},ticks:{stepSize:1,color:css('--muted'),font:{size:11},callback:v=>Number.isInteger(v)&&semsD[v]?semCorta(semsD[v]):''}},y:{grid:{color:css('--line')},border:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>pct(v,1)}}}})});
+  } else sinDatos('c-dots','Todavía no hay mediciones semanales cargadas.');
   document.getElementById('t-ext').innerHTML=`<thead><tr><th>Fuente</th><th>Período</th><th>Medida</th><th>Rubro</th><th class="n">Ellos</th><th class="n">IPCEER</th><th class="n">Diferencia</th><th>Nuestro equivalente</th><th>Publicado</th></tr></thead><tbody>`+
     F.map(f=>`<tr><td><a href="${esc(f.x.url)}" target="_blank" rel="noopener">${esc(f.x.fuente)}</a></td><td class="mono">${esc(f.x.periodo)}</td><td>${esc((f.x.medida||'').replace(/_/g,' '))}</td><td>${esc(f.x.rubro)}${f.cod==='TOTAL'?' <span class="muted">(el nuestro: solo bienes de góndola)</span>':''}</td><td class="n">${pct(f.x.valor,2)}</td><td class="n">${pct(f.n.v,2)}</td><td class="n">${f.n.v!=null&&f.x.valor!=null?num(f.n.v-f.x.valor,2)+' pp':'–'}</td><td class="compl">${esc(f.n.txt)}${f.x.nota?` · <span class="muted">${esc(f.x.nota)}</span>`:''}</td><td class="mono">${esc(f.x.publicado||'')}</td></tr>`).join('')+'</tbody>';
 }

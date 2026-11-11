@@ -144,7 +144,7 @@ def pami(cfg: Config) -> dict:
 
 BCRA = "https://api.bcra.gob.ar/estadisticas/v4.0/Monetarias"
 # series del BCRA que se buscan por su descripción (no por número, que puede cambiar)
-BCRA_SERIES = {"tc_mayorista": ("mayorista", "3500"), "icl": ("contratos de locaci",),
+BCRA_SERIES = {"tc_mayorista": ("tipo de cambio mayorista",), "icl": ("contratos de locaci",),
                "cer": ("coeficiente de estabilizaci",), "uva": ("unidad de valor adquisitivo",)}
 
 

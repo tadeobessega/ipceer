@@ -506,6 +506,15 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <nav class="toc" id="toc-val"></nav>
       <div class="valcuerpo">
     <section>
+      <h2 id="v-sec-carrera">Carrera de métodos</h2>
+      <p class="sub" id="car-sub"></p>
+      <div class="grid">
+        <div class="card s12"><h3>Qué estima cada método y cuánto se acercó al INDEC</h3><div class="tablewrap"><table id="t-car"></table></div><p class="cap" id="car-nota" style="margin-top:14px"></p></div>
+        <div class="card s7"><h3 id="car-h-mes">Estimaciones del mes: métodos propios y consultoras</h3><div class="chart"><canvas id="c-car"></canvas></div><div class="src">Fuente: CEER en base a SEPA, tiendas en línea, INDEC y relevamientos privados publicados.</div></div>
+        <div class="card s5"><h3>Cómo fue cambiando cada estimación</h3><div class="tablewrap" style="max-height:380px;overflow-y:auto"><table id="t-pron"></table></div></div>
+      </div>
+    </section>
+    <section>
       <h2 id="v-sec-indec">Contra el INDEC</h2>
       <p class="sub" id="val-sub">Comparamos el IPCEER con el IPC oficial del INDEC en el mismo mes, la misma región y el mismo rubro. Para el total usamos dos referencias: los <b>bienes</b> del INDEC (que incluyen ropa, combustibles, medicamentos y otros que acá no están) y una <b>réplica del INDEC con nuestra misma canasta</b>: los índices oficiales de los mismos rubros, ponderados igual. La réplica es la comparación justa: si difiere, es por la fuente de precios y no por la cobertura.</p>
       <div class="filters" style="display:flex;gap:14px;flex-wrap:wrap;margin:0 0 16px">
@@ -1554,6 +1563,34 @@ function renderVariantes(){
 }
 function nombreCadena(id){ const c=((IND().cadenas||[]).find(x=>x.cadena_id===id)||{}).cadena; return c||('comercio '+id.replace('-',', bandera ')); }
 
+/* ---------- carrera de métodos ---------- */
+function renderCarrera(){
+  const C=D.carrera, t=document.getElementById('t-car'), sub=document.getElementById('car-sub');
+  sub.innerHTML='El mismo índice calculado de varias formas en cada corrida, también las que se descartaron. La fila <b>publicado</b> es el número del tablero; las demás corren de fondo para ver cuál se acerca más al INDEC. Cada método se compara con dos referencias: el <b>nivel general</b> del INDEC (lo que se busca anticipar) y la <b>réplica</b> (los índices del INDEC de las mismas clases que mide ese método, con los mismos ponderadores). Un método pasa a ser el publicado solo si baja el error contra el INDEC.';
+  if(!C||!(C.variantes||[]).length){ t.innerHTML='<tbody><tr><td class="muted">Todavía no se corrió la carrera de métodos: aparece con la próxima corrida de la tarea diaria.</td></tr></tbody>'; sinDatos('c-car'); document.getElementById('t-pron').innerHTML=''; return; }
+  const V=C.variantes.filter(v=>!v.error), meses=C.meses||[];
+  const pend=meses.filter(m=>!(m in (C.indec_general||{})));
+  const cols=meses.slice(-3);
+  const hr=v=>v.historico_vs_replica, hg=v=>v.historico_vs_general;
+  const conH=V.filter(v=>hg(v)), mejorG=conH.length?conH.reduce((a,b)=>hg(b).rmse<hg(a).rmse?b:a).id:null;
+  const conR=V.filter(v=>hr(v)), mejorR=conR.length?conR.reduce((a,b)=>hr(b).rmse<hr(a).rmse?b:a).id:null;
+  const val=(v,m)=>{const x=(v.meses||[]).find(r=>r.mes===m); return x?pct(x.var,2)+(x.parcial?'*':''):'–';};
+  t.innerHTML='<thead><tr><th rowspan="2">Método</th><th class="n" rowspan="2">Canasta medida</th>'+cols.map(m=>`<th class="n" rowspan="2">${mesLbl(m)}</th>`).join('')+'<th class="n" colspan="2">2017-2018, contra la réplica</th><th class="n" colspan="2">2017-2018, contra el nivel general</th><th class="n" colspan="2">Desde 2026, contra el nivel general</th></tr><tr><th class="n">Sesgo</th><th class="n">Error</th><th class="n">Sesgo</th><th class="n">Error</th><th class="n">Meses</th><th class="n">Error</th></tr></thead><tbody>'+
+    V.map(v=>{const a=v.actual_vs_general; return `<tr${v.id==='base'?' style="font-weight:600"':''}><td>${esc(v.nombre)}${v.id==='base'?' <span class="muted">(publicado)</span>':''}</td><td class="n">${pct(v.cobertura_pct,0)}</td>${cols.map(m=>`<td class="n">${val(v,m)}</td>`).join('')}<td class="n">${hr(v)?num(hr(v).sesgo,2):'–'}</td><td class="n">${hr(v)?num(hr(v).rmse,2)+(v.id===mejorR?' <span class="muted">(mejor)</span>':''):'–'}</td><td class="n">${hg(v)?num(hg(v).sesgo,2):'–'}</td><td class="n">${hg(v)?num(hg(v).rmse,2)+(v.id===mejorG?' <span class="muted">(mejor)</span>':''):'–'}</td><td class="n">${a?a.n:0}</td><td class="n">${a?num(a.rmse,2):'–'}</td></tr>`;}).join('')+
+    (Object.keys(C.indec_general||{}).length?`<tr><td><b>INDEC, nivel general</b></td><td class="n">100%</td>${cols.map(m=>`<td class="n">${pct((C.indec_general||{})[m],2)}</td>`).join('')}<td colspan="6"></td></tr>`:'')+'</tbody>';
+  document.getElementById('car-nota').innerHTML='Sesgo: diferencia media con el INDEC, en puntos porcentuales por mes (negativo: medimos menos). Error: raíz del error cuadrático medio, en puntos porcentuales. El asterisco marca un mes en curso. Los métodos con tiendas en línea, tarifas y alquileres no tienen prueba 2017-2018 porque esos datos empezaron a juntarse en noviembre de 2026: se evalúan con cada dato nuevo del INDEC. Los dos ajustes experimentales se estiman con 2017-2018 y su error se mide dejando afuera de a un mes.'+(C.ultimo_indec?` Último mes del INDEC: ${mesLbl(C.ultimo_indec)}.`:'');
+  const mes=pend.length?pend[pend.length-1]:meses[meses.length-1];
+  document.getElementById('car-h-mes').textContent='Estimaciones de '+mesLbl(mes)+': métodos propios y consultoras';
+  const filas=V.map(v=>{const x=(v.meses||[]).find(r=>r.mes===mes); return x?{n:v.nombre.split(':')[0].split(' (')[0].slice(0,46),v:x.var,propio:true,pub:v.id==='base'}:null;}).filter(Boolean)
+    .concat((C.consultoras||[]).filter(c=>c.periodo===mes).map(c=>({n:c.fuente+' ('+c.medida.replace(/_/g,' ')+')',v:c.valor,propio:false})));
+  if((C.indec_general||{})[mes]!=null) filas.push({n:'INDEC',v:C.indec_general[mes],indec:true});
+  if(filas.length) draw('c-car',{type:'bar',data:{labels:filas.map(f=>f.n),datasets:[{data:filas.map(f=>f.v),backgroundColor:filas.map(f=>f.indec?css('--ambar'):f.pub?PAL()[0]:f.propio?PAL()[0]+'88':css('--muted'))}]},options:baseOpts({indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>pct(v,1)}}}})});
+  else sinDatos('c-car','Todavía no hay estimaciones de este mes.');
+  const P=(D.pronosticos||[]).filter(r=>r.mes===mes&&['base','web','completo'].includes(r.variante));
+  const dias=[...new Set(P.map(r=>r.calculado))].sort().reverse().slice(0,40);
+  document.getElementById('t-pron').innerHTML=dias.length?`<thead><tr><th>Calculado el</th><th class="n">Publicado</th><th class="n">Con tiendas en línea</th><th class="n">Completo</th></tr></thead><tbody>`+dias.map(d=>{const g=k=>(P.find(r=>r.calculado===d&&r.variante===k)||{}).var_pct; return `<tr><td class="mono">${esc(d)}</td><td class="n">${pct(g('base'),2)}</td><td class="n">${pct(g('web'),2)}</td><td class="n">${pct(g('completo'),2)}</td></tr>`;}).join('')+'</tbody>':'<tbody><tr><td class="muted">Sin historial todavía.</td></tr></tbody>';
+}
+
 /* ---------- regulados ---------- */
 function renderRegu(){
   const R=D.regulados||{}, I=(R.indice||[]).filter(r=>r.region==='Nacional'&&r.var_pct!=null);
@@ -1677,7 +1714,7 @@ function render(){
   if(tab==='cad') renderCad();
   if(tab==='hilo') renderHilo();
   if(tab==='met') renderMetodo();
-  if(tab==='val'){ renderVal(); renderExt(); renderMun(); renderVariantes(); tocVal(); }
+  if(tab==='val'){ renderCarrera(); renderVal(); renderExt(); renderMun(); renderVariantes(); tocVal(); }
   if(tab==='regu') renderRegu();
   if(tab==='fre') renderFre();
   if(tab==='can') renderCan();

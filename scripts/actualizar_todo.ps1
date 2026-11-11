@@ -121,6 +121,7 @@ if ($historico -or ($reglasPrevias.Trim() -eq $reglas)) {
   Paso "Consolidación de semanas y meses (todo: cambiaron las reglas)" { Ipceer consolidar --todos; if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq $null) { $reglas | Out-File -Encoding ascii $marcaReglas } }
 }
 Paso "Variantes de método" { Ipceer variantes }
+Paso "Carrera de métodos" { Ipceer carrera }
 Paso "Cálculo" { Ipceer calcular }
 Paso "Tablero" { Ipceer sitio }
 Paso "Resumen" { Ipceer estado }

@@ -127,8 +127,46 @@ def relativos(previo: pl.DataFrame, actual: pl.DataFrame, min_p: int, min_a: int
     return regional, nacional
 
 
-def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame]:
+def _mes_del_periodo(periodo: str, frecuencia: str) -> str:
+    if frecuencia == "mensual":
+        return periodo
+    return (_inicio(periodo, frecuencia) + timedelta(days=3)).strftime("%Y-%m")  # mes del jueves
+
+
+def niveles_indec(cfg: Config, codigos: list[str]) -> tuple[pl.DataFrame, list[str]]:
+    """Índice del INDEC (base dic-2016 = 100) de la serie publicada más específica que contiene a
+    cada código, por región y mes: clase, si no su grupo, si no su división. Con eso se actualizan
+    los ponderadores de la canasta al último mes publicado (ponderador x precio relativo)."""
+    from .indec import directorio
+    from .validacion import leer_indec
+    ind = leer_indec(directorio(cfg)).filter(pl.col("region").is_in(REGIONES))
+    if ind.is_empty():
+        return pl.DataFrame(schema={"codigo": pl.Utf8, "region": pl.Utf8, "mes": pl.Utf8, "nivel_indec": pl.Float64}), []
+    publicados = set(ind["codigo"].unique().to_list())
+    partes = []
+    for c in codigos:
+        x = resolver_codigo(c, publicados, min_niveles=1)
+        if x is None:
+            continue
+        partes.append(ind.filter(pl.col("codigo") == x).select(
+            pl.lit(c).alias("codigo"), "region", "mes", pl.col("indice").alias("nivel_indec")))
+    if not partes:
+        return pl.DataFrame(schema={"codigo": pl.Utf8, "region": pl.Utf8, "mes": pl.Utf8, "nivel_indec": pl.Float64}), []
+    niv = pl.concat(partes)
+    return niv, sorted(niv["mes"].unique().to_list())
+
+
+def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None = None) -> dict[str, pl.DataFrame]:
+    """`ponderacion`:
+      "indec"  (por defecto) los ponderadores de la canasta del INDEC se actualizan con los índices
+               del INDEC hasta su último mes publicado; de ahí en adelante, con las variaciones
+               propias. La variación de un agregado es la suma de las variaciones propias de cada
+               clase por esos ponderadores.
+      "propia" el método anterior: los ponderadores se actualizan solo con el nivel propio desde
+               el comienzo del tramo (se sigue calculando para comparar).
+    """
     ic = cfg["indice"]
+    ponderacion = ponderacion or ic.get("ponderacion", "indec")
     col_precio = "precio_lista" if ic["precio"] == "lista" else "precio_efectivo"
     min_dias = ic["min_dias_mes"] if frecuencia == "mensual" else ic["min_dias_semana"]
     pond = ponderadores_clase(cfg)
@@ -206,8 +244,39 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
             pl.when(pl.col("logrel").is_null()).then(None).otherwise(pl.col("_acum").exp() * 100).alias("indice"),
             # nivel previo, solo para ponderar el eslabón siguiente (no entra como variación de precio)
             pl.col("_acum").shift(1).over("codigo", "region", "tramo").fill_null(0.0).exp().alias("_nivel_prev"))
-        .drop("_acum")
     )
+    ult_indec = None
+    if ponderacion == "indec":
+        niv, meses_indec = niveles_indec(cfg, usados)
+        if not meses_indec:
+            log.warning("Sin series del INDEC: se usan los ponderadores con el nivel propio")
+            ponderacion = "propia"
+    if ponderacion == "indec":
+        ult_indec = meses_indec[-1]
+        mes_p = {p: _mes_del_periodo(p, frecuencia) for p in periodos}
+        # mes de referencia: último mes del INDEC anterior al mes del período
+        ref = {p: max((m for m in meses_indec if m < mes_p[p]), default=None) for p in periodos}
+        # último período propio (del mismo tramo) que no es posterior al mes de referencia
+        p_ref = {}
+        for i, p in enumerate(periodos):
+            cands = [q for q in periodos[:i] if ref[p] is not None and mes_p[q] <= ref[p] and tramo[q] == tramo[p]]
+            p_ref[p] = cands[-1] if cands else None
+        mapa_ref = pl.DataFrame({"periodo": periodos, "_mes_ref": [ref[p] for p in periodos],
+                                 "_p_ref": [p_ref[p] for p in periodos]},
+                                schema={"periodo": pl.Utf8, "_mes_ref": pl.Utf8, "_p_ref": pl.Utf8})
+        elem = (
+            elem.join(mapa_ref, on="periodo", how="left")
+            .join(elem.select("codigo", "region", pl.col("periodo").alias("_p_ref"), pl.col("_acum").alias("_acum_ref")),
+                  on=["codigo", "region", "_p_ref"], how="left")
+            .join(niv.rename({"mes": "_mes_ref"}), on=["codigo", "region", "_mes_ref"], how="left")
+            .with_columns(pl.col("_acum").shift(1).over("codigo", "region", "tramo").fill_null(0.0).alias("_acum_prev"))
+            # ponderador actualizado = ponderador base x índice INDEC del mes de referencia x variación
+            # propia acumulada desde entonces (solo meses que el INDEC todavía no publicó)
+            .with_columns(((pl.col("nivel_indec").fill_null(100.0) / 100)
+                           * (pl.col("_acum_prev") - pl.col("_acum_ref").fill_null(0.0)).exp()).alias("_nivel_prev"))
+            .drop("_mes_ref", "_p_ref", "_acum_ref", "_acum_prev", "nivel_indec")
+        )
+    elem = elem.drop("_acum")
     # base = 100: el mes_base configurado en su tramo; en los demás, el primer período del tramo
     base = ic.get("mes_base") if frecuencia == "mensual" else None
     if base and base not in periodos:
@@ -232,6 +301,7 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
         con = pl.col("logrel").is_not_null()
         eslabon = df.group_by(*por, "tramo").agg(
             ((w * pl.col("logrel").exp()).filter(con).sum() / w.filter(con).sum()).alias("_rel"),
+            w.filter(con).sum().alias("_w"),
             pl.col("ponderacion").sum().alias("ponderacion"),
             pl.col("n_reg").sum().alias("n_productos"),
         )
@@ -240,7 +310,7 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
             (pl.col("_rel").log().fill_null(0.0).cum_sum().over(*claves, "tramo").exp() * 100).alias("indice"))
         # sin ninguna clase con datos en el período: el agregado queda vacío ese período
         return eslabon.with_columns(pl.when(pl.col("_rel").is_null()).then(None).otherwise(pl.col("indice"))
-                                    .alias("indice")).drop("_rel", "tramo")
+                                    .alias("indice")).drop("tramo")
 
     regional = pl.concat([
         agregar(elem, ["periodo", "region", "codigo"]).with_columns(pl.lit("clase").alias("nivel")),
@@ -251,6 +321,8 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
         agregar(elem, ["periodo", "region"]).with_columns(pl.lit("TOTAL").alias("codigo"), pl.lit("total").alias("nivel")),
     ], how="diagonal")
 
+    eslabones = regional.select("periodo", "region", "nivel", "codigo", "_rel", "_w", "ponderacion", "n_productos")
+    regional = regional.drop("_rel", "_w")
     if base:  # el agregado encadenado arranca en 100 al inicio del tramo: se lleva a 100 en el mes base
         regional = regional.join(parcial.select("periodo", "tramo"), on="periodo").with_columns(
             pl.when(pl.col("tramo") == tramo[base])
@@ -259,15 +331,39 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
             .otherwise(pl.col("indice")).alias("indice")).drop("tramo")
 
     # 3. nacional
-    nac = (
-        regional.with_columns(pl.col("region").replace_strict(w_region, return_dtype=pl.Float64).alias("w_region"))
-        .with_columns((pl.col("w_region") * pl.col("ponderacion")).alias("w"))
-        .group_by("periodo", "codigo", "nivel")
-        .agg(pl.when(pl.col("indice").null_count() == 0)  # si falta una región, el nacional queda vacío
-             .then((pl.col("indice") * pl.col("w")).sum() / pl.col("w").sum()).otherwise(None).alias("indice"),
-             pl.col("w").sum().alias("ponderacion"), pl.col("n_productos").sum())
-        .with_columns(pl.lit(NACIONAL).alias("region"))
-    )
+    if ponderacion == "indec":
+        # variación nacional = suma de las variaciones regionales por el ponderador actualizado de
+        # cada región (peso de la región x canasta cubierta a precios del mes de referencia)
+        en = (
+            eslabones.with_columns(pl.col("region").replace_strict(w_region, return_dtype=pl.Float64).alias("w_region"))
+            .with_columns((pl.col("w_region") * pl.col("_w")).alias("_ww"))
+            .group_by("periodo", "codigo", "nivel")
+            .agg(pl.when((pl.col("_rel").null_count() == 0) & (pl.len() == len(REGIONES)))  # si falta una región, vacío
+                 .then((pl.col("_rel") * pl.col("_ww")).sum() / pl.col("_ww").sum()).otherwise(None).alias("_rel"),
+                 (pl.col("w_region") * pl.col("ponderacion")).sum().alias("ponderacion"), pl.col("n_productos").sum())
+            .join(parcial.select("periodo", "tramo"), on="periodo")
+            .sort("nivel", "codigo", "periodo")
+        )
+        nac = en.with_columns(
+            (pl.col("_rel").log().fill_null(0.0).cum_sum().over("nivel", "codigo", "tramo").exp() * 100).alias("indice")
+        ).with_columns(pl.when(pl.col("_rel").is_null()).then(None).otherwise(pl.col("indice")).alias("indice"),
+                       pl.lit(NACIONAL).alias("region")).drop("_rel", "tramo")
+        if base:
+            nac = nac.join(parcial.select("periodo", "tramo"), on="periodo").with_columns(
+                pl.when(pl.col("tramo") == tramo[base])
+                .then(pl.col("indice") / pl.col("indice").filter(pl.col("periodo") == base).first()
+                      .over("nivel", "codigo", "tramo") * 100)
+                .otherwise(pl.col("indice")).alias("indice")).drop("tramo")
+    else:
+        nac = (
+            regional.with_columns(pl.col("region").replace_strict(w_region, return_dtype=pl.Float64).alias("w_region"))
+            .with_columns((pl.col("w_region") * pl.col("ponderacion")).alias("w"))
+            .group_by("periodo", "codigo", "nivel")
+            .agg(pl.when(pl.col("indice").null_count() == 0)  # si falta una región, el nacional queda vacío
+                 .then((pl.col("indice") * pl.col("w")).sum() / pl.col("w").sum()).otherwise(None).alias("indice"),
+                 pl.col("w").sum().alias("ponderacion"), pl.col("n_productos").sum())
+            .with_columns(pl.lit(NACIONAL).alias("region"))
+        )
 
     nombres_div = dict(pl.read_csv(cfg.dir_config / "ponderadores_division.csv", schema_overrides={"codigo": pl.Utf8})
                        .select("codigo", "nombre").iter_rows())
@@ -322,7 +418,8 @@ def calcular(cfg: Config, frecuencia: str = "mensual") -> dict[str, pl.DataFrame
                          schema={"clase": pl.Utf8, "codigo_ponderador": pl.Utf8})
     calidad = elem.group_by("periodo", "origen").agg(pl.len().alias("n_agregados")).sort("periodo", "origen")
 
-    return {"indices": todos, "cobertura": cobertura, "mapeo_clases": mapeo, "calidad": calidad}
+    return {"indices": todos.with_columns(pl.lit(ponderacion).alias("ponderacion_metodo")), "cobertura": cobertura,
+            "mapeo_clases": mapeo, "calidad": calidad}
 
 
 def guardar(res: dict[str, pl.DataFrame], cfg: Config, frecuencia: str) -> list[Path]:

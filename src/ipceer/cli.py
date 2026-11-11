@@ -57,6 +57,19 @@ def cmd_procesar(cfg, args):
             log.error("No se pudo procesar %s: %s", z.name, e)
 
 
+def cmd_web(cfg, args):
+    from . import web
+    solo = [x for x in args.tiendas.split(",") if x] or None
+    r = web.actualizar(cfg, bajar_ahora=not args.sin_bajar, prefijo="gh_" if args.solo_bajar else "", solo=solo)
+    d = r.get("descarga") or {}
+    log.info("Web: %s artículos de %s tiendas", d.get("articulos"), d.get("tiendas_con_datos"))
+    for tid, i in (d.get("tiendas") or {}).items():
+        if not i.get("articulos") or i.get("estado") != "ok":
+            log.info("  %s: %s (%s artículos)", tid, i.get("estado"), i.get("articulos"))
+    if r.get("panel"):
+        log.info("Web, paneles: %s", {k: v for k, v in r["panel"].items() if k != "clases"})
+
+
 def cmd_consolidar(cfg, args):
     for f in ("semanal", "mensual"):
         panel.actualizar_paneles(cfg, f, todos=getattr(args, "todos", False))
@@ -323,6 +336,11 @@ def main(argv=None):
         fn=lambda cfg, args: combustibles.actualizar(cfg))
     sub.add_parser("cadenas", help="nombres de las cadenas desde los últimos zips").set_defaults(fn=cmd_cadenas)
     sub.add_parser("estado", help="resumen de datos y resultados").set_defaults(fn=cmd_estado)
+    w = sub.add_parser("web", help="precios minoristas de tiendas en línea (catálogos públicos)")
+    w.add_argument("--solo-bajar", action="store_true", help="baja y guarda con prefijo gh_ (GitHub Actions)")
+    w.add_argument("--sin-bajar", action="store_true", help="solo rearma los paneles con lo ya bajado")
+    w.add_argument("--tiendas", default="", help="ids separados por coma (por defecto, todas)")
+    w.set_defaults(fn=cmd_web)
     sub.add_parser("otras", help="alquileres (Index Zonaprop) y medicamentos (PAMI)").set_defaults(
         fn=lambda cfg, a: otras_fuentes.actualizar(cfg))
     sub.add_parser("variantes", help="compara variantes de método contra el INDEC (2016-2018)").set_defaults(

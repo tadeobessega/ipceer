@@ -1,0 +1,44 @@
+name: Precios web (tiendas en línea)
+# Baja todos los días los catálogos públicos de las tiendas que responden desde GitHub y los deja
+# en el release "sepa-archivo" como web_AAAA-MM-DD.parquet. La PC los trae en su corrida diaria
+# (y además baja por su cuenta las tiendas que a GitHub le limitan los pedidos).
+on:
+  schedule:
+    - cron: "23 13 * * *"   # 10:23 en Argentina
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/workflows/precios_web.yml", "src/ipceer/web.py", "config/web/**"]
+permissions:
+  contents: write
+concurrency: precios-web
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: sepa-archivo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Bajar
+        run: ipceer web --solo-bajar
+      - name: Guardar en el release
+        run: |
+          shopt -s nullglob
+          for f in data/web/gh_20*.parquet; do
+            n=$(basename "$f"); cp "$f" "web_${n#gh_}"; gh release upload "$TAG" "web_${n#gh_}" --clobber
+          done
+          cp data/web/gh_estado.json web_estado_github.json
+          gh release upload "$TAG" web_estado_github.json --clobber
+          python - <<'PY'
+          import json
+          d = json.load(open("data/web/gh_estado.json", encoding="utf-8"))
+          print(d["articulos"], "artículos de", d["tiendas_con_datos"], "tiendas")
+          for t, i in d["tiendas"].items():
+              print(f"{t:22s} {i.get('articulos'):>7} {i.get('estado')}")
+          PY

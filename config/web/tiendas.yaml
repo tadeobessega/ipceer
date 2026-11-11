@@ -1,0 +1,92 @@
+# Tiendas en línea con catálogo público (el mismo que usa su propia página). Se bajan una vez por
+# día, de a un pedido por vez por tienda y con pausa. Si una tienda no responde o limita los pedidos,
+# se anota y se sigue: no se saltea ninguna protección.
+#
+#   tipo:       vtex | shopify
+#   regiones:   regiones del IPC a las que se asigna el precio. Los supermercados muestran por
+#               defecto el precio de su zona principal (GBA); las tiendas de alcance nacional
+#               tienen un precio único para todo el país ("todas").
+#   deptos:     expresión regular sobre el nombre del departamento (primer nivel): solo se bajan
+#               esos. En supermercados se bajan los rubros que SEPA no cubre bien (frescos y no
+#               alimentarios); almacén, bebidas, lácteos, limpieza y perfumería ya vienen de SEPA.
+super: &super
+  tipo: vtex
+  regiones: [GBA]
+  deptos: 'carn|pescad|frut|verdur|panader|rotiser|electro|tecnolog|hogar|bazar|textil|indument|moda|calzado|jugue|librer|deporte|aire libre|tiempo libre|automotor|ferreter|jardin|bebe|farmacia|salud'
+nacional: &nacional
+  tipo: vtex
+  regiones: todas
+
+tiendas:
+  # supermercados (frescos y no alimentarios)
+  - {id: carrefour, host: www.carrefour.com.ar, <<: *super}
+  - {id: dia, host: diaonline.supermercadosdia.com.ar, <<: *super}
+  - {id: jumbo, host: www.jumbo.com.ar, <<: *super}
+  - {id: disco, host: www.disco.com.ar, <<: *super}
+  - {id: vea, host: www.vea.com.ar, <<: *super}
+  - {id: changomas, host: www.masonline.com.ar, <<: *super}
+  - {id: cordiez, host: www.cordiez.com.ar, <<: *super, regiones: [Pampeana]}
+  - {id: josimar, host: www.josimar.com.ar, <<: *super}
+  - {id: toledo, host: www.toledodigital.com.ar, <<: *super, regiones: [Pampeana]}
+  - {id: comodin, host: www.comodinencasa.com.ar, <<: *super, regiones: [Noroeste]}
+  - {id: modomarket, host: www.modomarket.com, <<: *super}
+  # farmacias y perfumerías
+  - {id: farmacity, host: www.farmacity.com, <<: *nacional}
+  - {id: farmaonline, host: www.farmaonline.com, <<: *nacional}
+  - {id: farmaplus, host: www.farmaplus.com.ar, <<: *nacional}
+  - {id: farmaciasdelpueblo, host: www.farmaciasdelpueblo.com.ar, <<: *nacional}
+  - {id: rouge, host: www.perfumeriasrouge.com, <<: *nacional}
+  - {id: juleriaque, host: www.juleriaque.com.ar, <<: *nacional}
+  - {id: simplicity, host: www.simplicity.com.ar, <<: *nacional}
+  - {id: getthelook, host: www.getthelook.com.ar, <<: *nacional}
+  # indumentaria y calzado
+  - {id: mimo, host: www.mimo.com.ar, <<: *nacional}
+  - {id: topper, host: www.topper.com.ar, <<: *nacional}
+  - {id: equus, host: www.equus.com.ar, <<: *nacional}
+  - {id: levis, host: www.levi.com.ar, <<: *nacional}
+  - {id: portsaid, host: www.portsaid.com.ar, <<: *nacional}
+  - {id: legacy, host: www.legacy.com.ar, <<: *nacional}
+  - {id: 47street, host: www.47street.com.ar, <<: *nacional}
+  - {id: sporting, host: www.sporting.com.ar, <<: *nacional}
+  - {id: cuestablanca, host: www.cuestablanca.com, <<: *nacional}
+  - {id: tascani, host: www.tascani.com.ar, <<: *nacional}
+  - {id: batistella, host: www.batistella.com.ar, <<: *nacional}
+  - {id: viamo, host: www.viamo.com, <<: *nacional}
+  - {id: fila, host: www.fila.com.ar, <<: *nacional}
+  - {id: underarmour, host: www.underarmour.com.ar, <<: *nacional}
+  - {id: lasmargaritas, host: www.lasmargaritas.com.ar, <<: *nacional}
+  - {id: coppel, host: www.coppel.com.ar, <<: *nacional}
+  - {id: reebok, host: www.reebok.com.ar, tipo: shopify, regiones: todas}
+  - {id: columbia, host: www.columbiasportswear.com.ar, tipo: shopify, regiones: todas}
+  - {id: brooksfield, host: www.brooksfield.com, tipo: shopify, regiones: todas}
+  - {id: vcp, host: www.vcp.com.ar, tipo: shopify, regiones: todas}
+  - {id: chicco, host: www.chicco.com.ar, tipo: shopify, regiones: todas}
+  # electrodomésticos y tecnología
+  - {id: oncity, host: www.oncity.com, <<: *nacional}
+  - {id: naldo, host: www.naldo.com.ar, <<: *nacional}
+  - {id: pardo, host: www.pardo.com.ar, <<: *nacional}
+  - {id: cetrogar, host: www.cetrogar.com.ar, <<: *nacional}
+  - {id: castillo, host: www.castillo.com.ar, <<: *nacional}
+  - {id: bringeri, host: www.bringeri.com.ar, <<: *nacional}
+  - {id: bgh, host: www.bgh.com.ar, <<: *nacional}
+  - {id: whirlpool, host: www.whirlpool.com.ar, <<: *nacional}
+  - {id: electrolux, host: www.electrolux.com.ar, <<: *nacional}
+  - {id: liliana, host: www.liliana.com.ar, <<: *nacional}
+  - {id: motorola, host: www.motorola.com.ar, <<: *nacional}
+  # hogar, construcción, muebles y bazar
+  - {id: easy, host: www.easy.com.ar, <<: *nacional}
+  - {id: blaisten, host: www.blaisten.com.ar, <<: *nacional}
+  - {id: prestigio, host: www.prestigio.com.ar, <<: *nacional}
+  - {id: pintureriasdelcentro, host: www.pintureriasdelcentro.com, <<: *nacional}
+  - {id: arieta, host: www.sanitariosarieta.com.ar, <<: *nacional}
+  - {id: arredo, host: www.arredo.com.ar, <<: *nacional}
+  - {id: simmons, host: www.simmons.com.ar, <<: *nacional}
+  - {id: volf, host: www.volf.com.ar, <<: *nacional}
+  - {id: gafa, host: www.gafa.com.ar, <<: *nacional}
+  # libros, juguetes, motos, mascotas, otros
+  - {id: sbs, host: www.sbs.com.ar, <<: *nacional}
+  - {id: cebra, host: www.cebra.com.ar, <<: *nacional}
+  - {id: mundodeljuguete, host: www.elmundodeljuguete.com.ar, <<: *nacional}
+  - {id: yuhmak, host: www.yuhmak.com, <<: *nacional}
+  - {id: puppis, host: www.puppis.com.ar, <<: *nacional}
+  - {id: bonafide, host: www.bonafide.com.ar, <<: *nacional}

@@ -1,0 +1,142 @@
+# Clase del IPC de cada producto de las tiendas en línea.
+# Las reglas se evalúan EN ORDEN sobre la categoría de la tienda (normalizada: minúsculas, sin
+# tildes; los niveles separados por " / "). Si ninguna regla coincide con la categoría, se prueba
+# con el nombre del producto. Gana la primera regla que coincide con `incluir` y no con `excluir`.
+# Lo que no coincide con ninguna queda sin clase y no se usa (el precio igual queda guardado).
+# Rubros que ya vienen de SEPA (supermercados): si aparecen en una tienda web no se usan.
+excluir_global:
+  - '\b(limpieza|almacen|bebidas|lacteos|congelados|fiambres|golosinas|mascotas?|veterinaria|kiosco|desayuno y merienda)\b'
+# Repuestos, accesorios y servicios: se descartan mirando el nombre del producto.
+descartar_por_nombre:
+  - '\b(fundas?|protector(es)? de pantalla|vidrios? templados?|cargador(es)?|cables?|soportes?|repuestos?|garantia|servicio de instalacion|gift ?card|tarjeta de regalo|kit de instalacion)\b'
+
+reglas:
+  # --- alimentos frescos
+  - clase: "01.1.3"
+    solo_categoria: true
+    nombre: Pescados y mariscos
+    incluir: ['\b(pescados?|mariscos?|pescaderia)\b']
+    excluir: ['\b(mascotas?|gatos?|perros?|enlatad[ao]s?|conservas?|rebozad[ao]s?|congelad[ao]s?|carbon|encendido|carne vacuna|pollos?|cerdo|achuras)\b']
+  - clase: "01.1.2"
+    solo_categoria: true
+    nombre: Carnes y derivados
+    incluir: ['\b(carnes?|carniceria|vacuna|pollos?|granja|cerdo|porcin[ao]|achuras|embutidos|cordero)\b']
+    excluir: ['\b(mascotas?|gatos?|perros?|carbon|encendido|parrillas?|condimentos?|sazonador(es)?|vegetal(es)?|veggie|vegan[ao]s?|rebozad[ao]s?|congelad[ao]s?|hamburguesas?|medallon(es)?|nuggets|salchichas?|fiambres?|caldos?|enlatad[ao]s?|pate|picadillo|empanadas?|tartas?|milanesas? de soja)\b']
+  - clase: "01.1.6"
+    solo_categoria: true
+    nombre: Frutas
+    incluir: ['\bfrutas?\b']
+    excluir: ['\b(secos?|desecad[ao]s?|enlatad[ao]s?|conservas?|almibar|congelad[ao]s?|jugos?|pulpas?|mermeladas?)\b']
+  - clase: "01.1.7"
+    solo_categoria: true
+    nombre: Verduras, tubérculos y legumbres
+    incluir: ['\b(verduras?|hortalizas?|verduleria|tuberculos?|hierbas frescas|ensaladas?)\b']
+    excluir: ['\b(enlatad[ao]s?|conservas?|congelad[ao]s?|semillas?|jardin|frutos? secos?|secos)\b']
+  - clase: "01.1.1"
+    solo_categoria: true
+    nombre: Pan y cereales (panadería)
+    incluir: ['\b(panaderia|panificados?|pan fresco|facturas)\b']
+    excluir: ['\b(electro|maquinas?|hornos?|moldes?|bazar)\b']
+  # --- salud
+  - clase: "06.1.3"
+    nombre: Artefactos y equipos terapéuticos
+    incluir: ['\b(tensiometros?|nebulizador(es)?|oximetros?|glucometros?|ortopedi[ao]s?|sillas? de ruedas|muletas?|andador(es)?|audifonos? medicinal|lentes de contacto|anteojos|plantillas ortopedicas|fajas?|medias de compresion|termometros?)\b']
+  - clase: "06.1.2"
+    nombre: Otros productos medicinales
+    incluir: ['\b(primeros auxilios|botiquin|apositos?|curitas|gasas?|vendas?|preservativos?|test de embarazo|alcohol en gel|barbijos?|jeringas?|agua oxigenada|algodon)\b']
+  - clase: "06.1.1"
+    nombre: Productos farmacéuticos
+    incluir: ['\b(medicamentos?|venta libre|analgesicos?|antigripal(es)?|antiacidos?|antialergicos?|digestivos?|laxantes?|vitaminas?|suplementos?|farmacia|salud y farmacia|homeopat|fitoterap|antiinflamatorios?|descongestivos?|recetados?)\b']
+    excluir: ['\b(mascotas?|veterinari|deportiv[ao]s? equip|bebes? y maternidad)\b']
+  # --- prendas de vestir y calzado
+  - clase: "03.2.1"
+    nombre: Calzado
+    incluir: ['\b(calzados?|zapatillas?|zapatos?|botas?|botinetas?|botines|sandalias?|ojotas?|pantuflas?|borcegos?|mocasines?|alpargatas?|chinelas?|crocs|nauticos?|stilettos?|texanas?|zuecos?)\b']
+    excluir: ['\b(cuidado del calzado|pomadas?|cordones|plantillas?|munecas?|juguetes?|organizador(es)?|zapater[ao]s?|medias?)\b']
+  - clase: "03.1.3"
+    nombre: Otros artículos y accesorios para el vestir
+    incluir: ['\b(cinturon(es)?|bufandas?|gorr[ao]s?|guantes?|corbatas?|panuelos?|sombreros?|tiradores)\b']
+    excluir: ['\b(latex|limpieza|cocina|jardin|box(eo)?|arquero|natacion)\b']
+  - clase: "03.1.2"
+    nombre: Prendas de vestir
+    incluir: ['\b(indumentaria|ropa|remeras?|chombas?|camisas?|camisetas?|musculosas?|pantalon(es)?|jeans?|bermudas?|shorts?|polleras?|faldas?|vestidos?|buzos?|sweaters?|cardigans?|camperas?|sacos?|blazers?|chalecos?|tapados?|abrigos?|pilotos?|trajes?|joggings?|calzas?|leggings?|bodys?|enteritos?|monos?|pijamas?|lenceria|corpinos?|bombachas?|boxers?|slips?|medias|mallas?|bikinis?|tops?|blusas?|ambos|guardapolvos?|uniformes?)\b']
+    excluir: ['\b(ropa de cama|blanco|blanqueria|mascotas?|munecas?|juguetes?|lava ?ropas?|seca ?ropas?|cuidado de la ropa|perchas?|organizador(es)?|placard|canastos?|tender|perfumes?|fragancias?|relojes?|bicicletas?|valijas?|mochilas?|carteras?|billeteras?|rinoneras?|bolsos?|anteojos|termic[ao]s? de cocina|cocina|bazar|electro)\b']
+  # --- vivienda y equipamiento del hogar
+  - clase: "04.3.1"
+    nombre: Materiales para la reparación de la vivienda
+    incluir: ['\b(pinturas?|pintureria|ferreteria|construccion|griferias?|sanitarios?|plomeria|pisos?|revestimientos?|ceramic[ao]s?|porcelanatos?|maderas?|aberturas?|puertas?|ventanas?|cerraduras?|cerrajeria|materiales electricos|electricidad|cemento|adhesivos?|selladores?|impermeabilizantes?|membranas?|canerias?|tanques?|bachas?|inodoros?|vanitory|mamparas?|durlock|aislantes?|latex|esmaltes?|barnices?|tornillos?|bulones|termofusion)\b']
+    excluir: ['\b(guantes|juguetes?|unas|maquillaje|dental(es)?|oral|cuidado personal|perfumeria|farmacia|salud|pestanas|protesis|libreria|escolar(es)?|adhesivos? (vinilicos?|escolar(es)?))\b']
+  - clase: "05.2"
+    nombre: Artículos textiles para el hogar
+    incluir: ['\b(blanco|blanqueria|sabanas?|acolchados?|cubrecamas?|frazadas?|mantas?|toallas?|toallones?|cortinas?|almohadas?|almohadones?|manteles?|ropa de cama|repasadores?|fundas? de almohada|edredon(es)?|batas?)\b']
+    excluir: ['\b(colchon(es)?|sommiers?|humedas?|panales?|femeninas?|higienicas?|desmaquillantes?|papel)\b']
+  - clase: "05.3"
+    nombre: Artefactos para el hogar
+    incluir: ['\b(heladeras?|freezers?|lavarropas?|lavado|secarropas?|lavasecarropas?|lavavajillas?|cocinas?|hornos?|anafes?|microondas|termotanques?|calefon(es)?|aires? acondicionados?|climatizacion|ventilador(es)?|estufas?|calefactor(es)?|caloventor(es)?|pequenos electrodomesticos|electrodomesticos|licuadoras?|batidoras?|procesadoras?|pavas? electricas?|tostadoras?|cafeteras?|aspiradoras?|planchas?|freidoras?|multiprocesadoras?|purificador(es)?|campanas?|extractor(es)?|maquinas? de coser|electro limpieza|cavas?)\b']
+    excluir: ['\b(cocina y comedor|utensilios|accesorios de cocina|bazar|muebles? de cocina|juguetes?|planchas? de pelo|planchitas?|cuidado personal|cuidado capilar|capilar|guantes? de cocina|repasadores?|reloj(es)? de cocina|papel de cocina|rollos? de cocina|leche|lactancia|maternidad)\b']
+  - clase: "05.5"
+    nombre: Herramientas y equipos para el hogar y el jardín
+    incluir: ['\b(herramientas?|jardin|jardineria|taladros?|amoladoras?|atornilladoras?|sierras?|lijadoras?|escaleras?|riego|mangueras?|cortadoras? de cesped|bordeadoras?|hidrolavadoras?|soldadoras?|compresor(es)?|desmalezadoras?|motosierras?|pilas|lamparas? led|lamparitas?)\b']
+    excluir: ['\b(juguetes?|muebles? de jardin|piletas?)\b']
+  - clase: "05.4"
+    nombre: Vajilla, utensilios y cristalería
+    incluir: ['\b(bazar|vajilla|cocina y comedor|ollas?|sarten(es)?|cacerolas?|cubiertos?|vasos?|copas?|platos?|cristaleria|utensilios?|termos?|mates?|bombillas?|fuentes?|jarras?|tazas?|bowls?|tuppers?|hermeticos?|cuchillos?|tablas? de picar|asaderas?|moldes?)\b']
+    excluir: ['\b(descartables?|juguetes?|mamaderas?|bebes?|maquillaje|perfumeria|cuidado personal|menstrual(es)?)\b']
+  - clase: "05.1"
+    nombre: Muebles, accesorios y alfombras
+    incluir: ['\b(muebles?|colchon(es)?|sommiers?|sillon(es)?|sofas?|sillas?|mesas?|placares?|placards?|roperos?|racks?|escritorios?|bibliotecas?|estanterias?|alfombras?|iluminacion|lamparas?|veladores?|decoracion|deco|espejos?|cuadros?|comodas?|camas?|cunas?|dormitorio|living|comedor|organizacion|banquetas?)\b']
+    excluir: ['\b(juguetes?|ropa de cama|camping|playa|auto|maquillaje|cuidado personal|perfumeria|regaleria|party|depilar|led|lamparitas?)\b']
+  # --- transporte personal
+  - clase: "07.1.3"
+    nombre: Bicicletas
+    incluir: ['\bbicicletas?\b']
+    excluir: ['\b(fijas?|accesorios|cascos?|infladores?|candados?|juguetes?)\b']
+  - clase: "07.1.2"
+    nombre: Motocicletas
+    incluir: ['\b(motos?|motocicletas?|scooters?|cuatriciclos?)\b']
+    excluir: ['\b(cascos?|accesorios|indumentaria|juguetes?|electric[ao]s? infantil|repuestos?|cubiertas?|aceites?)\b']
+  - clase: "07.2.1"
+    nombre: Repuestos y accesorios para vehículos
+    incluir: ['\b(automotor|neumaticos?|cubiertas?|baterias? (de|para) auto|lubricantes? (para|de) (auto|motor)|accesorios para (el )?auto|autopartes?|aceites? (de|para) motor|limpiaparabrisas|cuidado del auto)\b']
+  # --- comunicación
+  - clase: "08.2.2"
+    nombre: Equipos telefónicos móviles
+    incluir: ['\b(celulares?|smartphones?|telefonos? moviles|telefonia celular)\b']
+    excluir: ['\baccesorios\b']
+  - clase: "08.2.1"
+    nombre: Equipos telefónicos fijos
+    incluir: ['\btelefonos? (fijos?|inalambricos?)\b']
+  # --- recreación y cultura
+  - clase: "09.3.1"
+    nombre: Juegos, juguetes y hobbies
+    excluir: ['\b(sexual(es)?|eroticos?|adultos)\b']
+    incluir: ['\b(juguetes?|jugueteria|juegos? de mesa|munecas?|munecos?|peluches?|rodados|videojuegos?|consolas?|playstation|xbox|nintendo|bloques|rompecabezas|didacticos?|triciclos?|monopatin(es)?|karting)\b']
+  - clase: "09.1.3"
+    nombre: Equipos de procesamiento de la información
+    incluir: ['\b(informatica|notebooks?|computadoras?|computacion|tablets?|impresoras?|monitores?|pcs? de escritorio|all in one|teclados?|mouses?|gaming|routers?)\b']
+  - clase: "09.1.4"
+    nombre: Medios para grabación
+    incluir: ['\b(pendrives?|memorias? (usb|sd|micro ?sd|ram)|tarjetas? de memoria|discos? (rigidos?|externos?|solidos?)|almacenamiento|tarjetas? sd)\b']
+  - clase: "09.1.2"
+    nombre: Equipo fotográfico
+    incluir: ['\b(camaras?|fotografia|binoculares|telescopios?|drones?)\b']
+    excluir: ['\b(seguridad|bicicleta)\b']
+  - clase: "09.1.1"
+    nombre: Equipos de sonido e imagen
+    incluir: ['\b(tv|tvs|televisor(es)?|smart tv|audio|parlantes?|auriculares?|video|proyector(es)?|barras? de sonido|home theater|minicomponentes?|radios?)\b']
+  - clase: "09.5.1"
+    nombre: Libros
+    incluir: ['\b(libros?|novelas?|literatura|textos escolares|ficcion|ensayos?|comics?|mangas?)\b']
+    excluir: ['\b(libreria y oficina|para colorear|contables?)\b']
+  - clase: "09.5.4"
+    nombre: Papel y útiles de oficina
+    incluir: ['\b(libreria|utiles|escolares?|papeleria|oficina|cuadernos?|lapices|lapiceras?|marcadores?|resmas?|carpetas?|mochilas? escolares?|cartucheras?)\b']
+  - clase: "09.3.2"
+    nombre: Equipo para el deporte, campamento y recreación
+    incluir: ['\b(deportes?|fitness|camping|aire libre|tiempo libre|pesca|pelotas?|piletas?|gimnasio|pesas|mancuernas|carpas?|bolsas? de dormir|conservadoras?|reposeras?|sombrillas?|raquetas?|paletas?|patines?|skates?|natacion|yoga|bicicletas? fijas?|cintas? de correr)\b']
+    excluir: ['\b(suplementos?|nutricion)\b']
+  # --- cuidado personal (perfumerías y farmacias; los supermercados ya vienen de SEPA)
+  - clase: "12.1.3"
+    nombre: Artículos y productos para la atención personal
+    incluir: ['\b(maquillaje|fragancias?|perfumes?|perfumeria|dermocosmetica|cuidado de la piel|cuidado capilar|cuidado personal|skincare|unas|cuidado facial|cuidado corporal|proteccion solar|solares|higiene|desodorantes?|shampoo|acondicionador(es)?|coloracion|afeitado|depilacion|cuidado oral|panales?|bebes? y maternidad|electro belleza|secador(es)? de pelo|planchas? de pelo|planchitas?|afeitadoras?)\b']
+    excluir: ['\b(mascotas?|hogar|regaleria)\b']

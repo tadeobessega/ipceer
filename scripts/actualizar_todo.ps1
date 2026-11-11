@@ -109,6 +109,7 @@ Paso "SEPA: procesamiento" { Ipceer procesar }
 Paso "Nombres de las cadenas" { Ipceer cadenas }
 Paso "Municipios (Morón)" { Ipceer municipios }
 Paso "Alquileres y medicamentos" { Ipceer otras }
+Paso "Precios web (tiendas en línea)" { Ipceer web }
 # Reconsolidar todo (2016 en adelante) tarda más de media hora: solo se hace si cambiaron las reglas
 # de clasificación; si no, se consolidan solo las semanas y meses nuevos.
 $reglas = (Get-FileHash "$Repo\config\clasificador.yaml").Hash + (Get-FileHash "$Repo\config\clasificacion_manual.csv" -ErrorAction SilentlyContinue).Hash

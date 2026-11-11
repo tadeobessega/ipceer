@@ -1,0 +1,62 @@
+name: Otras fuentes (frescos, alquileres, BCRA)
+# Corre en GitHub lo mismo que el paso "Alquileres y medicamentos" de la PC: Cañuelas, Mercado
+# Central, Zonaprop, PAMI y BCRA. Guarda lo bajado en el release "sepa-archivo" (otras.tar.gz) y el
+# resumen (otras_fuentes_github.json), así no depende de que la PC esté prendida.
+on:
+  schedule:
+    - cron: "41 12 * * *"   # 09:41 en Argentina
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/workflows/otras_fuentes.yml", "src/ipceer/frescos.py", "src/ipceer/otras_fuentes.py"]
+permissions:
+  contents: write
+concurrency: otras-fuentes
+jobs:
+  otras:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: sepa-archivo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[ponderadores]"
+      - name: Recuperar lo ya bajado
+        run: |
+          mkdir -p data
+          if gh release download "$TAG" -p otras.tar.gz -O otras.tar.gz 2>/dev/null; then tar -xzf otras.tar.gz -C data; fi
+          ls data/otras 2>/dev/null || true
+      - name: Bajar
+        run: |
+          ipceer otras
+          python - <<'PY'
+          import json, zipfile, pathlib
+          r = json.load(open("resultados/otras_fuentes.json", encoding="utf-8"))
+          for k, v in r.items():
+              if isinstance(v, dict):
+                  print(k, "->", {a: (b if not isinstance(b, (list, dict)) else f"{type(b).__name__}({len(b)})") for a, b in v.items()})
+              else:
+                  print(k, "->", v if not isinstance(v, list) else f"lista({len(v)})")
+          # muestra de un archivo del Mercado Central, para controlar el formato
+          zs = sorted(pathlib.Path("data/otras/mcba").glob("*.zip"))
+          muestra = {}
+          if zs:
+              with zipfile.ZipFile(zs[-1]) as z:
+                  nombres = z.namelist()
+                  muestra = {"zip": zs[-1].name, "miembros": nombres[:40]}
+                  if nombres:
+                      pathlib.Path("muestra_mcba.bin").write_bytes(z.read(nombres[0]))
+                      muestra["primero"] = nombres[0]
+          json.dump(muestra, open("muestra_mcba.json", "w"), ensure_ascii=False)
+          PY
+      - name: Guardar en el release
+        run: |
+          tar -czf otras.tar.gz -C data otras
+          ls -la otras.tar.gz
+          cp resultados/otras_fuentes.json otras_fuentes_github.json
+          gh release upload "$TAG" otras.tar.gz otras_fuentes_github.json muestra_mcba.json --clobber
+          if [ -f muestra_mcba.bin ]; then gh release upload "$TAG" muestra_mcba.bin --clobber; fi

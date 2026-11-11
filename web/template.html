@@ -73,13 +73,16 @@ h1{font-size:44px;line-height:52px;letter-spacing:-.02em;margin:.25em 0 .3em;fon
 h1 em{font-style:normal;color:var(--accent)}
 .lead{color:var(--fg2);font-size:18px;line-height:28px;margin:0;text-align:justify;hyphens:manual}
 .note{font-size:12.5px;color:var(--muted);margin-top:12px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-top:26px}
-.kpi{background:var(--panel);border-top:3px solid var(--fg);padding:24px;min-height:250px;display:flex;flex-direction:column}
-.kpi>span{display:block;font-size:15px;color:var(--muted);line-height:1.35}
-.kpi b{display:block;font-family:var(--mono);font-size:72px;line-height:76px;font-weight:600;letter-spacing:-.03em;margin:18px 0 8px;color:var(--fg)}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-top:26px}
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}}
+.kpi .kind{margin-top:auto;font-family:var(--font);font-size:13px;line-height:1.35}
+.kpi .kind.mej{color:var(--cian-t,#138282)}.kpi .kind.emp{color:var(--neg,#af3e30)}.kpi .kind.ig,.kpi .kind.nd{color:var(--muted)}
+.kpi{background:var(--panel);border-top:3px solid var(--fg);padding:18px;min-height:190px;min-width:0;display:flex;flex-direction:column}
+.kpi>span{display:block;font-size:13.5px;color:var(--muted);line-height:1.35}
+.kpi b{display:block;font-family:var(--mono);font-size:clamp(30px,3.1vw,46px);line-height:1.15;font-weight:600;letter-spacing:-.03em;margin:18px 0 8px;color:var(--fg)}
 .kpi b.ac{color:var(--accent)}
 .kpi b.am{color:var(--ambar-t)}
-.kpi b.nd{color:var(--resto);font-family:var(--font);font-weight:400;font-size:28px;line-height:76px;letter-spacing:0}
+.kpi b.nd{color:var(--resto);font-family:var(--font);font-weight:400;font-size:20px;line-height:1.6;letter-spacing:0}
 .minik b.nd{color:var(--resto);font-weight:400;font-size:18px}
 .kpi small{font-family:var(--mono);font-size:15px;color:var(--fg2);line-height:1.4;display:block}
 .kpi small .mono{color:var(--fg)}
@@ -306,6 +309,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <div class="grid">
         <div class="card s7"><h3>Nivel del índice</h3><div class="chart"><canvas id="c-niv"></canvas></div><div class="src">Base: primer mes relevado = 100.</div></div>
         <div class="card s5"><h3>Tabla</h3><div class="tablewrap"><table id="t-mensual"></table></div></div>
+        <div class="card s12"><h3>Serie empalmada de bienes: INDEC y, después de su último dato, IPCEER</h3><p class="cap" id="emp-cap"></p><div class="legend"><span><i style="background:var(--ambar)"></i>INDEC (bienes, nacional)</span><span><i style="background:var(--accent)"></i>IPCEER (meses completos)</span><span><i style="background:var(--resto)"></i>IPCEER (proyección del mes en curso)</span></div><div class="chart"><canvas id="c-emp"></canvas></div><div class="src">Fuente: INDEC (IPC, bienes, base dic-2016 = 100) y CEER en base a SEPA.</div></div>
       </div>
     </section>
   </div>
@@ -450,12 +454,13 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
     <section>
       <h2>Canasta básica alimentaria y total</h2>
       <p class="sub" id="can-sub"></p>
+      <div class="filters" style="margin:0 0 16px"><label class="f">Período <select id="can-tramo"></select></label></div>
       <div class="grid">
-        <div class="card s12"><h3>Costo mensual de la CBA de un adulto equivalente</h3><div class="legend"><span><i style="background:var(--accent)"></i>IPCEER</span><span><i style="background:var(--ambar)"></i>INDEC</span></div><div class="chart"><canvas id="c-can1"></canvas></div><div class="src">Fuente: CEER en base a SEPA e INDEC (canasta básica alimentaria, GBA).</div></div>
+        <div class="card s12"><h3>Costo mensual de la CBA de un adulto equivalente</h3><div class="legend"><span><i style="background:var(--accent)"></i>IPCEER (anclada al INDEC)</span><span><i style="background:var(--ambar)"></i>INDEC</span><span><i style="background:var(--resto)"></i>Empalme después del último dato oficial</span></div><div class="chart"><canvas id="c-can1"></canvas></div><div class="src">Fuente: CEER en base a SEPA e INDEC (canasta básica alimentaria, GBA).</div></div>
         <div class="card s6"><h3>Variación mensual de la CBA</h3><div class="chart short"><canvas id="c-can2"></canvas></div><div class="src">Fuente: CEER en base a SEPA e INDEC.</div></div>
         <div class="card s6"><h3>Canasta básica total</h3><p class="cap" id="cbt-cap"></p><div class="chart short"><canvas id="c-can3"></canvas></div><div class="src">Fuente: CEER en base a SEPA e INDEC (inversa del coeficiente de Engel).</div></div>
         <div class="card s12"><h3>Mes a mes</h3><div class="tablewrap"><table id="t-can"></table></div></div>
-        <div class="card s12"><h3>Componentes de la CBA</h3><p class="cap">Cantidad mensual por adulto equivalente (INDEC, GBA) y precio mediano del mes en SEPA.</p><div class="tablewrap"><table id="t-can-comp"></table></div></div>
+        <div class="card s12"><h3>Componentes de la CBA</h3><p class="cap">Cantidad mensual por adulto equivalente (INDEC, GBA) y precio mediano del mes en SEPA. Sirve para controlar qué productos entran en cada componente; el costo de esta tabla no es el de la canasta.</p><div class="tablewrap"><table id="t-can-comp"></table></div></div>
       </div>
     </section>
   </div>
@@ -628,19 +633,22 @@ function draw(id,cfg){ if(charts[id]) charts[id].destroy(); delete document.getE
 
 /* ---------- KPIs ---------- */
 function renderKpis(){
-  const s=serie(), sem=s.semanal||[], p=s.proyeccion;
-  const ult=sem[sem.length-1], ultC=[...sem].reverse().find(x=>!x.parcial)||ult;
+  const s=serie(), sem=s.semanal||[], p=s.proyeccion, men=s.mensual||[];
+  const ult=sem[sem.length-1], prev=sem[sem.length-2];
+  // indicador contra el dato comparable previo: bajaSiMejora=true para inflación y rotación
+  const ind=(v,v0,bajaMejora,txt,dec=2,un=' pp')=>{ if(v==null||v0==null||isNaN(v)||isNaN(v0)) return '<small class="kind nd">sin dato previo comparable</small>';
+    const d=v-v0, igual=Math.abs(d)<0.5*10**-dec; if(igual) return `<small class="kind ig">= igual que ${txt}</small>`;
+    const mejora=bajaMejora?d<0:d>0; return `<small class="kind ${mejora?'mej':'emp'}">${d>0?'▲':'▼'} ${mejora?'mejoró':'empeoró'}: ${un===' pp'?num(Math.abs(d),dec)+' pp':nf(0).format(Math.abs(d))} ${d>0?'más':'menos'} que ${txt}</small>`; };
+  const R=(IND().rotacion||[]).filter(r=>r.region===st.reg&&r.codigo===(st.ser==='TOTAL'?'TOTAL':st.ser)), r1=R[R.length-1], r0=R[R.length-2];
+  const menC=men.filter(x=>!x.parcial&&x.var!=null), mAnt=menC[menC.length-1];
   const k=[];
-  if(ultC){
-    k.push(`<div class="kpi"><span>${ultC.parcial?'Semana en curso':'Última semana completa'} · ${semLbl(ultC)}</span><b>${pct(ultC.var,2)}</b><small>Mensualizada: <span class="mono">${pct(ultC.var_mensualizada)}</span></small></div>`);
-    k.push(`<div class="kpi"><span>Promedio últimas 4 semanas</span><b class="ac">${pct(ultC.prom4_mensualizada)}</b><small>${ultC.prom4==null?'<span style="font-family:var(--font)">Hacen falta 4 semanas con datos</span>':'mensualizado · semanal <span class="mono">'+pct(ultC.prom4,2)+'</span>'}</small></div>`);
-  }
-  if(p){
-    k.push(`<div class="kpi"><span>${mesLargo(p.mes)} · relevado</span><b>${pct(p.relevado)}</b><small><span class="mono">${p.semanas_observadas}</span> de <span class="mono">${p.semanas_mes}</span> semanas con datos</small></div>`);
-    k.push(`<div class="kpi"><span>${mesLargo(p.mes)} · proyección</span><b class="am">${pct(p.proyeccion)}</b><small>Piso por arrastre: <span class="mono">${pct(p.arrastre)}</span></small></div>`);
-  }
-  k.forEach((h,i)=>{ k[i]=h.replace(/<\/div>$/,'<div class="kfuente">Fuente: CEER en base a SEPA.</div></div>').replace(/<b class="(ac|am)">–<\/b>/,'<b class="nd">sin datos aún</b>').replace(/<b>–<\/b>/,'<b class="nd">sin datos aún</b>'); });
-  document.getElementById('kpis').innerHTML = k.join('') || '<div class="kpi"><span>Sin datos todavía</span><b>–</b></div>';
+  k.push(`<div class="kpi"><span>Precios relevados · ${ult?semLbl(ult):'última semana'}${ult&&ult.parcial?' (en curso)':''}</span><b>${ult&&ult.n!=null?nf(0).format(ult.n):'–'}</b>${ind(ult&&ult.n,prev&&prev.n,false,'la semana previa',0,'')}</div>`);
+  k.push(`<div class="kpi"><span>Rotación · precios que cambiaron en la semana</span><b>${r1?pct(r1.cambia,1):'–'}</b>${ind(r1&&r1.cambia,r0&&r0.cambia,true,'la semana previa',1)}</div>`);
+  k.push(`<div class="kpi"><span>Inflación de la semana · ${ult?semLbl(ult):''}${ult&&ult.parcial?' (en curso)':''}</span><b>${ult?pct(ult.var,2):'–'}</b>${ind(ult&&ult.var,prev&&prev.var,true,'la semana previa')}</div>`);
+  k.push(`<div class="kpi"><span>Inflación acumulada del mes · ${p?mesLargo(p.mes):''}</span><b>${p?pct(p.relevado,2):'–'}</b>${ind(p&&p.relevado,mAnt&&mAnt.var,true,'todo '+(mAnt?mesLbl(mAnt.mes):'el mes previo'))}</div>`);
+  k.push(`<div class="kpi"><span>Proyección del mes completo · ${p?mesLargo(p.mes):''}</span><b class="am">${p?pct(p.proyeccion,2):'–'}</b>${ind(p&&p.proyeccion,mAnt&&mAnt.var,true,mAnt?mesLbl(mAnt.mes):'el mes previo')}</div>`);
+  k.forEach((h,i)=>{ k[i]=h.replace(/<b class="am">–<\/b>/,'<b class="nd">sin datos aún</b>').replace(/<b>–<\/b>/,'<b class="nd">sin datos aún</b>'); });
+  document.getElementById('kpis').innerHTML = k.join('');
   const cob=(D.cobertura||[]).find(c=>c.region===st.reg);
   document.getElementById('hero-note').innerHTML = `${esc(st.reg)} · ${esc(SERIES[st.ser]||st.ser)}`+(cob&&st.ser==='TOTAL'?` · cubre el <span class="mono">${num(cob.ponderacion_cubierta_pct,1)}%</span> de la canasta del IPC de la región`:'')+'.';
 }
@@ -1518,37 +1526,71 @@ function renderRegu(){
 
 /* ---------- canastas (CBA y CBT) ---------- */
 function renderCan(){
-  const K=D.canastas||{}, M=(K.mensual||[]).filter(r=>r.region==='GBA'), I=K.indec||[];
+  const K=D.canastas||{}, Mt=(K.mensual||[]).filter(r=>r.region==='GBA'), I=K.indec||[];
   const iM=Object.fromEntries(I.map(r=>[r.mes,r]));
-  document.getElementById('can-sub').innerHTML=`Canasta básica alimentaria (CBA) de un adulto equivalente de Gran Buenos Aires, con las cantidades del INDEC. Cada componente sigue la variación de los mismos productos de la misma cadena entre un mes y el anterior (promedio del mes contra promedio del mes, como el IPC). El nivel parte del costo propio del primer mes de cada tramo: compará sobre todo las variaciones. La canasta básica total (CBT) es la CBA por la inversa del coeficiente de Engel que publica el INDEC para ese mes; si el INDEC todavía no la publicó, no hay CBT.`;
+  const tramos=[...new Set(Mt.map(r=>r.tramo))], sel=document.getElementById('can-tramo');
+  if(sel&&!sel.options.length){ sel.innerHTML=tramos.map(t=>{const x=Mt.filter(r=>r.tramo===t); return `<option value="${t}">${mesLbl(x[0].mes)} a ${mesLbl(x[x.length-1].mes)}</option>`;}).reverse().join(''); sel.onchange=renderCan; }
+  const tr=sel&&sel.value!==''?+sel.value:tramos[tramos.length-1], M=Mt.filter(r=>r.tramo===tr);
+  document.getElementById('can-sub').innerHTML=`Canasta básica alimentaria (CBA) de un adulto equivalente de Gran Buenos Aires, con las cantidades del INDEC. Cada componente sigue la variación de los mismos productos de la misma cadena entre un mes y el anterior (promedio contra promedio, como el IPC). <b>Los montos en pesos están anclados al INDEC</b>: los precios por kilo de SEPA (envasados, sin verdulería ni carnicería) no sirven para fijar el nivel, pero sí la variación. La línea "IPCEER" parte de la CBA oficial del primer mes del período y sigue solo con nuestras variaciones; la serie empalmada usa el dato oficial mientras existe y nuestras variaciones después. Si en el período todavía no hay ningún mes oficial, se muestran solo variaciones. La CBT es la CBA por la inversa del coeficiente de Engel del INDEC del mismo mes.`;
   if(!M.length){ ['c-can1','c-can2','c-can3'].forEach(i=>sinDatos(i)); return; }
-  const meses=[...new Set([...M.map(r=>r.mes),...I.filter(r=>r.mes>=M[0].mes).map(r=>r.mes)])].sort();
-  const mM=Object.fromEntries(M.map(r=>[r.mes,r]));
-  draw('c-can1',{type:'line',data:{labels:meses.map(mesLbl),datasets:[
-    {label:'IPCEER',data:meses.map(m=>(mM[m]||{}).cba??null),borderColor:css('--accent'),backgroundColor:css('--accent'),borderWidth:2.5,pointRadius:0,spanGaps:false},
-    {label:'INDEC',data:meses.map(m=>(iM[m]||{}).cba??null),borderColor:css('--ambar'),backgroundColor:css('--ambar'),borderWidth:2,pointRadius:0}]},
+  const meses=M.map(r=>r.mes), mM=Object.fromEntries(M.map(r=>[r.mes,r]));
+  const hayNivel=M.some(r=>r.cba_val!=null);
+  const emp=meses.map(m=>{const r=mM[m]; return r.cba_emp!=null&&!r.oficial?r.cba_emp:null;});
+  if(hayNivel) draw('c-can1',{type:'line',data:{labels:meses.map(mesLbl),datasets:[
+    {label:'IPCEER (anclada al INDEC en '+mesLbl(M.find(r=>r.ancla_val).ancla_val)+')',data:meses.map(m=>mM[m].cba_val??null),borderColor:css('--accent'),backgroundColor:css('--accent'),borderWidth:2.5,pointRadius:0,spanGaps:false},
+    {label:'INDEC',data:meses.map(m=>(iM[m]||{}).cba??null),borderColor:css('--ambar'),backgroundColor:css('--ambar'),borderWidth:2,pointRadius:0},
+    {label:'Empalme (después del último dato oficial)',data:emp,borderColor:css('--resto'),backgroundColor:css('--resto'),borderWidth:2,borderDash:[5,4],pointRadius:3}]},
     options:baseOpts({plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'$ '+num(v,0)}}}})});
+  else sinDatos('c-can1','En este período todavía no hay ningún mes con CBA oficial del INDEC para anclar el nivel: se muestran solo las variaciones. Cuando el INDEC publique '+mesLbl(meses[0])+', aparece la serie en pesos.');
   const vi=m=>{ const a=iM[m], k=meses.indexOf(m), b=k>0?iM[meses[k-1]]:null; return a&&b?(a.cba/b.cba-1)*100:null; };
   draw('c-can2',{type:'bar',data:{labels:meses.map(mesLbl),datasets:[
-    {label:'IPCEER',data:meses.map(m=>(mM[m]||{}).var??null),backgroundColor:css('--accent')},
+    {label:'IPCEER',data:meses.map(m=>mM[m].var??null),backgroundColor:css('--accent')},
     {label:'INDEC',data:meses.map(vi),backgroundColor:css('--ambar')}]},options:baseOpts({})});
-  const cbt=meses.map(m=>(mM[m]&&mM[m].cba!=null&&iM[m]&&iM[m].ice)?mM[m].cba*iM[m].ice:null);
-  document.getElementById('cbt-cap').textContent='CBA del IPCEER por la inversa del coeficiente de Engel del INDEC del mismo mes, contra la CBT oficial.';
-  draw('c-can3',{type:'line',data:{labels:meses.map(mesLbl),datasets:[
+  const cbt=meses.map(m=>(mM[m].cba_val!=null&&iM[m]&&iM[m].ice)?mM[m].cba_val*iM[m].ice:null);
+  document.getElementById('cbt-cap').textContent='CBA del IPCEER (anclada) por la inversa del coeficiente de Engel del INDEC del mismo mes, contra la CBT oficial. Sin coeficiente oficial del mes no hay CBT.';
+  if(cbt.some(v=>v!=null)) draw('c-can3',{type:'line',data:{labels:meses.map(mesLbl),datasets:[
     {label:'IPCEER',data:cbt,borderColor:css('--accent'),backgroundColor:css('--accent'),borderWidth:2.5,pointRadius:0},
     {label:'INDEC',data:meses.map(m=>(iM[m]||{}).cbt??null),borderColor:css('--ambar'),backgroundColor:css('--ambar'),borderWidth:2,pointRadius:0}]},
     options:baseOpts({plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'$ '+num(v,0)}}}})});
-  document.getElementById('t-can').innerHTML=`<thead><tr><th>Mes</th><th class="n">CBA IPCEER</th><th class="n">Var. IPCEER</th><th class="n">Componentes con variación</th><th class="n">CBA INDEC</th><th class="n">Var. INDEC</th><th class="n">ICE (INDEC)</th><th class="n">CBT IPCEER</th><th class="n">CBT INDEC</th></tr></thead><tbody>`+
-    [...meses].reverse().map((m,j)=>{const r=mM[m]||{}, o=iM[m]||{}, k=meses.indexOf(m); return `<tr><td>${mesLbl(m)}${r.inicio_tramo?' <span class="muted">(inicio de tramo)</span>':''}</td><td class="n">${r.cba!=null?pesos(r.cba):'–'}</td><td class="n">${pct(r.var,2,true)}</td><td class="n">${r.componentes?r.componentes_con_var+' de '+r.componentes:'–'}</td><td class="n">${o.cba!=null?pesos(o.cba):'–'}</td><td class="n">${pct(vi(m),2,true)}</td><td class="n">${o.ice!=null?num(o.ice,2):'–'}</td><td class="n">${cbt[k]!=null?pesos(cbt[k]):'–'}</td><td class="n">${o.cbt!=null?pesos(o.cbt):'–'}</td></tr>`;}).join('')+'</tbody>';
+  else sinDatos('c-can3','Sin coeficiente de Engel oficial para estos meses.');
+  document.getElementById('t-can').innerHTML=`<thead><tr><th>Mes</th><th class="n">Var. IPCEER</th><th class="n">Var. INDEC</th><th class="n">Componentes con variación</th><th class="n">CBA IPCEER anclada</th><th class="n">CBA INDEC</th><th class="n">Serie empalmada</th><th class="n">ICE (INDEC)</th><th class="n">CBT IPCEER</th><th class="n">CBT INDEC</th></tr></thead><tbody>`+
+    [...meses].reverse().map(m=>{const r=mM[m], o=iM[m]||{}, k=meses.indexOf(m); return `<tr><td>${mesLbl(m)}${r.inicio_tramo?' <span class="muted">(inicio)</span>':''}</td><td class="n">${pct(r.var,2,true)}</td><td class="n">${pct(vi(m),2,true)}</td><td class="n">${r.inicio_tramo?'–':r.componentes_con_var+' de '+r.componentes}</td><td class="n">${r.cba_val!=null?pesos(r.cba_val):'–'}</td><td class="n">${o.cba!=null?pesos(o.cba):'–'}</td><td class="n">${r.cba_emp!=null?pesos(r.cba_emp)+(r.oficial?' <span class="muted">(oficial)</span>':''):'–'}</td><td class="n">${o.ice!=null?num(o.ice,2):'–'}</td><td class="n">${cbt[k]!=null?pesos(cbt[k]):'–'}</td><td class="n">${o.cbt!=null?pesos(o.cbt):'–'}</td></tr>`;}).join('')+'</tbody>';
   const comp=K.componentes||[];
   document.getElementById('t-can-comp').innerHTML=`<thead><tr><th>Componente</th><th class="n">Cantidad mensual</th><th class="n">Precio mediano (${comp[0]&&comp[0].mes?mesLbl(comp[0].mes):''})</th><th class="n">Productos</th><th class="n">Costo</th></tr></thead><tbody>`+
     comp.map(c=>`<tr><td>${esc(c.nombre)}</td><td class="n">${num(c.cantidad_g,0)} ${c.base==='l'?'cm³':'g'}</td><td class="n">${c.precio!=null?'$ '+num(c.precio,2)+' / '+esc(c.base):'–'}</td><td class="n">${c.productos||0}</td><td class="n">${c.precio!=null?pesos(c.precio*c.cantidad_g/1000):'–'}</td></tr>`).join('')+'</tbody>';
+}
+
+/* ---------- serie empalmada: dato oficial hasta donde existe, después variaciones del IPCEER ---------- */
+function sigMes(m){ let [a,b]=m.split('-').map(Number); b++; if(b>12){a++;b=1;} return a+'-'+String(b).padStart(2,'0'); }
+function renderEmpalme(){
+  const I=((D.indec||{}).B||[]), cap=document.getElementById('emp-cap');
+  if(!I.length){ sinDatos('c-emp','Falta la serie del INDEC.'); cap.textContent=''; return; }
+  const S=((D.series.Nacional||{}).TOTAL||{}), men=S.mensual||[], p=S.proyeccion;
+  const L=I[I.length-1][0], of=I.slice(-25);
+  const ext=[]; let m=sigMes(L), niv=I[I.length-1][1];
+  for(;;){ const x=men.find(y=>y.mes===m); if(!x||x.var==null) break;
+    if(x.parcial){ if(p&&p.mes===m&&p.proyeccion!=null) ext.push({mes:m,v:niv*(1+p.proyeccion/100),proy:true,var:p.proyeccion}); break; }
+    niv*=1+x.var/100; ext.push({mes:m,v:niv,proy:false,var:x.var}); m=sigMes(m); }
+  const labels=[...of.map(x=>x[0]),...ext.map(x=>x.mes)];
+  const dOf=[...of.map(x=>x[1]),...ext.map(()=>null)];
+  const dC=labels.map((l,i)=>{ if(i===of.length-1&&ext.length) return of[i][1]; const e=ext.find(x=>x.mes===l); return e&&!e.proy?e.v:null; });
+  const dP=labels.map((l,i)=>{ const e=ext.find(x=>x.mes===l), j=ext.indexOf(e); if(e&&e.proy) return e.v; if(ext.length&&ext[ext.length-1].proy){ const ant=ext.length>1?ext[ext.length-2].mes:of[of.length-1][0]; if(l===ant) return ext.length>1?ext[ext.length-2].v:of[of.length-1][1]; } return null; });
+  draw('c-emp',{type:'line',data:{labels:labels.map(mesLbl),datasets:[
+    {label:'INDEC',data:dOf,borderColor:css('--ambar'),backgroundColor:css('--ambar'),borderWidth:2.5,pointRadius:0},
+    {label:'IPCEER',data:dC,borderColor:css('--accent'),backgroundColor:css('--accent'),borderWidth:2.5,pointRadius:3},
+    {label:'IPCEER (proyección)',data:dP,borderColor:css('--resto'),backgroundColor:css('--resto'),borderWidth:2,borderDash:[5,4],pointRadius:3}]},
+    options:baseOpts({plugins:{legend:{display:false}}})});
+  const sig=sigMes(L), tiene=men.find(y=>y.mes===sig&&y.var!=null);
+  cap.innerHTML=`El INDEC publicó hasta ${mesLbl(L)}. Mientras exista dato oficial se usa el oficial; el IPCEER solo agrega los meses posteriores, encadenando su variación mensual (y, para el mes en curso, su proyección, marcada aparte).`+
+    (ext.length?` Empalme: ${ext.map(e=>mesLbl(e.mes)+' '+pct(e.var,2,true)+(e.proy?' (proyección)':'')).join(', ')}.`:
+     ` Hoy no se puede extender: el IPCEER no tiene variación propia de ${mesLbl(sig)}${tiene?'':' (es su primer mes de datos, no tiene contra qué compararse)'}. El empalme arranca cuando el INDEC publique ${mesLbl(sig)}; no se completa ese mes con otra fuente.`);
 }
 function render(){
   const tab=document.querySelector('.tabs button[aria-selected="true"]').dataset.tab;
   renderKpis();
   if(tab==='res'){ renderDia(); renderSemanal(); renderMensual(); }
   if(tab==='sem') renderTablaSemanal();
+  if(tab==='men') renderEmpalme();
   if(tab==='men') renderTablaMensual();
   if(tab==='rub') renderRubros();
   if(tab==='reg'){ renderRegiones(); renderNivReg(); }

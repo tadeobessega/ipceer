@@ -127,8 +127,9 @@ def cmd_calcular(cfg, args):
             log.warning("IPCEER con combustibles: %s", e)
         datos["combustibles"] = resumen._limpio(comb_datos)
     try:
-        can = indicadores.canasta_mensual(cfg)
         cba_of = indec.leer_cba(indec.directorio(cfg))
+        of = dict(cba_of.select("mes", "cba").iter_rows()) if cba_of is not None and not cba_of.is_empty() else {}
+        can = indicadores.canasta_mensual(cfg, oficial=of)
         datos["canastas"] = resumen._limpio({
             "mensual": can.to_dicts() if not can.is_empty() else [],
             "componentes": indicadores.componentes_cba(cfg),
@@ -137,6 +138,14 @@ def cmd_calcular(cfg, args):
             can.write_csv(cfg.ruta("resultados") / "canasta_mensual.csv")
     except Exception as e:
         log.warning("Canastas: %s", e)
+    try:
+        # series oficiales nacionales para la serie empalmada (INDEC hasta su último mes, después IPCEER)
+        ind = validacion.leer_indec(indec.directorio(cfg)).filter(
+            (pl.col("region") == "Nacional") & pl.col("codigo").is_in(["0", "B", "01"]))
+        datos["indec"] = {c: [[m, round(i, 4)] for m, i in g.sort("mes").select("mes", "indice").iter_rows()]
+                          for (c,), g in ind.group_by(["codigo"])}
+    except Exception as e:
+        log.warning("Series del INDEC para el empalme: %s", e)
     try:
         ro = cfg.ruta("resultados") / "otras_fuentes.json"
         if ro.exists():

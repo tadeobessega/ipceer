@@ -109,13 +109,14 @@ def correr(cfg: Config, opciones: dict, tramo: int | None) -> dict:
     res = indice.calcular(cfg, "mensual", solo_tramo=tramo, solo_tramo_actual=tramo is None, **op)
     ind = res["indices"]
     tot = ind.filter((pl.col("nivel") == "total") & (pl.col("region") == indice.NACIONAL)).sort("periodo")
-    meses = [{"mes": p, "var": v, "parcial": bool(par), "n": int(n or 0)}
+    meses = [{"mes": p, "var": v if (v is not None and math.isfinite(v)) else None, "parcial": bool(par), "n": int(n or 0)}
              for p, v, par, n in tot.select("periodo", "var_pct", "parcial", "n_productos").iter_rows()]
-    codigos = sorted(set(ind.filter(pl.col("nivel") == "clase", pl.col("var_pct").is_not_null())["codigo"].to_list()))
+    medido = pl.col("var_pct").is_not_null() & pl.col("var_pct").is_finite()   # sin datos puede venir como NaN
+    codigos = sorted(set(ind.filter(pl.col("nivel") == "clase", medido)["codigo"].to_list()))
     # canasta medida en el último mes: peso de las clases que tienen variación propia ese mes
     # (una clase con precios pero sin mes anterior para comparar todavía no mide nada)
     ult = meses[-1]["mes"] if meses else None
-    con = ind.filter(pl.col("nivel") == "clase", pl.col("periodo") == ult, pl.col("var_pct").is_not_null(),
+    con = ind.filter(pl.col("nivel") == "clase", pl.col("periodo") == ult, medido,
                      pl.col("region").is_in(REGIONES)).select("codigo", "region")
     w = ponderadores_clase(cfg).select("codigo", "region", "ponderacion")
     wr = ponderadores_region(cfg)

@@ -40,3 +40,26 @@ Sobre el Cuadro 7: se verificó la fila de Pan y cereales (01.1.1: GBA 4,05; Pam
 - Un cambio de presentación cuenta como producto nuevo: no hay ajuste por reduflación ni se capta la sustitución.
 - Hay estacionalidad dentro del mes (las listas se actualizan a comienzo de mes), así que una semana sola mensualizada engaña. Por eso el indicador principal es el promedio de 4 semanas.
 - La clasificación se hace con reglas y puede tener errores.
+
+## Ponderación con los índices del INDEC y carrera de métodos
+
+Lo que se publica es inflación: la variación de los precios propios de cada rubro, sumada con las
+ponderaciones del INDEC. Los ponderadores de la canasta (base diciembre 2016) se llevan al último mes
+publicado por el INDEC multiplicándolos por el índice oficial de cada rubro; de ahí en adelante se
+actualizan con las variaciones propias hasta que sale el dato oficial siguiente
+(`indice.calcular(..., ponderacion="indec")`, el valor por defecto).
+
+`ipceer carrera` calcula en cada corrida todas las variantes de método (`src/ipceer/carrera.py`),
+también las descartadas, y las compara con el nivel general del INDEC y con la réplica del INDEC para
+las mismas clases. `ipceer carrera --historico` hace la prueba 2017-2018 de las variantes cuya
+definición cambió. Resultados: `resultados/carrera.json`, `resultados/carrera_historico.json` y
+`resultados/pronosticos.csv` (lo que cada variante estimó para cada mes, con la fecha del cálculo; no
+se reescribe). La variante publicada se cambia solo si otra baja el error contra el INDEC.
+
+Prueba 2017-01 a 2018-03 (15 meses), error mensual en puntos porcentuales contra la réplica y contra
+el nivel general: publicado 0,69 y 0,89; ponderación anterior 0,69 y 0,88; con promociones 0,73 y
+0,92; media recortada 0,69 y 0,92; mediana 1,54 y 1,80; por sucursales 0,70 y 0,88; sin frutas ni
+verduras 0,79 y 0,86; sin frescos 0,86 y 0,93.
+
+Los precios de tiendas en línea (`src/ipceer/web.py`, `config/web/`) los baja GitHub Actions una vez
+por día y la PC trae el resultado. No tienen historia: entran solo en sus variantes de la carrera.

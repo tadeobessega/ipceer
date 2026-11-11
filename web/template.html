@@ -1029,9 +1029,9 @@ function renderCad(){
   const med=C.find(c=>c.region===reg&&c.semana===s&&c.cadena_id==='MEDIANA');
   const ci=(D.validacion&&D.validacion.cba_indec)||[]; const ui=ci.length?ci[ci.length-1]:null;
   document.getElementById('cad-t1').textContent='La canasta básica en cada cadena · '+reg;
-  document.getElementById('cad-c1').innerHTML = s ? `Costo mensual de la CBA del INDEC para un adulto equivalente, semana del ${semCorta(s)}. Mediana de las cadenas: <span class="mono">${pesos(med&&med.costo)}</span>.`+(ui?` Último dato oficial de la CBA del INDEC (GBA, ${mesLbl(ui.mes)}, otro período): <span class="mono">${pesos(ui.cba)}</span>.`:'')+' Las barras claras tienen menos del '+num(100*((I.parametros||{}).cobertura_min_cba??0.6),0)+'% del costo con precios propios de la cadena y no entran en el ranking.' : 'Sin datos todavía.';
+  document.getElementById('cad-c1').innerHTML = s ? `Costo de la CBA del INDEC en cada cadena respecto de la mediana de las cadenas (mediana = 100), semana del ${semCorta(s)}. Se muestra como índice y no en pesos: los precios por kilo de SEPA no reproducen el nivel de la CBA oficial (salen varias veces más altos por envases chicos, marcas y unidades mal informadas), pero la comparación entre cadenas sí sirve.`+(ui?` Último dato oficial de la CBA del INDEC (GBA, ${mesLbl(ui.mes)}, otro período): <span class="mono">${pesos(ui.cba)}</span>.`:'')+' Las barras claras tienen menos del '+num(100*((I.parametros||{}).cobertura_min_cba??0.6),0)+'% del costo con precios propios de la cadena y no entran en el ranking.' : 'Sin datos todavía.';
   document.getElementById('cad-ch1').style.minHeight=Math.max(220,fila.length*30+60)+'px';
-  if(fila.length) draw('c-cad1',{type:'bar',data:{labels:fila.map(f=>f.cadena),datasets:[{label:'CBA',data:fila.map(f=>f.costo),
+  if(fila.length) draw('c-cad1',{type:'bar',data:{labels:fila.map(f=>f.cadena),datasets:[{label:'CBA (mediana = 100)',data:fila.map(f=>med&&med.costo?100*f.costo/med.costo:null),
       backgroundColor:fila.map((f,i)=>!f.en_ranking?css('--bar2'):i===0?css('--ambar'):css('--accent'))}]},
     options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+pesos(c.parsed.x)+' · cobertura '+pct(100*fila[c.dataIndex].cobertura,0)}}},
       scales:{x:{...axY(v=>'$'+num(v/1000,0)+' mil'),beginAtZero:true},y:{grid:{display:false},ticks:{color:css('--fg2'),font:{size:12}}}}})});
@@ -1041,7 +1041,7 @@ function renderCad(){
   const infl=Object.fromEntries((I.inflacion_cadenas||[]).filter(c=>c.semana===s).map(c=>[c.cadena_id,c]));
   const flecha=v=>v==null?'–':v>0?`<span style="color:var(--cian)">▲ ${v}</span>`:v<0?`<span style="color:var(--neg)">▼ ${-v}</span>`:'=';
   document.getElementById('t-cad').innerHTML=`<thead><tr><th class="n">Puesto</th><th class="n">Cambio</th><th>Cadena</th><th class="n">CBA</th><th class="n">Var. semanal</th><th class="n">Vs. mediana</th><th class="n">Nivel mismos productos</th><th class="n">Inflación semanal</th><th class="n">Cobertura CBA</th></tr></thead><tbody>`+
-    fila.map(f=>`<tr><td class="n">${f.puesto??'–'}</td><td class="n">${flecha(f.cambio_puesto)}</td><td>${esc(f.cadena)}${infoCompletado(f)}</td><td class="n">${pesos(f.costo)}</td><td class="n">${pct(f.var,2)}</td><td class="n">${med?pct((f.costo/med.costo-1)*100,1):'–'}</td><td class="n">${niv[f.cadena_id]?num(niv[f.cadena_id].nivel,1):'–'}</td><td class="n">${infl[f.cadena_id]?pct(infl[f.cadena_id].var,2):'–'}</td><td class="n">${pct(100*f.cobertura,0)}</td></tr>`).join('')+'</tbody>';
+    fila.map(f=>`<tr><td class="n">${f.puesto??'–'}</td><td class="n">${flecha(f.cambio_puesto)}</td><td>${esc(f.cadena)}${infoCompletado(f)}</td><td class="n">${med&&med.costo?num(100*f.costo/med.costo,1):'–'}</td><td class="n">${pct(f.var,2)}</td><td class="n">${med?pct((f.costo/med.costo-1)*100,1):'–'}</td><td class="n">${niv[f.cadena_id]?num(niv[f.cadena_id].nivel,1):'–'}</td><td class="n">${infl[f.cadena_id]?pct(infl[f.cadena_id].var,2):'–'}</td><td class="n">${pct(100*f.cobertura,0)}</td></tr>`).join('')+'</tbody>';
   const Ns=[...N].sort((a,b)=>a.nivel-b.nivel);
   document.getElementById('cad-ch2').style.minHeight=Math.max(220,Ns.length*28+60)+'px';
   if(Ns.length) draw('c-cad2',{type:'bar',data:{labels:Ns.map(n=>n.cadena),datasets:[{label:'Nivel',data:Ns.map(n=>n.nivel-100),backgroundColor:Ns.map(n=>n.nivel<100?css('--accent'):css('--neg'))}]},
@@ -1163,7 +1163,7 @@ function barrasH(x,items,fmt,titulo,unidad,h,fuente){ const {W,H,M}=IMG; fondo(x
   pieC(x,'IPCEER · semana '+h.rango,fuente||'Fuente: CEER en base a SEPA'); }
 
 function imgCadenas(x,h){ const reg=h.region_cadenas||'GBA', C=((IND().cba||{}).cadenas||[]).filter(c=>c.semana===h.semana&&c.region===reg&&c.en_ranking).sort((a,b)=>a.costo-b.costo).slice(0,10);
-  if(C.length>=2) return barrasH(x,C.map((c,i)=>({l:c.cadena,v:c.costo/1000,dest:i===0})),v=>'$'+nf(0).format(v)+' mil','La canasta básica en cada cadena',`Costo mensual de la CBA del INDEC para un adulto, ${reg}, miles de $`,h,'Fuente: CEER en base a SEPA e INDEC');
+  if(C.length>=2) return barrasH(x,C.map((c,i)=>({l:c.cadena,v:100*c.costo/C[Math.floor(C.length/2)].costo,dest:i===0})),v=>nf(0).format(v),'La canasta básica en cada cadena',`Costo de la CBA del INDEC en cada cadena, ${reg}, cadena del medio = 100`,h,'Fuente: CEER en base a SEPA e INDEC');
   const N=(IND().cadenas||[]).filter(c=>c.semana===h.semana&&c.region===reg).sort((a,b)=>a.nivel-b.nivel).slice(0,10);
   barrasH(x,N.map((c,i)=>({l:c.cadena,v:c.nivel-100,dest:i===0})),v=>(v>0?'+':'')+nf(1).format(v).replace('-','−')+'%','Precios por cadena',`Diferencia con el promedio, mismos productos, ${reg}, %`,h); }
 function imgRegiones(x,h){ const R=(IND().regiones||[]).filter(r=>r.semana===h.semana).sort((a,b)=>b.nivel-a.nivel);

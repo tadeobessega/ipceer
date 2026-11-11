@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 UA = "Mozilla/5.0 (compatible; ipceer-bot/1.0; +https://github.com/tadeobessega/ipceer)"
 H = {"User-Agent": UA, "Accept": "application/json"}
 PAUSA = 0.5            # segundos entre pedidos a una misma tienda
-MAX_PEDIDOS = 900      # tope de pedidos por tienda y por corrida
+MAX_PEDIDOS = int(__import__("os").environ.get("IPCEER_WEB_MAX_PEDIDOS", 900))   # tope de pedidos por tienda y por corrida
 MAX_SEGUNDOS = 1500    # tope de tiempo por tienda
 VTEX_PASO, VTEX_TOPE = 50, 2500   # el buscador de VTEX no pagina más allá de 2.500 por categoría
 
@@ -223,12 +223,21 @@ def _una(t: dict, hoy: str) -> tuple[str, list[dict], dict]:
     return t["id"], filas, info
 
 
-def bajar(cfg: Config, prefijo: str = "", solo: list[str] | None = None, hilos: int = 12) -> dict:
-    """Baja todas las tiendas (en paralelo entre tiendas, de a un pedido por tienda) y guarda el día."""
+def bajar(cfg: Config, prefijo: str = "", solo: list[str] | None = None, hilos: int = 4,
+          parte: tuple[int, int] | None = None) -> dict:
+    """Baja las tiendas y guarda el día. Las de VTEX comparten servidores y un mismo límite de
+    pedidos por dirección: van de a una, un pedido por vez. Las demás van en paralelo entre sí.
+    `parte` = (i, n): solo las tiendas que le tocan a la corrida i de n (para repartir en GitHub)."""
     hoy = date.today().isoformat()
     lista = [t for t in tiendas(cfg) if not solo or t["id"] in solo]
-    with ThreadPoolExecutor(hilos) as ex:
-        res = list(ex.map(lambda t: _una(t, hoy), lista))
+    if parte:
+        lista = [t for k, t in enumerate(lista) if k % parte[1] == parte[0] % parte[1]]
+    vtex = [t for t in lista if t.get("tipo", "vtex") == "vtex"]
+    otras = [t for t in lista if t.get("tipo", "vtex") != "vtex"]
+    with ThreadPoolExecutor(max(1, hilos)) as ex:
+        pend = [ex.submit(_una, t, hoy) for t in otras]
+        res = [_una(t, hoy) for t in vtex]
+        res += [f.result() for f in pend]
     filas = [f for _, fs, _ in res for f in fs]
     estado = {tid: info for tid, _, info in res}
     d = dir_web(cfg)
@@ -395,10 +404,11 @@ def construir_paneles(cfg: Config) -> dict:
                         "articulos": a, "tiendas": t} for c, a, t in resumen_cl.iter_rows()]}
 
 
-def actualizar(cfg: Config, bajar_ahora: bool = True, prefijo: str = "", solo: list[str] | None = None) -> dict:
+def actualizar(cfg: Config, bajar_ahora: bool = True, prefijo: str = "", solo: list[str] | None = None,
+               parte: tuple[int, int] | None = None) -> dict:
     res = {}
     if bajar_ahora:
-        res["descarga"] = bajar(cfg, prefijo=prefijo, solo=solo)
+        res["descarga"] = bajar(cfg, prefijo=prefijo, solo=solo, parte=parte)
     if not prefijo:
         res["respaldo"] = bajar_respaldo(cfg)
         res["panel"] = construir_paneles(cfg)

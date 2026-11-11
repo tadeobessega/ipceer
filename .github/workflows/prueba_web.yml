@@ -1,0 +1,23 @@
+name: Prueba de tiendas (de a una)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/workflows/prueba_web.yml"]
+permissions:
+  contents: write
+jobs:
+  prueba:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      IPCEER_WEB_MAX_PEDIDOS: "12"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - run: ipceer web --solo-bajar --tiendas carrefour,dia,jumbo,farmacity,farmaplus,easy,oncity,topper,cebra,arredo
+      - run: cp data/web/gh_estado.json prueba_web.json && gh release upload sepa-archivo prueba_web.json --clobber

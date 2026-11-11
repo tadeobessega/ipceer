@@ -72,7 +72,9 @@ def cmd_carrera(cfg, args):
 def cmd_web(cfg, args):
     from . import web
     solo = [x for x in args.tiendas.split(",") if x] or None
-    r = web.actualizar(cfg, bajar_ahora=not args.sin_bajar, prefijo="gh_" if args.solo_bajar else "", solo=solo)
+    parte = tuple(int(x) for x in args.parte.split("/")) if args.parte else None
+    r = web.actualizar(cfg, bajar_ahora=not args.sin_bajar, prefijo="gh_" if args.solo_bajar else "", solo=solo,
+                       parte=parte)
     d = r.get("descarga") or {}
     log.info("Web: %s artículos de %s tiendas", d.get("articulos"), d.get("tiendas_con_datos"))
     for tid, i in (d.get("tiendas") or {}).items():
@@ -365,6 +367,7 @@ def main(argv=None):
     w.add_argument("--solo-bajar", action="store_true", help="baja y guarda con prefijo gh_ (GitHub Actions)")
     w.add_argument("--sin-bajar", action="store_true", help="solo rearma los paneles con lo ya bajado")
     w.add_argument("--tiendas", default="", help="ids separados por coma (por defecto, todas)")
+    w.add_argument("--parte", default="", help="i/n: solo las tiendas que le tocan a la corrida i de n")
     w.set_defaults(fn=cmd_web)
     c = sub.add_parser("carrera", help="todas las variantes de método, contra el INDEC y las consultoras")
     c.add_argument("--historico", action="store_true", help="prueba 2016-2018 de las variantes que falten")

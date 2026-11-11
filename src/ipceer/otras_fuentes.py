@@ -169,7 +169,9 @@ def bcra(cfg: Config, desde: str = "2016-01-01") -> dict:
     for clave, palabras in BCRA_SERIES.items():
         v = next((x for x in variables if all(w in (x.get("descripcion") or "").lower() for w in palabras)), None)
         if v is None:
-            out[clave] = {"error": "no está en la lista de variables"}
+            parecidas = [x.get("descripcion") for x in variables if "cambio" in (x.get("descripcion") or "").lower()]
+            out[clave] = {"error": "no está en la lista de variables", "variables": len(variables),
+                          "parecidas": parecidas[:15] if clave == "tc_mayorista" else []}
             continue
         filas, hasta = [], date.today()
         try:

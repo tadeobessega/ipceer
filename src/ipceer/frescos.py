@@ -176,19 +176,49 @@ def _mes_de_nombre(nombre: str) -> str | None:
     return f"{a}-{mes:02d}"
 
 
-def _leer_tabla(nombre: str, crudo: bytes):
-    """Lee un archivo diario del MCBA (xls, xlsx, csv o txt) como lista de dicts con claves en mayúscula."""
-    import polars as pl
+def _leer_biff2(crudo: bytes) -> list[dict]:
+    """Los archivos diarios del MCBA son planillas de Excel 2.0 (BIFF2), que las librerías actuales
+    no abren. El formato es una lista de registros (tipo, largo, datos); alcanza con leer las
+    celdas de texto (0x04), número (0x03) y entero (0x02). La primera fila son los encabezados."""
+    import struct
+    celdas: dict[int, dict[int, object]] = {}
+    i, n = 0, len(crudo)
+    while i + 4 <= n:
+        tipo, largo = struct.unpack_from("<HH", crudo, i)
+        d = crudo[i + 4:i + 4 + largo]
+        i += 4 + largo
+        if tipo in (2, 3, 4) and len(d) >= 7:
+            fila, col = struct.unpack_from("<HH", d, 0)
+            if tipo == 4:
+                v = d[8:8 + d[7]].decode("latin-1").strip() if len(d) >= 8 else ""
+            elif tipo == 3 and len(d) >= 15:
+                v = struct.unpack_from("<d", d, 7)[0]
+            elif tipo == 2 and len(d) >= 9:
+                v = float(struct.unpack_from("<H", d, 7)[0])
+            else:
+                continue
+            celdas.setdefault(fila, {})[col] = v
+    if 0 not in celdas:
+        return []
+    enc = {c: str(v).strip().upper() for c, v in celdas[0].items()}
+    return [{enc[c]: v for c, v in f.items() if c in enc} for k, f in sorted(celdas.items()) if k > 0]
+
+
+def _leer_tabla(nombre: str, crudo: bytes) -> list[dict] | None:
+    """Lee un archivo diario del MCBA como lista de filas (dict con encabezados en mayúscula)."""
     ext = nombre.lower().rsplit(".", 1)[-1]
+    if ext not in ("xls", "xlsx", "csv", "txt"):
+        return None
+    if crudo[:2] == b"\t\x00":   # BOF de BIFF2
+        return _leer_biff2(crudo)
+    import polars as pl
     if ext in ("xls", "xlsx"):
         df = pl.read_excel(io.BytesIO(crudo), engine="calamine")
-    elif ext in ("csv", "txt"):
+    else:
         txt = crudo.decode("latin-1")
         sep = ";" if txt.count(";") > txt.count(",") else ","
         df = pl.read_csv(io.StringIO(txt), separator=sep, infer_schema_length=0, truncate_ragged_lines=True)
-    else:
-        return None
-    return df.rename({c: str(c).strip().upper() for c in df.columns})
+    return df.rename({c: str(c).strip().upper() for c in df.columns}).to_dicts()
 
 
 def _fecha_de_archivo(nombre: str, mes: str) -> str | None:
@@ -203,31 +233,40 @@ def _fecha_de_archivo(nombre: str, mes: str) -> str | None:
 
 
 def _resumen_zip(ruta: Path, mes: str) -> dict:
-    """Precio modal por kilo (columna MOPK) promedio por especie y día, y de ahí el promedio del mes."""
-    import polars as pl
-    por_dia: dict[str, dict[str, list[float]]] = {}
+    """Precio modal por kilo (columna MOPK) promedio por especie y día, y de ahí el promedio del mes.
+    Dentro de cada día se promedian todas las variedades, procedencias, envases y calidades."""
+    por_dia: dict[str, dict[str, float]] = {}
     miembros, problemas = [], []
     with zipfile.ZipFile(ruta) as z:
         for info in z.infolist():
             if info.is_dir():
                 continue
             miembros.append(info.filename)
+            dia = _fecha_de_archivo(info.filename, mes)
             try:
-                df = _leer_tabla(info.filename, z.read(info))
+                filas = _leer_tabla(info.filename, z.read(info))
             except Exception as e:
-                problemas.append(f"{info.filename}: {e}")
+                problemas.append(f"{info.filename}: {str(e)[:120]}")
                 continue
-            if df is None:
+            if filas is None:
                 continue
-            if "ESP" not in df.columns or "MOPK" not in df.columns:
-                problemas.append(f"{info.filename}: columnas {df.columns[:16]}")
+            if not dia:
+                problemas.append(f"{info.filename}: el nombre no trae una fecha de {mes}")
                 continue
-            dia = _fecha_de_archivo(info.filename, mes) or info.filename
-            t = df.select(pl.col("ESP").cast(pl.Utf8).str.strip_chars().str.to_uppercase().alias("esp"),
-                          pl.col("MOPK").cast(pl.Utf8).str.replace(",", ".").cast(pl.Float64, strict=False).alias("p"))
-            t = t.filter(pl.col("p") > 0).group_by("esp").agg(pl.col("p").mean())
-            for esp, p in t.iter_rows():
-                por_dia.setdefault(esp, {})[dia] = p
+            if not filas or "ESP" not in filas[0] or "MOPK" not in filas[0]:
+                problemas.append(f"{info.filename}: sin columnas ESP y MOPK")
+                continue
+            suma: dict[str, list[float]] = {}
+            for f in filas:
+                esp, p = str(f.get("ESP") or "").strip().upper(), f.get("MOPK")
+                try:
+                    p = float(str(p).replace(",", ".")) if p is not None else None
+                except ValueError:
+                    p = None
+                if esp and p and p > 0:
+                    suma.setdefault(esp, []).append(p)
+            for esp, v in suma.items():
+                por_dia.setdefault(esp, {})[dia] = sum(v) / len(v)
     especies = {e: {"precio": round(sum(v.values()) / len(v), 2), "dias": len(v)} for e, v in por_dia.items()}
     return {"miembros": len(miembros), "ejemplo": miembros[:3], "especies": especies, "problemas": problemas[:5]}
 

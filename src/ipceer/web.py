@@ -140,43 +140,107 @@ def _filas_vtex(prods: list[dict], tienda: str, hoy: str, cat_defecto: str) -> l
     return filas
 
 
+BUSCAR = "/api/catalog_system/pub/products/search"
+ORDENES = ("", "OrderByTopSaleDESC", "OrderByPriceDESC", "OrderByPriceASC", "OrderByNameASC", "OrderByReleaseDateDESC")
+
+
+def _total(r) -> int:
+    m = re.search(r"/(\d+)$", r.headers.get("resources", ""))
+    return int(m.group(1)) if m else 0
+
+
+def _categorias_de(prods: list[dict]) -> dict[str, str]:
+    """Categorías que aparecen en una página de productos: ruta de ids -> ruta de nombres."""
+    out = {}
+    for p in prods:
+        for ids, nombres in zip(p.get("categoriesIds") or [], p.get("categories") or []):
+            out[ids.strip("/")] = nombres.strip("/").replace("/", " / ")
+    return out
+
+
+def _depto_ok(nombres: str, patron: re.Pattern | None) -> bool:
+    return patron is None or bool(patron.search(_norm(nombres.split(" / ")[0])))
+
+
 def bajar_vtex(t: dict, hoy: str) -> tuple[list[dict], dict]:
+    """Recorre el catálogo por categoría con el buscador público de la tienda.
+
+    Las categorías salen del árbol que publica la tienda; muchas tiendas limitan ese pedido (HTTP 429)
+    aunque el buscador responde normalmente. En ese caso las categorías se descubren con el propio
+    buscador: se miran las primeras páginas del listado general en varios órdenes y se anota a qué
+    categorías pertenecen los productos; las que aparecen después, al recorrer, se suman a la cola."""
     T = _Tienda(t)
-    r = T.get("/api/catalog_system/pub/category/tree/3")
-    if r.status_code != 200 or "json" not in r.headers.get("content-type", ""):
-        return [], {"estado": f"no responde el catálogo (HTTP {r.status_code})", "pedidos": T.pedidos}
     patron = re.compile(t["deptos"]) if t.get("deptos") else None
-    hojas = _hojas(r.json(), patron)
-    filas, vistos, cortadas = [], set(), 0
-    for ids, nombres in hojas:
-        desde = 0
-        while desde < VTEX_TOPE and not T.agotada():
-            r = T.get("/api/catalog_system/pub/products/search", fq=f"C:/{ids}/", _from=desde, _to=desde + VTEX_PASO - 1)
-            if r.status_code not in (200, 206):
-                if r.status_code in (429, 503):
-                    T.estado = f"limitó los pedidos (HTTP {r.status_code}): quedó incompleta"
+    cola: dict[str, str] = {}
+    filas, vistos = [], set()
+
+    def sumar(prods: list[dict], cat_defecto: str):
+        for f in _filas_vtex(prods, t["id"], hoy, cat_defecto):
+            if f["sku"] not in vistos and _depto_ok(f["categoria"], patron):
+                vistos.add(f["sku"])
+                filas.append(f)
+
+    T.pedidos += 1
+    time.sleep(PAUSA)
+    r = T.s.get(f"https://{T.host}/api/catalog_system/pub/category/tree/3", timeout=40)   # un solo intento
+    modo = "árbol"
+    if r.status_code == 200 and "json" in r.headers.get("content-type", ""):
+        cola = dict(_hojas(r.json(), patron))
+    else:
+        modo = "buscador"
+        for orden in ORDENES:
+            for desde in range(0, 500, VTEX_PASO):
+                params = {"_from": desde, "_to": desde + VTEX_PASO - 1} | ({"O": orden} if orden else {})
+                r = T.get(BUSCAR, **params)
+                if r.status_code not in (200, 206):
+                    if desde == 0 and not orden:
+                        return [], {"estado": f"no responde el catálogo (HTTP {r.status_code})", "pedidos": T.pedidos}
+                    break
+                try:
+                    prods = r.json()
+                except ValueError:
+                    break
+                cola.update(_categorias_de(prods))
+                sumar(prods, "")
+                if len(prods) < VTEX_PASO:
+                    break
+        # solo las categorías más específicas (las que no son prefijo de otra) y del rubro pedido
+        rutas = sorted(cola)
+        cola = {k: cola[k] for k in rutas if not any(o.startswith(k + "/") for o in rutas) and _depto_ok(cola[k], patron)}
+    hechas, cortadas = set(), 0
+    while cola and not T.agotada() and T.estado == "ok":
+        ids, nombres = next(iter(cola.items()))
+        del cola[ids]
+        hechas.add(ids)
+        for orden in ("", "OrderByPriceDESC"):   # el segundo orden solo si la categoría supera el tope
+            desde, total = 0, 0
+            while desde < VTEX_TOPE and not T.agotada():
+                params = {"fq": f"C:/{ids}/", "_from": desde, "_to": desde + VTEX_PASO - 1} | ({"O": orden} if orden else {})
+                r = T.get(BUSCAR, **params)
+                if r.status_code not in (200, 206):
+                    if r.status_code in (429, 503):
+                        T.estado = f"limitó los pedidos (HTTP {r.status_code}): quedó incompleta"
+                    break
+                try:
+                    prods = r.json()
+                except ValueError:
+                    break
+                sumar(prods, nombres)
+                if modo == "buscador":   # subcategorías que no habían aparecido
+                    for k, v in _categorias_de(prods).items():
+                        if k.startswith(ids + "/") and k not in hechas and k not in cola:
+                            cola[k] = v
+                total = _total(r)
+                desde += VTEX_PASO
+                if len(prods) < VTEX_PASO or desde >= total:
+                    break
+            if total <= VTEX_TOPE or T.estado != "ok":
                 break
-            try:
-                prods = r.json()
-            except ValueError:
-                break
-            for f in _filas_vtex(prods, t["id"], hoy, nombres):
-                if f["sku"] not in vistos:
-                    vistos.add(f["sku"])
-                    filas.append(f)
-            m = re.search(r"/(\d+)$", r.headers.get("resources", ""))
-            total = int(m.group(1)) if m else 0
-            desde += VTEX_PASO
-            if len(prods) < VTEX_PASO or desde >= total:
-                if total > VTEX_TOPE:
-                    cortadas += 1
-                break
-        if T.estado != "ok" or T.agotada():
-            break
-    if T.agotada() and T.estado == "ok":
+            cortadas += orden != ""
+    if T.agotada() and T.estado == "ok" and cola:
         T.estado = "se llegó al tope de pedidos o de tiempo: quedó incompleta"
-    return filas, {"estado": T.estado, "pedidos": T.pedidos, "categorias": len(hojas), "categorias_cortadas": cortadas,
-                   "segundos": round(time.time() - T.t0)}
+    return filas, {"estado": T.estado, "pedidos": T.pedidos, "categorias": len(hechas), "categorias_cortadas": cortadas,
+                   "modo": modo, "segundos": round(time.time() - T.t0)}
 
 
 def bajar_shopify(t: dict, hoy: str) -> tuple[list[dict], dict]:
@@ -223,21 +287,16 @@ def _una(t: dict, hoy: str) -> tuple[str, list[dict], dict]:
     return t["id"], filas, info
 
 
-def bajar(cfg: Config, prefijo: str = "", solo: list[str] | None = None, hilos: int = 4,
+def bajar(cfg: Config, prefijo: str = "", solo: list[str] | None = None, hilos: int = 6,
           parte: tuple[int, int] | None = None) -> dict:
-    """Baja las tiendas y guarda el día. Las de VTEX comparten servidores y un mismo límite de
-    pedidos por dirección: van de a una, un pedido por vez. Las demás van en paralelo entre sí.
+    """Baja las tiendas (en paralelo entre tiendas, de a un pedido por vez en cada una) y guarda el día.
     `parte` = (i, n): solo las tiendas que le tocan a la corrida i de n (para repartir en GitHub)."""
     hoy = date.today().isoformat()
     lista = [t for t in tiendas(cfg) if not solo or t["id"] in solo]
     if parte:
         lista = [t for k, t in enumerate(lista) if k % parte[1] == parte[0] % parte[1]]
-    vtex = [t for t in lista if t.get("tipo", "vtex") == "vtex"]
-    otras = [t for t in lista if t.get("tipo", "vtex") != "vtex"]
     with ThreadPoolExecutor(max(1, hilos)) as ex:
-        pend = [ex.submit(_una, t, hoy) for t in otras]
-        res = [_una(t, hoy) for t in vtex]
-        res += [f.result() for f in pend]
+        res = list(ex.map(lambda t: _una(t, hoy), lista))
     filas = [f for _, fs, _ in res for f in fs]
     estado = {tid: info for tid, _, info in res}
     d = dir_web(cfg)
@@ -342,7 +401,7 @@ def clasificar(df: pl.DataFrame, cl: ClasesWeb) -> pl.DataFrame:
 def dias_web(cfg: Config) -> dict[str, list[Path]]:
     out: dict[str, list[Path]] = {}
     for p in sorted(dir_web(cfg).glob("*.parquet")):
-        m = re.search(r"(\d{4}-\d\d-\d\d)$", p.stem)
+        m = re.search(r"(\d{4}-\d\d-\d\d)", p.stem)
         if m:
             out.setdefault(m.group(1), []).append(p)
     return out

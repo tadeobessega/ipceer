@@ -1,21 +1,47 @@
 name: Precios web (tiendas en línea)
-# Baja todos los días los catálogos públicos de las tiendas que responden desde GitHub y los deja
-# en el release "sepa-archivo" como web_AAAA-MM-DD.parquet. La PC los trae en su corrida diaria
-# (y además baja por su cuenta las tiendas que a GitHub le limitan los pedidos).
+# Baja todos los días los catálogos públicos de las tiendas de config/web/tiendas.yaml, repartidas en
+# cuatro corridas, y deja el día en el release "sepa-archivo" como web_AAAA-MM-DD.parquet. La PC lo
+# trae en su corrida diaria: el scrapeo se hace acá, no en la PC.
 on:
   schedule:
-    - cron: "23 13 * * *"   # 10:23 en Argentina
+    - cron: "23 12 * * *"   # 09:23 en Argentina
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [".github/workflows/precios_web.yml", "src/ipceer/web.py", "config/web/**"]
+    paths: [".github/workflows/precios_web.yml", "src/ipceer/web.py", "config/web/tiendas.yaml"]
 permissions:
   contents: write
 concurrency: precios-web
 jobs:
-  web:
+  bajar:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        parte: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Bajar
+        run: |
+          ipceer web --solo-bajar --parte ${{ matrix.parte }}/4
+          mkdir -p partes
+          for f in data/web/gh_20*.parquet; do cp "$f" "partes/p${{ matrix.parte }}_$(basename "$f")"; done
+          cp data/web/gh_estado.json "partes/p${{ matrix.parte }}_estado.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: parte-${{ matrix.parte }}
+          path: partes/
+          retention-days: 3
+  juntar:
+    needs: bajar
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
       TAG: sepa-archivo
@@ -24,21 +50,36 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e .
-      - name: Bajar
-        run: ipceer web --solo-bajar
-      - name: Guardar en el release
+      - run: pip install polars
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: parte-*
+          path: partes
+          merge-multiple: true
+      - name: Juntar y guardar en el release
         run: |
-          shopt -s nullglob
-          for f in data/web/gh_20*.parquet; do
-            n=$(basename "$f"); cp "$f" "web_${n#gh_}"; gh release upload "$TAG" "web_${n#gh_}" --clobber
-          done
-          cp data/web/gh_estado.json web_estado_github.json
-          gh release upload "$TAG" web_estado_github.json --clobber
           python - <<'PY'
-          import json
-          d = json.load(open("data/web/gh_estado.json", encoding="utf-8"))
-          print(d["articulos"], "artículos de", d["tiendas_con_datos"], "tiendas")
-          for t, i in d["tiendas"].items():
-              print(f"{t:22s} {i.get('articulos'):>7} {i.get('estado')}")
+          import glob, json, re, subprocess
+          import polars as pl
+          por_dia = {}
+          for f in sorted(glob.glob("partes/p*_gh_*.parquet")):
+              por_dia.setdefault(re.search(r"(\d{4}-\d\d-\d\d)", f).group(1), []).append(pl.read_parquet(f))
+          tiendas = {}
+          for f in sorted(glob.glob("partes/p*_estado.json")):
+              tiendas.update(json.load(open(f, encoding="utf-8"))["tiendas"])
+          for dia, partes in por_dia.items():
+              nombre = f"web_{dia}.parquet"
+              # si ya hay un archivo de hoy (otra corrida), se conserva lo que esta corrida no trajo
+              if subprocess.run(["gh", "release", "download", "sepa-archivo", "-p", nombre, "-O", "previo.parquet", "--clobber"]).returncode == 0:
+                  partes.insert(0, pl.read_parquet("previo.parquet"))
+              df = pl.concat(partes, how="diagonal_relaxed").unique(["tienda", "sku"], keep="last")
+              df.write_parquet(nombre, compression="zstd")
+              subprocess.run(["gh", "release", "upload", "sepa-archivo", nombre, "--clobber"], check=True)
+              print(dia, df.height, "artículos de", df["tienda"].n_unique(), "tiendas")
+              estado = {"fecha": dia, "articulos": df.height, "tiendas_con_datos": df["tienda"].n_unique(), "tiendas": tiendas}
+              json.dump(estado, open("web_estado_github.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+          if por_dia:
+              subprocess.run(["gh", "release", "upload", "sepa-archivo", "web_estado_github.json", "--clobber"], check=True)
+          for t, i in sorted(tiendas.items()):
+              print(f"{t:22s} {i.get('articulos'):>7} {i.get('modo', ''):9s} {i.get('estado')}")
           PY

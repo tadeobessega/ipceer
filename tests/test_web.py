@@ -54,3 +54,43 @@ def test_paneles_web(tmp_path):
     assert abs(far["precio_lista"][0] - 110.0) < 1e-6 and far["n_dias"][0] == 2   # media geométrica de los días
     car = m.filter(pl.col("id_comercio") == "web:carrefour")
     assert car["region"].to_list() == ["GBA"] and car["clase"][0] == "01.1.2"
+
+
+def test_vtex_sin_arbol_descubre_categorias_con_el_buscador(monkeypatch):
+    """Si la tienda limita el árbol de categorías (429), las categorías salen de los productos."""
+    def prod(i, ids, nombres):
+        return {"productId": str(i), "productName": f"P{i}", "brand": "X", "categoriesIds": ids, "categories": nombres,
+                "items": [{"itemId": str(i), "name": f"P{i}", "measurementUnit": "un", "unitMultiplier": 1,
+                           "sellers": [{"sellerDefault": True, "commertialOffer": {"Price": 100.0 + i, "IsAvailable": True}}]}]}
+    carnes = [prod(i, ["/1/10/", "/1/"], ["/Carnes/Vacuna/", "/Carnes/"]) for i in range(1, 4)]
+    almacen = [prod(9, ["/2/"], ["/Almacén/"])]
+
+    class R:
+        def __init__(self, status, datos=None, total=0):
+            self.status_code, self._d = status, datos
+            self.headers = {"content-type": "application/json", "resources": f"0-49/{total}"}
+
+        def json(self):
+            return self._d
+
+    pedidos = []
+
+    class S:
+        headers = {}
+
+        def get(self, url, params=None, timeout=None):
+            pedidos.append((url, params))
+            if "category/tree" in url:
+                return R(429)
+            if params and params.get("fq") == "C:/1/10/":
+                return R(206, carnes, 3)
+            if params and params.get("fq"):
+                return R(206, [], 0)
+            return R(206, carnes[:1] + almacen, 2)
+
+    monkeypatch.setattr(web.requests, "Session", lambda: S())
+    monkeypatch.setattr(web, "PAUSA", 0)
+    filas, info = web.bajar_vtex({"id": "t", "host": "x", "deptos": "carn"}, "2026-11-11")
+    assert info["modo"] == "buscador" and info["estado"] == "ok"
+    assert sorted(f["sku"] for f in filas) == ["1", "2", "3"]          # el almacén no se baja
+    assert not any((p or {}).get("fq") == "C:/2/" for _, p in pedidos)

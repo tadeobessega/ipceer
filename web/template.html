@@ -225,6 +225,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <button role="tab" data-tab="cad" aria-selected="false">Cadenas</button>
       <button role="tab" data-tab="can" aria-selected="false">Canastas</button>
       <button role="tab" data-tab="regu" aria-selected="false">Regulados</button>
+      <button role="tab" data-tab="fre" aria-selected="false">Frescos y alquileres</button>
       <button role="tab" data-tab="val" aria-selected="false">Validación</button>
       <button role="tab" data-tab="hilo" aria-selected="false">Hilo</button>
       <button role="tab" data-tab="met" aria-selected="false">Metodología</button>
@@ -453,6 +454,32 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <div class="grid">
         <div class="card s12"><h3>Costo mensual de la canasta de servicios de un hogar tipo</h3><div class="chart"><canvas id="c-cs"></canvas></div><div class="src">Fuente: CEER en base a las tarifas y normas citadas en el registro.</div></div>
         <div class="card s12"><h3>Componentes, valor y variación</h3><div class="tablewrap"><table id="t-cs"></table></div></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- FRESCOS Y ALQUILERES -->
+  <div data-panel="fre" hidden>
+    <section>
+      <h2>Hacienda en pie: Mercado Agroganadero de Cañuelas</h2>
+      <p class="sub" id="fre-sub1"></p>
+      <div class="grid">
+        <div class="card s7"><h3>Precio promedio del mes, en pesos por kilo vivo</h3><div class="chart"><canvas id="c-mag"></canvas></div><div class="src">Fuente: CEER en base al Mercado Agroganadero de Cañuelas (precios por categoría).</div></div>
+        <div class="card s5"><h3>Variación mensual por categoría</h3><div class="tablewrap" style="max-height:380px;overflow-y:auto"><table id="t-mag"></table></div></div>
+      </div>
+    </section>
+    <section>
+      <h2>Frutas y hortalizas: Mercado Central de Buenos Aires</h2>
+      <p class="sub" id="fre-sub2"></p>
+      <div class="grid">
+        <div class="card s12"><h3>Precio mayorista modal por kilo, promedio del mes</h3><div class="tablewrap" style="max-height:460px;overflow-y:auto"><table id="t-mcba"></table></div><div class="src">Fuente: CEER en base a los precios mayoristas diarios del Mercado Central de Buenos Aires.</div></div>
+      </div>
+    </section>
+    <section>
+      <h2>Alquileres publicados en la Ciudad de Buenos Aires</h2>
+      <p class="sub">Alquiler medio publicado de un departamento de dos ambientes según el informe mensual Index de Zonaprop. Son precios de avisos, no de contratos firmados ni de contratos vigentes: miden lo que se pide hoy por un alquiler nuevo. La variación real descuenta el IPC nacional del INDEC del mismo mes y solo aparece si el INDEC ya lo publicó.</p>
+      <div class="grid">
+        <div class="card s12"><div class="tablewrap"><table id="t-alq"></table></div><div class="src">Fuente: CEER en base a Index Zonaprop (Ciudad de Buenos Aires) e INDEC.</div></div>
       </div>
     </section>
   </div>
@@ -837,8 +864,9 @@ prom. 4 mens.  = (1 + prom. 4 sem.)^(30,44 / 7) − 1</div>
     <p>La CBT es la CBA por la inversa del coeficiente de Engel que publica el INDEC para el mismo mes. Si el INDEC no lo publicó todavía, no hay CBT: no se usa el del mes anterior.</p>`],
   ['servicios','Regulados y canasta de servicios',`
     <p>Los precios fijados por norma (salario del servicio doméstico, transporte, y lo que se vaya sumando) se cargan con su valor, vigencia, norma y fuente. La canasta de servicios sigue la idea de la canasta de servicios públicos del AMBA del Observatorio de Tarifas y Subsidios del IIEP (UBA-CONICET): electricidad, gas, agua y transporte de un hogar tipo, valorizados con los cuadros tarifarios. Un mes tiene costo total solo si están todos los componentes con su tarifa y su cantidad con fuente.</p>`],
-  ['otras','Alquileres y medicamentos',`
-    <p>Las fuentes que no están en SEPA se bajan en cada corrida de la tarea programada, solo si son públicas y se pueden bajar sin saltear protecciones: el informe mensual Index Zonaprop de la Ciudad (alquileres publicados) y el listado de precios de medicamentos de PAMI (datos abiertos). Los portales de avisos inmobiliarios no permiten bajar sus listados con robots, por eso se usa el informe que publican.</p>`],
+  ['otras','Frescos, alquileres y medicamentos',`
+    <p>Las fuentes que no están en SEPA se bajan en cada corrida de la tarea programada, solo si son públicas y se pueden bajar sin saltear protecciones. Para alquileres, el informe mensual Index Zonaprop de la Ciudad: se toma el alquiler medio publicado de un dos ambientes y su variación (los portales de avisos no permiten bajar sus listados con robots, por eso se usa el informe). Para medicamentos, el listado de PAMI (datos abiertos), que informa lo que paga el afiliado.</p>
+    <p>Para alimentos frescos se suman dos mercados mayoristas: la hacienda en pie del Mercado Agroganadero de Cañuelas (importe sobre kilos vendidos en el mes, por categoría) y las frutas y hortalizas del Mercado Central de Buenos Aires (precio modal por kilo, promedio de los días del mes). Son precios mayoristas: se muestran como indicador adelantado y no entran al índice ni reemplazan ningún precio de góndola. Un mes que no se pudo bajar queda vacío.</p>`],
   ['diario','Índice diario y eventos',`
     <p>Para ver cómo reaccionan los precios a un evento puntual se arma un índice por día y por rubro. Cada día se compara <b>directamente con el día base</b> (el primero de la ventana, hoy los últimos ${((D.indicadores||{}).parametros||{}).diario_dias||120} días sin cortes) con un Jevons sobre los mismos productos de la misma cadena y región en los dos días. No se encadena día a día porque los ruidos diarios se acumularían.</p>
     <p>Si un rubro no tiene productos comparables un día, ese día no tiene dato para ese rubro. Las clases sin datos quedan afuera y su peso se reparte entre las que tienen; el nacional existe solo si están las seis regiones ese día. No se completa ni se arrastra nada.</p>
@@ -1547,8 +1575,30 @@ function renderRegu(){
   if(tot.length) draw('c-cs',{type:'bar',data:{labels:tot.map(m=>mesLbl(m.mes)),datasets:[{label:'Canasta',data:tot.map(m=>m.total),backgroundColor:css('--accent')}]},options:baseOpts({})});
   else sinDatos('c-cs','La canasta todavía no tiene todos sus componentes cargados con fuente: no se muestra un total incompleto.');
   document.getElementById('t-cs').innerHTML=`<thead><tr><th>Componente</th><th>Cantidad</th>${M.map(m=>`<th class="n">${mesLbl(m.mes)}</th>`).join('')}<th>Estado</th></tr></thead><tbody>`+
-    C.map(c=>`<tr><td>${esc(c.nombre)}</td><td>${c.cantidad!=null?num(c.cantidad,0)+' '+esc(c.unidad||''):'–'}</td>${M.map(m=>{const p=(m.precios||{})[c.id]; return `<td class="n">${p!=null?'$ '+num(p,2):'–'}</td>`;}).join('')}<td class="muted">${c.pendiente?esc(c.nota||'pendiente'):'con fuente'}</td></tr>`).join('')+
+    C.map(c=>`<tr><td>${esc(c.nombre)}</td><td>${c.detalle?esc(c.detalle):c.cantidad!=null?num(c.cantidad,0)+' '+esc(c.unidad||''):'–'}</td>${M.map(m=>{const p=(m.precios||{})[c.id]; return `<td class="n">${p!=null?'$ '+num(p,2):'–'}</td>`;}).join('')}<td class="muted">${c.pendiente?esc(c.nota||'pendiente'):(c.fuente_url?`<a href="${esc(c.fuente_url)}" target="_blank" rel="noopener">cantidad con fuente</a>`:'con fuente')+(c.nota?'. '+esc(c.nota):'')}</td></tr>`).join('')+
     `<tr><td><b>Total</b></td><td></td>${M.map(m=>`<td class="n"><b>${m.total!=null?pesos(m.total):'–'}</b></td>`).join('')}<td></td></tr></tbody>`;
+}
+
+/* ---------- frescos (mayoristas) y alquileres ---------- */
+function renderFre(){
+  const O=D.otras||{}, G=O.hacienda_canuelas||{}, M=(G.meses||[]);
+  const cats=[['NOVILLITOS','Novillitos'],['VAQUILLONAS','Vaquillonas'],['NOVILLOS','Novillos'],['VACAS','Vacas'],['TOTAL','Total del mercado']];
+  document.getElementById('fre-sub1').innerHTML='Precio de la hacienda que se vende para faena en Cañuelas: importe total dividido por los kilos vendidos en el mes, por categoría. Es un precio <b>mayorista y en pie</b>, no el del mostrador: sirve para anticipar hacia dónde va la carne, que SEPA casi no trae por kilo. Novillitos y vaquillonas son las categorías del consumo interno. El mes en curso es parcial (hasta el último día operado) y se marca con un asterisco. No entra al índice.'+((G.errores||[]).length?` <b>Meses que no se pudieron bajar:</b> ${esc(G.errores.slice(0,4).join('; '))}.`:'');
+  if(M.length){
+    draw('c-mag',{type:'line',data:{labels:M.map(r=>mesLbl(r.mes)+(r.parcial?'*':'')),datasets:cats.slice(0,4).map(([k,l],i)=>({label:l,data:M.map(r=>(r.grupos[k]||{}).precio??null),borderColor:PAL()[i],backgroundColor:PAL()[i],borderWidth:2,pointRadius:0}))},options:baseOpts({scales:{y:{ticks:{callback:v=>'$ '+num(v,0)}}}})});
+    document.getElementById('t-mag').innerHTML='<thead><tr><th>Mes</th>'+cats.map(c=>`<th class="n">${c[1]}</th>`).join('')+'</tr></thead><tbody>'+[...M].reverse().map(r=>`<tr><td>${mesLbl(r.mes)}${r.parcial?'*':''}</td>${cats.map(([k])=>`<td class="n">${pct((r.var||{})[k],1,true)}</td>`).join('')}</tr>`).join('')+'</tbody>';
+  } else { sinDatos('c-mag',O.hacienda_canuelas&&O.hacienda_canuelas.error?'No se pudo bajar: '+O.hacienda_canuelas.error:'Todavía no se bajó: aparece con la próxima corrida de la tarea diaria.'); document.getElementById('t-mag').innerHTML=''; }
+  const C=O.frutas_hortalizas_mcba||{}, S=C.serie||[];
+  const meses=[...new Set(S.map(r=>r.mes))].sort().slice(-6);
+  const esp=[...new Set(S.filter(r=>meses.includes(r.mes)).map(r=>r.tipo+'|'+r.especie))].sort();
+  const probl=(C.archivos||[]).filter(f=>(f.problemas||[]).length||f.error);
+  document.getElementById('fre-sub2').innerHTML='Precio mayorista modal por kilo de cada especie en el Mercado Central: promedio de los días del mes (promedio simple de variedades, procedencias y calidades de cada día). Es mayorista, no de verdulería, y no entra al índice. El mes en curso es parcial.'+(S.length?'':' <b>Todavía sin serie:</b> '+(C.error?esc(C.error):(C.archivos||[]).length?`se archivaron ${(C.archivos||[]).length} archivos, pero no se pudieron leer con el formato esperado`:'los archivos se bajan con la próxima corrida de la tarea diaria')+'.')+(probl.length&&S.length?` Archivos con problemas de lectura: ${probl.length}.`:'');
+  document.getElementById('t-mcba').innerHTML=S.length?'<thead><tr><th>Especie</th><th>Tipo</th>'+meses.map(m=>`<th class="n">${mesLbl(m)}</th>`).join('')+'<th class="n">Var. último mes</th></tr></thead><tbody>'+esp.map(k=>{const [t,e]=k.split('|'); const f=m=>S.find(r=>r.mes===m&&r.tipo===t&&r.especie===e); const u=f(meses[meses.length-1]); return `<tr><td>${esc(e)}</td><td class="muted">${esc(t)}</td>${meses.map(m=>`<td class="n">${f(m)?'$ '+num(f(m).precio,0):'–'}</td>`).join('')}<td class="n">${u?pct(u.var,1,true):'–'}</td></tr>`;}).join('')+'</tbody>':'';
+  const A=(O.alquileres_zonaprop||[]), ipc={};
+  if(Array.isArray(A)){
+    const g=((D.indec||{})['0']||[]); g.forEach((r,k)=>{ if(k>0&&g[k-1][1]) ipc[r[0]]=(r[1]/g[k-1][1]-1)*100; });
+    document.getElementById('t-alq').innerHTML='<thead><tr><th>Mes del informe</th><th class="n">Alquiler medio, 2 ambientes</th><th class="n">Variación mensual</th><th class="n">IPC INDEC</th><th class="n">Variación real</th></tr></thead><tbody>'+[...A].reverse().map(r=>{const i=ipc[r.mes], real=(r.var_alquiler!=null&&i!=null)?((1+r.var_alquiler/100)/(1+i/100)-1)*100:null; return `<tr><td>${mesLbl(r.mes)}</td><td class="n">${r.alquiler_2amb!=null?pesos(r.alquiler_2amb):'–'}</td><td class="n">${pct(r.var_alquiler,1,true)}</td><td class="n">${pct(i,1,true)}</td><td class="n">${pct(real,1,true)}</td></tr>`;}).join('')+'</tbody>';
+  }
 }
 
 /* ---------- canastas (CBA y CBT) ---------- */
@@ -1629,6 +1679,7 @@ function render(){
   if(tab==='met') renderMetodo();
   if(tab==='val'){ renderVal(); renderExt(); renderMun(); renderVariantes(); tocVal(); }
   if(tab==='regu') renderRegu();
+  if(tab==='fre') renderFre();
   if(tab==='can') renderCan();
 }
 if(window.Chart){ Chart.defaults.font.family=css('--font'); Chart.defaults.color=css('--muted'); }

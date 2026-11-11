@@ -35,23 +35,41 @@ componentes:
     pendiente: true
     nota: falta definir con fuente la cantidad de viajes del hogar tipo
   - id: electricidad
-    nombre: Electricidad (Edenor/Edesur, usuario N1)
-    concepto: null
-    cantidad: null
+    nombre: Electricidad (Edenor, T1-R2 sin subsidio, 265 kWh, sin impuestos)
+    partes:
+      - concepto: "Edenor T1-R2 (151 a 400 kWh) sin subsidio: cargo fijo"
+        cantidad: 1
+      - concepto: "Edenor T1-R2 (151 a 400 kWh) sin subsidio: cargo variable"
+        cantidad: 265
+    detalle: 265 kWh por mes
     unidad: kWh por mes
-    pendiente: true
-    nota: falta cargar el cuadro tarifario del ENRE (cargo fijo y variable por escalón) y el consumo
+    fuente_cantidad: "IIEP, Reporte de tarifas y subsidios: consumo de 265 kWh/mes"
+    fuente_url: https://economicas.uba.ar/iiep/wp-content/uploads/INFORME-IIEP-MARZO-2026.pdf
+    nota: >-
+      consumo del IIEP (265 kWh por mes). Importe sin impuestos: cargo fijo más 265 kWh por el cargo
+      variable de Edenor R2. Cargados los cuadros de enero (desde el 16), mayo y septiembre; faltan
+      los demás meses y Edesur
   - id: gas
-    nombre: Gas natural (Metrogas/Naturgy, usuario N1)
-    concepto: null
-    cantidad: null
+    nombre: Gas natural (Metrogas, sin subsidio, 60,5 m3)
+    partes:
+      - concepto: null
+        cantidad: 1
+      - concepto: "Metrogas R1 a R3 sin subsidio: cargo por metro cúbico"
+        cantidad: 60.5
+    detalle: 60,5 m3 por mes
     unidad: m3 por mes
     pendiente: true
-    nota: falta cargar el cuadro tarifario del ENARGAS y el consumo estacional
+    fuente_cantidad: "IIEP, Reporte de tarifas y subsidios: consumo de 60,5 m3/mes"
+    fuente_url: https://economicas.uba.ar/iiep/wp-content/uploads/INFORME-IIEP-MARZO-2026.pdf
+    nota: >-
+      consumo del IIEP (60,5 m3 por mes, 726 al año, que cae en la categoría R2 y no en R1). Está
+      el cargo por m3 de noviembre; falta el cargo fijo de la categoría R2 (solo conseguimos el de R1)
   - id: agua
     nombre: Agua potable (AySA)
     concepto: null
     cantidad: null
     unidad: factura mensual
     pendiente: true
-    nota: falta cargar la tarifa de AySA (cargo fijo por zona y coeficiente K)
+    nota: >-
+      está cargado el coeficiente K de octubre y noviembre (la tarifa se mueve con K), pero falta la
+      factura base: el IIEP usa un hogar de coeficiente zonal medio de la Ciudad y no publica la fórmula

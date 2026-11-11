@@ -140,14 +140,32 @@ def canasta_servicios(cfg: Config) -> dict:
     if not pm.is_empty():
         for concepto, mes, precio in pm.select("concepto", "mes", "precio").iter_rows():
             precios.setdefault(concepto, {})[mes] = precio
-    activos = [c for c in comps if not c.get("pendiente") and c.get("concepto") and c.get("cantidad")]
-    meses = sorted({m for c in comps if c.get("concepto") for m in precios.get(c["concepto"], {})})
+    # Un componente es una tarifa por una cantidad, o varias `partes` que se suman (una factura:
+    # cargo fijo x 1 + cargo variable x consumo). Sin todas sus partes con tarifa ese mes, no hay valor.
+    def partes(c):
+        if c.get("partes"):
+            return [(x.get("concepto"), x.get("cantidad")) for x in c["partes"]]
+        return [(c.get("concepto"), c.get("cantidad"))]
+
+    def completo(c):
+        return all(con and cant for con, cant in partes(c))
+
+    con_tarifa = [c for c in comps if any(con for con, _ in partes(c))]
+    activos = [c for c in comps if not c.get("pendiente") and completo(c)]
+    meses = sorted({m for c in con_tarifa for con, _ in partes(c) if con for m in precios.get(con, {})})
     filas = []
     for mes in meses:
-        costo = {c["id"]: precios.get(c["concepto"], {}).get(mes, None) for c in comps if c.get("concepto")}
-        valor = {c["id"]: (costo[c["id"]] * c["cantidad"]) if (c in activos and costo.get(c["id"]) is not None) else None
-                 for c in comps if c.get("concepto")}
-        total = sum(valor[c["id"]] for c in activos) if activos and all(valor[c["id"]] is not None for c in activos) else None
+        costo, valor = {}, {}
+        for c in con_tarifa:
+            ps = [(precios.get(con, {}).get(mes) if con else None, cant) for con, cant in partes(c)]
+            if c.get("partes"):   # factura: se muestra el importe del componente
+                costo[c["id"]] = sum(p * q for p, q in ps) if completo(c) and all(p is not None for p, _ in ps) else None
+                valor[c["id"]] = costo[c["id"]] if c in activos else None
+            else:
+                costo[c["id"]] = ps[0][0]
+                valor[c["id"]] = ps[0][0] * ps[0][1] if (c in activos and ps[0][0] is not None) else None
+        total = (sum(valor[c["id"]] for c in activos)
+                 if activos and len(activos) == len(comps) and all(valor.get(c["id"]) is not None for c in activos) else None)
         filas.append({"mes": mes, "precios": costo, "valores": valor, "total": total})
     for a, b in zip(filas, filas[1:]):
         if a["total"] and b["total"]:

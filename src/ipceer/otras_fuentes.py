@@ -70,26 +70,44 @@ def zonaprop(cfg: Config, meses: int = 6) -> list[dict]:
     return sorted(filas, key=lambda x: x["mes"])
 
 
+def _n(s: str) -> float:
+    """'909.058' -> 909058.0 ; '1.2' o '1,2' -> 1.2 (los informes usan punto decimal en los porcentajes)."""
+    s = s.strip()
+    if re.fullmatch(r"\d{1,3}(\.\d{3})+", s):
+        return float(s.replace(".", ""))
+    return float(s.replace(",", "."))
+
+
+def leer_zonaprop(texto: str) -> dict:
+    """Saca del informe el alquiler medio publicado de un 2 ambientes (pesos por mes) y su variación
+    mensual. Busca la frase que habla del ALQUILER medio: el informe también trae la de venta
+    ("El precio medio sube...") y esa no se usa."""
+    t = re.sub(r"\s+", " ", texto)
+    m = re.search(r"alquiler medio de un departamento de (\d) ambientes[^$]{0,80}\$\s*([\d.]+)\s*por mes"
+                  r"[^%]{0,40}?(sube|aumenta|crece|baja|cae|desciende|se mantiene)[^%\d]{0,15}(-?\d+[.,]?\d*)?\s*%?", t, re.I)
+    if not m:
+        return {"var_alquiler": None, "alquiler_2amb": None}
+    out = {"ambientes": int(m.group(1)), "alquiler_2amb": _n(m.group(2)), "texto": m.group(0)[:220]}
+    verbo = m.group(3).lower()
+    if m.group(4):
+        v = abs(_n(m.group(4)))
+        out["var_alquiler"] = -v if verbo in ("baja", "cae", "desciende") else v
+    else:
+        out["var_alquiler"] = 0.0 if verbo == "se mantiene" else None
+    return out
+
+
 def _zonaprop_alquiler(ruta: Path) -> dict:
-    """Variación mensual del precio de alquiler publicado (en pesos), si el texto la dice."""
     try:
         import pdfplumber
     except ImportError:
         return {"error": "falta pdfplumber"}
     try:
         with pdfplumber.open(ruta) as pdf:
-            txt = "\n".join((p.extract_text() or "") for p in pdf.pages[:12])
+            txt = "\n".join((p.extract_text() or "") for p in pdf.pages)
     except Exception as e:
         return {"error": str(e)}
-    t = re.sub(r"\s+", " ", txt)
-    # p. ej. "El precio de alquiler sube 1.4% en junio" / "alquileres ... registró una suba de 2,1%"
-    m = re.search(r"alquiler[^.]{0,120}?(sube|aumenta|crece|baja|cae|registra[^.]{0,20}?)\s*(-?\d+[.,]\d+)\s*%", t, re.I)
-    if not m:
-        return {"var_alquiler": None}
-    v = float(m.group(2).replace(",", "."))
-    if m.group(1).lower() in ("baja", "cae"):
-        v = -abs(v)
-    return {"var_alquiler": v, "texto": m.group(0)[:200]}
+    return leer_zonaprop(txt)
 
 
 def pami(cfg: Config) -> dict:
@@ -124,7 +142,7 @@ def pami(cfg: Config) -> dict:
     return out
 
 
-BCRA = "https://api.bcra.gob.ar/estadisticas/v3.0/monetarias"
+BCRA = "https://api.bcra.gob.ar/estadisticas/v4.0/Monetarias"
 # series del BCRA que se buscan por su descripción (no por número, que puede cambiar)
 BCRA_SERIES = {"tc_mayorista": ("mayorista", "3500"), "icl": ("contratos de locaci",),
                "cer": ("coeficiente de estabilizaci",), "uva": ("unidad de valor adquisitivo",)}
@@ -136,9 +154,15 @@ def bcra(cfg: Config, desde: str = "2016-01-01") -> dict:
     d = _dir(cfg, "bcra")
     out = {}
     try:
-        r = requests.get(BCRA, headers=UA, timeout=60, verify=True)
-        r.raise_for_status()
-        variables = r.json().get("results", [])
+        variables, offset = [], 0
+        while True:   # el catálogo de la v4.0 viene paginado (más de 1.000 series)
+            r = requests.get(BCRA, params={"limit": 1000, "offset": offset}, headers=UA, timeout=60)
+            r.raise_for_status()
+            lote = r.json().get("results", [])
+            variables += lote
+            offset += 1000
+            if len(lote) < 1000 or offset > 5000:
+                break
     except Exception as e:
         log.warning("BCRA: %s", e)
         return {"error": str(e)}
@@ -185,7 +209,9 @@ def afispop(cfg: Config) -> list[dict]:
 
 def actualizar(cfg: Config) -> dict:
     res = {"actualizado": datetime.now().isoformat(timespec="seconds")}
-    for nombre, f in (("alquileres_zonaprop", zonaprop), ("medicamentos_pami", pami), ("bcra", bcra)):
+    from . import frescos
+    for nombre, f in (("alquileres_zonaprop", zonaprop), ("medicamentos_pami", pami), ("bcra", bcra),
+                      ("hacienda_canuelas", frescos.canuelas), ("frutas_hortalizas_mcba", frescos.mcba)):
         try:
             res[nombre] = f(cfg)
         except Exception as e:  # una fuente que falla no frena las demás

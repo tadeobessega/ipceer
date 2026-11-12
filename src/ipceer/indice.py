@@ -194,16 +194,21 @@ def relativos(previo: pl.DataFrame, actual: pl.DataFrame, min_p: int, min_a: int
 
 def _bases_directas(periodos: list[str], tramo: dict[str, int], frecuencia: str) -> dict[str, str]:
     """Período base de la comparación directa de cada período (decisión D-14): el último período de
-    diciembre del año anterior dentro del mismo tramo (como la muestra fija del INDEC, que se
-    sigue desde la base); si el tramo no tiene diciembre previo, su primer período."""
+    diciembre del año anterior dentro del tramo continuo (sin períodos faltantes) que termina en el
+    período anterior; si ese tramo no tiene un diciembre previo, su primer período. Así la base nunca
+    queda del otro lado de un hueco (por ejemplo, la semana suelta de abril de 2025)."""
     out = {}
     for i, p in enumerate(periodos):
         if i == 0:
             continue
         anio = int(_mes_del_periodo(p, frecuencia)[:4])
-        previos = [q for q in periodos[:i] if tramo[q] == tramo[p]]
-        dic = [q for q in previos if _mes_del_periodo(q, frecuencia) == f"{anio - 1}-12"]
-        out[p] = dic[-1] if dic else (previos[0] if previos else periodos[i - 1])
+        cont = [periodos[i - 1]]
+        j = i - 1
+        while j > 0 and tramo[periodos[j - 1]] == tramo[p] and _siguiente(periodos[j - 1], frecuencia) == periodos[j]:
+            cont.insert(0, periodos[j - 1])
+            j -= 1
+        dic = [q for q in cont if _mes_del_periodo(q, frecuencia) == f"{anio - 1}-12"]
+        out[p] = dic[-1] if dic else cont[0]
     return out
 
 

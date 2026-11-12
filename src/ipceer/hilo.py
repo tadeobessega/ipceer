@@ -99,7 +99,7 @@ def armar(cfg: Config, datos: dict, semanal: pl.DataFrame | None, ind: dict) -> 
         cola = f". La proyección para {mes_nombre} es de {pct(p1)}."
     else:
         cola = "."
-    t1 = (f"El IPCEER midió una inflación semanal de bienes del {pct(s['var'], 2)} en la {ordn} semana de "
+    t1 = (f"El ipceer midió una inflación semanal de bienes del {pct(s['var'], 2)} en la {ordn} semana de "
           f"{mes_nombre} ({rango_texto(semana)}){cola}")
     tuits.append({"texto": t1, "imagen": "portada"})
 
@@ -209,7 +209,7 @@ def armar(cfg: Config, datos: dict, semanal: pl.DataFrame | None, ind: dict) -> 
 
     # 6. cierre
     url = hc.get("url", "")
-    tuits.append({"texto": "Series, rubros, regiones, cadenas y metodología completa en el tablero del IPCEER:"
+    tuits.append({"texto": "Series, rubros, regiones, cadenas y metodología completa en el tablero del ipceer:"
                            + (f"\n\n{url}" if url else ""), "imagen": None})
 
     for k, t in enumerate(tuits, start=1):

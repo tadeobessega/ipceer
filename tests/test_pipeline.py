@@ -214,7 +214,7 @@ def test_indicadores_y_hilo(cfg):
     # hilo
     datos = resumen.armar_datos(cfg, None, sem["indices"], sem["cobertura"], indicadores=ind)
     h = hilo.armar(cfg, datos, sem["indices"], datos["indicadores"])
-    assert h["tuits"][0]["texto"].startswith("El IPCEER midió una inflación semanal de bienes del ")
+    assert h["tuits"][0]["texto"].startswith("El ipceer midió una inflación semanal de bienes del ")
     assert "—" not in "".join(t["texto"] for t in h["tuits"])
     assert any(t["imagen"] == "cadenas" for t in h["tuits"])
 

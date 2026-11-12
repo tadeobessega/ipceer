@@ -111,7 +111,8 @@ def relativos_externos(cfg: Config) -> pl.DataFrame:
             alq = json.loads(ruta.read_text(encoding="utf-8")).get("alquileres_zonaprop") or []
             filas = [{"periodo": a["mes"], "codigo": "04.1.1", "region": "GBA",
                       "logrel": math.log(1 + a["var_alquiler"] / 100), "fuente": "alquileres"}
-                     for a in alq if isinstance(a, dict) and a.get("var_alquiler") is not None]
+                     for a in alq if isinstance(a, dict) and a.get("var_alquiler") is not None
+                     and a.get("zona", "CABA") == "CABA"]   # GBA Norte, Oeste y Sur se guardan, no entran (D-39)
             if filas:
                 partes.append(pl.DataFrame(filas, schema=esquema))
     except Exception as e:

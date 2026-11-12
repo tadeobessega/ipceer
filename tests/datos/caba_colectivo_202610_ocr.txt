@@ -1,0 +1,31 @@
+GOBIERNODELACIUDADDEBUENOSAIRES
+"2026 - Afio del 30° Aniversario de la sancién de la Constitucién de la Ciudad Auténoma de Buenos Aires"
+Anexo
+Numero: IF-2026-43666802-GCABA-SECT
+Buenos Aires, Martes 29 de Septiembre de 2026
+Referencia: Anexo EX-2025-51549657-GCABA-SSPMSV s/ Aprueba cuadros tarifarios - octubre 2026
+Cuadro I - Cuadro Tarifario Aplicable - Servicios Comunes (en $/boleto)
+~» .SECCION TARIFA PLENA
+x
+Sy 0-3 km $ 920,48
+Wu
+= 3-6 km $ 1.022 ,81
+>
+e 6-12 km $ 1.101,59
+12-27 km $ 1.180,44
+Cuadro II - Cuadro Tarifario Aplicable - Servicios Expresos - Valores maximos (en $/boleto)
+Pe ON TARIFA EXPRESO
+S 0-3 km $ 1.150,60
+3-6 km $ 1.278,51
+=
+. 6-12 km $ 1.376,99
+12-27 km $ 1.475,55
+Digitally signed by Comunicaciones Oficiales
+Date: 2026.09.29 10:51:30 -03:00
+Guillermo Krantzer
+Secretario
+SECRETARIA TRANSPORTE
+MINISTERIO DE MOVILIDAD E INFRAESTRUCTURA
+Digitally signed by Comunicaciones Oficiales
+Date: 2026.09.29 10:51:29 -03:00
+

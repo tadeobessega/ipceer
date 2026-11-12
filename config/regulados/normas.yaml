@@ -3,6 +3,10 @@
 # `tema` (sobre organismo, título y resumen) coinciden.
 # desde_id: id de Infoleg desde el que se empezó a revisar (norma 429488 = 1 de septiembre de 2026).
 desde_id: 429400
+# historia_hasta_id: hasta dónde se revisa Infoleg hacia atrás para reconstruir la historia de
+# tarifas (D-38). 402000 es aproximadamente diciembre de 2023: cubre todo el período de la serie
+# de regulados. Se avanza 900 ids por corrida, así que la historia completa lleva unas 30 corridas.
+historia_hasta_id: 402000
 rubros:
   - id: electricidad
     organismo: 'ENTE NACIONAL REGULADOR DE LA ELECTRICIDAD|ENTE NACIONAL REGULADOR DEL GAS Y LA ELECTRICIDAD'

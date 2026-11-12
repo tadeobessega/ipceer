@@ -17,6 +17,7 @@ import io
 import json
 import logging
 import re
+import time
 from datetime import date, datetime
 from pathlib import Path
 
@@ -46,28 +47,34 @@ def _meses_atras(n: int) -> list[tuple[int, int]]:
     return out
 
 
+ZONAS_ZONAPROP = ("CABA", "GBA_NORTE", "GBA_OESTE", "GBA_SUR")
+
+
 def zonaprop(cfg: Config, meses: int = 6) -> list[dict]:
-    """Baja los informes Index Zonaprop CABA de los últimos meses y extrae la variación mensual del
-    alquiler. El informe del mes M se sube en la carpeta del mes M+1."""
+    """Baja los informes Index Zonaprop de la Ciudad y de GBA Norte, Oeste y Sur de los últimos meses
+    y extrae el alquiler medio de un 2 ambientes y su variación mensual. El informe del mes M se sube
+    en la carpeta del mes M+1. Cada fila lleva su `zona`; el índice usa por ahora solo CABA (D-39)."""
     d = _dir(cfg, "zonaprop")
     filas = []
-    for a, m in _meses_atras(meses):
-        ruta = d / f"INDEX_CABA_REPORTE_{a}-{m:02d}.pdf"
-        if not ruta.exists():
-            sa, sm = (a + (m == 12), 1 if m == 12 else m + 1)
-            url = (f"https://www.zonaprop.com.ar/blog/wp-content/uploads/{sa}/{sm:02d}/"
-                   f"INDEX_CABA_REPORTE_{a}-{m:02d}.pdf")
-            try:
-                r = requests.get(url, headers=UA, timeout=60)
-                if r.status_code != 200 or not r.content.startswith(b"%PDF"):
+    for zona in ZONAS_ZONAPROP:
+        for a, m in _meses_atras(meses):
+            ruta = d / f"INDEX_{zona}_REPORTE_{a}-{m:02d}.pdf"
+            if not ruta.exists():
+                sa, sm = (a + (m == 12), 1 if m == 12 else m + 1)
+                url = (f"https://www.zonaprop.com.ar/blog/wp-content/uploads/{sa}/{sm:02d}/"
+                       f"INDEX_{zona}_REPORTE_{a}-{m:02d}.pdf")
+                try:
+                    r = requests.get(url, headers=UA, timeout=60)
+                    if r.status_code != 200 or not r.content.startswith(b"%PDF"):
+                        continue
+                    ruta.write_bytes(r.content)
+                    log.info("Zonaprop: %s", ruta.name)
+                except requests.RequestException as e:
+                    log.warning("Zonaprop %s %s-%02d: %s", zona, a, m, e)
                     continue
-                ruta.write_bytes(r.content)
-                log.info("Zonaprop: %s", ruta.name)
-            except requests.RequestException as e:
-                log.warning("Zonaprop %s-%02d: %s", a, m, e)
-                continue
-        filas.append({"mes": f"{a}-{m:02d}", "archivo": ruta.name, **_zonaprop_alquiler(ruta)})
-    return sorted(filas, key=lambda x: x["mes"])
+                time.sleep(1)
+            filas.append({"mes": f"{a}-{m:02d}", "zona": zona, "archivo": ruta.name, **_zonaprop_alquiler(ruta)})
+    return sorted(filas, key=lambda x: (x["zona"], x["mes"]))
 
 
 def _n(s: str) -> float:
@@ -83,7 +90,7 @@ def leer_zonaprop(texto: str) -> dict:
     mensual. Busca la frase que habla del ALQUILER medio: el informe también trae la de venta
     ("El precio medio sube...") y esa no se usa."""
     t = re.sub(r"\s+", " ", texto)
-    m = re.search(r"alquiler medio de un departamento de (\d) ambientes[^$]{0,80}\$\s*([\d.]+)\s*por mes"
+    m = re.search(r"(?:alquiler medio|precio medio de alquiler) de un departamento de (\d) ambientes[^$]{0,80}\$\s*([\d.]+)\s*por mes"
                   r"[^%]{0,40}?(sube|aumenta|crece|baja|cae|desciende|se mantiene)[^%\d]{0,15}(-?\d+[.,]?\d*)?\s*%?", t, re.I)
     if not m:
         return {"var_alquiler": None, "alquiler_2amb": None}
@@ -209,6 +216,14 @@ def afispop(cfg: Config) -> list[dict]:
         return [dict(r, valor=float(r["valor"])) for r in csv.DictReader(f)]
 
 
+def _base_regulados(cfg: Config, res: dict) -> None:
+    try:
+        from .externos import base_regulados
+        res["regulados_base"] = {"filas": base_regulados(cfg).height}
+    except Exception as e:
+        log.warning("Base de regulados: %s", e)
+
+
 def desde_github(cfg: Config) -> dict | None:
     """Plan A (D-33): trae lo que GitHub Actions ya bajó (otras.tar.gz y su resumen) en lugar de
     bajarlo de nuevo desde la PC. Devuelve el resumen, o None si no se pudo (la PC baja por su cuenta)."""
@@ -225,6 +240,7 @@ def desde_github(cfg: Config) -> dict | None:
             tf.extractall(data, members=seguros)
         res = json.loads(js.read_text(encoding="utf-8"))
         res["origen"] = "github"
+        _base_regulados(cfg, res)
         (cfg.ruta("resultados") / "otras_fuentes.json").write_text(json.dumps(res, ensure_ascii=False, indent=1),
                                                                    encoding="utf-8")
         return res
@@ -245,15 +261,17 @@ def actualizar(cfg: Config, desde_gh: bool = False) -> dict:
         log.warning("Otras fuentes: GitHub no disponible, se bajan desde esta máquina")
     res = {"actualizado": datetime.now().isoformat(timespec="seconds")}
     from . import frescos
-    from . import normas, prepagas
+    from . import autos, boletines, normas, prepagas
     for nombre, f in (("alquileres_zonaprop", zonaprop), ("medicamentos_pami", pami), ("bcra", bcra),
                       ("hacienda_canuelas", frescos.canuelas), ("frutas_hortalizas_mcba", frescos.mcba),
-                      ("prepagas", prepagas.actualizar), ("normas", normas.actualizar)):
+                      ("prepagas", prepagas.actualizar), ("normas", normas.actualizar),
+                      ("boletines", boletines.actualizar), ("autos_cca", autos.actualizar)):
         try:
             res[nombre] = f(cfg)
         except Exception as e:  # una fuente que falla no frena las demás
             log.warning("%s: %s", nombre, e)
             res[nombre] = {"error": str(e)}
+    _base_regulados(cfg, res)
     (cfg.ruta("resultados") / "otras_fuentes.json").write_text(json.dumps(res, ensure_ascii=False, indent=1),
                                                                encoding="utf-8")
     return res

@@ -70,6 +70,54 @@ def test_normas_infoleg():
         "https://servicios.infoleg.gob.ar/infolegInternet/anexos/425000-429999/426258/res26-2.pdf"]
 
 
+def test_cuadros_de_gas_y_plausibilidad_en_el_tiempo():
+    from pathlib import Path
+    from ipceer import normas
+    d = Path(__file__).parent / "datos"
+    m = normas.leer_cuadro_gas((d / "cuadro_metrogas_202609.txt").read_text(encoding="utf-8").split("\n\f"),
+                               "Metrogas", "2026-09-01")
+    v = {x["concepto"]: x["valor"] for x in m}
+    assert v["Metrogas R1 sin subsidio (Ciudad de Buenos Aires): cargo fijo"] == 4432.10
+    assert v["Metrogas R2 2° sin subsidio (conurbano): cargo fijo"] == 14580.56
+    assert v["Metrogas R1-R2 1° sin subsidio (Ciudad de Buenos Aires): cargo por metro cúbico"] == 316.16
+    assert len(m) == 20
+    n = normas.leer_cuadro_gas((d / "cuadro_naturgy_202609.txt").read_text(encoding="utf-8").split("\n\f"),
+                               "Naturgy BAN", "2026-09-01")
+    v = {x["concepto"]: x["valor"] for x in n}
+    assert v["Naturgy BAN R1 sin subsidio (conurbano norte): cargo fijo"] == 3632.34
+    assert v["Naturgy BAN R1-R2 1° sin subsidio (conurbano norte): cargo por metro cúbico"] == 300.66
+    assert normas.vigencia_de_norma("los cuadros ... entrarán en vigencia a partir del 1° de septiembre de 2026.") == "2026-09-01"
+    # un valor de hace dos años contra el actual: se permite el cambio acumulado de los meses de distancia
+    viejo = normas.plausible([{"concepto": "a", "valor": 20.0, "vigente_desde": "2024-09-01"}],
+                             [{"concepto": "a", "valor": 300.0, "vigente_desde": "2026-09-01"}])
+    assert viejo[0]["control"] == "ok"
+    malo = normas.plausible([{"concepto": "a", "valor": 3000.0, "vigente_desde": "2026-10-01"}],
+                            [{"concepto": "a", "valor": 300.0, "vigente_desde": "2026-09-01"}])
+    assert malo[0]["control"].startswith("revisar")
+
+
+def test_boletines_ciudad_y_provincia():
+    from pathlib import Path
+    from ipceer import boletines as b
+    d = Path(__file__).parent / "datos"
+    c = b.leer_colectivo_caba((d / "caba_colectivo_202610_ocr.txt").read_text(encoding="utf-8"))
+    assert c == {"mes": "2026-10-01", "0-3": 920.48, "3-6": 1022.81, "6-12": 1101.59, "12-27": 1180.44}
+    t = (d / "caba_subte_253.txt").read_text(encoding="utf-8")
+    assert b.leer_subte(t) == 1887.0 and b.mes_de_referencia(t) == "2026-11-01"
+    p = b.leer_colectivo_pba((d / "pba_colectivo_122_26.txt").read_text(encoding="utf-8"))
+    assert p == {"mes": "2026-05-01", "0-3": 968.57, "0-3 sin nominar": 1937.14}
+    assert b.rubro_caba("Resolución N° 210/SECT/26", "Aprueba los cuadros tarifarios para el servicio público de transporte colectivo de pasajeros por automotor") == "colectivo"
+    assert b.rubro_caba("Resolución de Directorio N° 253/SBASE/26", "Aprueba los nuevos cuadros tarifarios para la explotación del Servicio SUBTE") == "subte"
+    assert b.rubro_caba("Resolución N° 214/SECT/26", "Establece el límite máximo de velocidad") is None
+    assert b.rubro_pba("Resolución 122/2026 del Ministerio de Transporte Resumen Modifica la Resolución N° 81/25 (actualización de los valores tarifarios de autotransporte público provincial") == "colectivo"
+
+
+def test_zonaprop_gba():
+    from ipceer.otras_fuentes import leer_zonaprop
+    z = leer_zonaprop("El precio medio de alquiler de un departamento de 2 ambientes en GBA Oeste se ubica en $651.251 por mes, sube 1.3% en septiembre")
+    assert z["alquiler_2amb"] == 651251.0 and z["var_alquiler"] == 1.3
+
+
 def test_prepagas_indice(tmp_path):
     import polars as pl
     from ipceer import prepagas

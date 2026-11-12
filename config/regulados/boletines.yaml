@@ -1,0 +1,11 @@
+# Boletines de la Ciudad y de la Provincia de Buenos Aires para tarifas reguladas (src/ipceer/boletines.py, D-40).
+#
+# Ciudad: número de edición del Boletín Oficial porteño desde el que se recorre hacia adelante
+# (7480 = 23 de octubre de 2026) y hasta cuál se recorre hacia atrás para la historia (6720 es
+# aproximadamente diciembre de 2023: el boletín sale unas 22 veces por mes). Cada corrida avanza
+# hasta 150 ediciones hacia atrás.
+caba_desde_boletin: 7480
+caba_historia_hasta_boletin: 6720
+# Provincia: búsquedas en normas.gba.gob.ar (resoluciones) desde esta fecha de publicación.
+pba_desde: "01/01/2024"
+pba_frases: ["valores tarifarios", "cuadro tarifario"]

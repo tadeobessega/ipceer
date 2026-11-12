@@ -1,0 +1,393 @@
+TIPO DE CARGO CAPITAL FEDERAL BUENOS AIRES
+4.432,10 5.118,35
+13.139,97 11.889,32
+15.939,36 14.580,56
+20.150,15 18.063,41
+24.824,42 23.390,06
+32.563,91 27.774,15
+44.473,38 34.374,39
+53.812,58 47.790,72
+105.887,36 57.543,38
+316,16 316,16
+316,16 316,16
+316,16 316,16
+316,16 316,16
+316,16 316,16
+478,18 434,08
+COMPONENTES DEL CARGO 
+POR M3 DE CONSUMO CAPITAL FEDERAL BUENOS AIRES
+Precio en el Punto de Ingreso 
+en el Sistema de Transporte 
+($/m3)
+210,04 210,04
+Diferencias Diarias 
+Acumuladas ($/m3) -4,78 -4,78
+Precio Incluido en los Cargos 
+por m3 de Consumo ($/m3) 205,26 205,26
+Costo de Gas Retenido ($/m3) 8,78 8,78
+Costo de Transporte ($/m3)(1) 102,12 102,12
+COMPOSICIÓN DEL PIST CAPITAL FEDERAL BUENOS AIRES
+0,00% 0,00%
+72,88% 72,88%
+0,01% 0,01%
+1,53% 1,53%
+25,58% 25,58%
+COMPOSICIÓN DEL COSTO DE 
+TRANSPORTE CAPITAL FEDERAL BUENOS AIRES
+Neuquén - GBA I(2) 20,90 3,21% 3,21%
+TGN - GBA - GBA 6,81 0,70% 0,70%
+Neuquén - GBA II(3) 27,85 14,55% 14,55%
+TGS - Neuquén - GBA 26,97 59,61% 59,61%
+TGS - Tierra del Fuego - GBA 45,68 21,92% 21,92%
+(1) Incluye la actualización del adicional aprobado por Resolución ENRG N° 551/97.
+(2) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A. y Salliqueló - GBA de TGS.
+(3) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+METROGAS S.A.
+TARIFAS FINALES A USUARIOS RESIDENCIALES SIN SUBSIDIOS ENERGÉTICOS FOCALIZADOS (DECRETO N° 943/2025) ABASTECIDOS CON GAS NATURAL - SIN IMPUESTOS
+CATEGORÍA / SUBZONA
+RESIDENCIALES
+RESIDENCIALES
+RESIDENCIALES
+RESIDENCIALES
+RESIDENCIALES
+CHUBUT
+Cargo Fijo $/mes
+R4
+CATEGORÍA / SUBZONA
+R1
+R2 1°
+R2 2°
+R2 3°
+R3 1°
+R3 2°
+R3 3°
+R3 4°
+R1-R2 1°
+R2 2°
+R2 3°
+R3 1°-R3 2°
+R3 3°-R3 4°
+Participación por Cuenca en la 
+Compra de Gas
+(en %)
+Participación por Ruta en la 
+Compra de Transporte (en %)
+CUENCA / SUBZONA
+NOROESTE
+EMPRESA-RUTA ($/m3) / SUBZONA
+NEUQUINA
+SANTA CRUZ
+TIERRA DEL FUEGO
+Cargo por m3 de Consumo
+R4
+TIPO DE CARGO CAPITAL FEDERAL BUENOS AIRES
+23.474,02 23.465,96
+88.729,91 88.574,68
+144.917,03 144.924,94
+0  a  1000  m3 317,05 318,66
+1001  a  9000  m3 312,25 314,35
+más  de  9000  m3 307,42 309,04
+0  a  1000  m3 343,27 358,44
+1001  a  9000  m3 335,08 349,15
+más  de  9000  m3 326,95 339,83
+51,89 53,96
+COMPONENTES DEL CARGO 
+POR M3 DE CONSUMO CAPITAL FEDERAL BUENOS AIRES
+Diferencias Diarias 
+Acumuladas ($/m3) -4,78 -4,78
+4,18% 4,18%
+71,48 71,48
+47,66 47,66
+COMPOSICIÓN DEL PIST CAPITAL FEDERAL BUENOS AIRES
+0,00% 0,00%
+72,88% 72,88%
+0,01% 0,01%
+1,53% 1,53%
+25,58% 25,58%
+COMPOSICIÓN DEL COSTO DE 
+TRANSPORTE CAPITAL FEDERAL BUENOS AIRES
+Neuquén - GBA I(4) 20,90 3,21% 3,21%
+TGN - GBA - GBA 6,81 0,70% 0,70%
+Neuquén - GBA II(5) 27,85 14,55% 14,55%
+TGS - Neuquén - GBA 26,97 59,61% 59,61%
+TGS - Tierra del Fuego - GBA 45,68 21,92% 21,92%
+(1) Usuarios Servicio General P servicio completo según Decreto 730/2022 y modificatorias.
+(2) No incluye precio de gas ni costo de gas retenido.
+(3) Incluye la actualización del adicional aprobado por Resolución ENRG N° 551/97.
+(4) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A. y Salliqueló - GBA de TGS.
+(5) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+EMPRESA-RUTA ($/m3) / SUBZONA
+Participación por Ruta en la 
+Compra de Transporte (en %)
+P3
+P1-P2
+METROGAS S.A.
+TARIFAS FINALES A USUARIOS SGP (P1, P2 y P3 (1)) y SDB ABASTECIDOS CON GAS NATURAL - SIN IMPUESTOS
+CATEGORÍA / SUBZONA
+SDB
+Cargo por m3 de consumo
+Participación por Cuenca en la 
+Compra de Gas
+(en %)
+NOROESTE
+NEUQUINA
+CHUBUT
+SANTA CRUZ
+TIERRA DEL FUEGO
+CUENCA / SUBZONA
+P1-P2-P3
+Costo de Gas Retenido ($/m3)
+SDB (como  %  del  precio  a  sus  usuarios)
+Costo de Transporte ($/m3) (3)
+SDB  
+Precio en el Punto de Ingreso 
+en el Sistema de Transporte 
+($/m3)
+CATEGORÍA / SUBZONA
+Precio Incluido en los Cargos 
+por m3 de Consumo ($/m3)
+SDB(2)
+P1-P2
+P3
+Cargo Fijo $/mes
+P1-P2-P3 210,04 210,04
+P1-P2-P3 205,26 205,26
+P1-P2-P3 8,78 8,78
+P1-P2-P3
+TIPO DE CARGO CAPITAL FEDERAL BUENOS AIRES
+535.429,88 534.235,06
+948.125,82 948.177,43
+366.835,27 366.870,12
+366.835,27 366.870,12
+1.877.125,59 1.877.179,51
+1.877.125,59 1.877.179,51
+1.877.125,59 1.877.179,51
+1.877.125,59 1.877.179,51
+0  a  1000  m3 57,75 72,92
+1001  a  9000  m3 49,56 63,63
+más  de  9000  m3 41,43 54,31
+0  a  5000  m3 14,35 15,84
+más  de  5000  m3 8,87 10,32
+13,73 15,15
+2,49 3,91
+30,83 32,85
+10,36 11,82
+24,16 26,16
+3,72 5,13
+944,37 965,31
+382,85 382,85
+576,82 595,73
+529,28 547,97
+COMPOSICIÓN DEL COSTO DE 
+TRANSPORTE(4) CAPITAL FEDERAL BUENOS AIRES
+Neuquén - GBA I(5) 20,90 3,21% 3,21%
+TGN - GBA - GBA 6,81 0,70% 0,70%
+Neuquén - GBA II(6) 27,85 14,55% 14,55%
+TGS - Neuquén - GBA 26,97 59,61% 59,61%
+TGS - Tierra del Fuego - GBA 45,68 21,92% 21,92%
+(1) Los usuarios pueden elegir el servicio y régimen tarifario aplicable, siempre que contraten los siguientes mínimos, sujeto a la disponibilidad del servicio: G, 1.000 m3/día; FD-FT, 10.000m3/día e ID-IT, 3.000.000 m3/año. FD-ID Conectados a redes de distribución y FT-IT conectados a gasoductos troncales.
+Las tarifas ID e IT no requieren cargo por reserva de capacidad. Las tarifas FD y FT requieren cargo por reserva de capacidad más cargo por m3 consumido.
+(2) Usuarios Servicio General P no alcanzados por lo establecido en  Decreto 730/2022 y modificatorias.
+(3) Cargo mensual por m3 diario de capacidad de transporte reservada.
+(4) Incluye la actualización del adicional aprobado por Resolución ENRG N° 551/97. Para los usuarios P3 se debe considerar un Factor de Carga de 0,5.
+(5) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A. y Salliqueló - GBA de TGS.
+(6) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+Nota: En caso de que la Distribuidora sea informada de devoluciones de gas retenido por parte de una transportista, deberá mensualmente notificar fehacientemente a sus Clientes unbundleados el volumen de gas en concepto de dicha devolución que les corresponde a cada uno, ponderando la devolución de gas
+retenido en relación con el volumen de gas transportado por la misma y cada uno de los clientes citados (conforme Informe Técnico N° IF-2021-33291729-APN-GT#ENARGAS obrante en el N° Expediente EX-2021-33013152- -APN-GT#ENARGAS).
+Cargo por m3 de Consumo
+EMPRESA-RUTA / SUBZONA
+G
+GNC FIRME
+FD
+FT
+P3
+G
+GNC INTERRUMPIBLE
+GNC FIRME
+ID
+FD
+IT
+FT
+Cargo por Reserva (m3/día)(3)
+Participación por Ruta en la 
+Compra de Transporte (en %)
+METROGAS S.A.
+TARIFAS DE DISTRIBUCIÓN A USUARIOS  (1) P3(2), G, GNC, FD, FT, ID e IT ABASTECIDOS CON GAS NATURAL - SIN IMPUESTOS
+Cargo Fijo $/mes
+P3
+G
+GNC INTERRUMPIBLE
+GNC FIRME
+ID
+FD
+IT
+CATEGORÍA / SUBZONA
+FT
+TIPO DE CARGO CAPITAL FEDERAL BUENOS AIRES
+23.474,02 23.465,96
+88.729,91 88.574,68
+0  a  1000  m3 159,44 161,05
+1001  a  9000  m3 154,64 156,74
+más  de  9000  m3 149,81 151,43
+0  a  1000  m3 185,66 200,83
+1001  a  9000  m3 177,47 191,54
+más  de  9000  m3 169,34 182,22
+COMPONENTES DEL CARGO 
+POR M3 DE CONSUMO CAPITAL FEDERAL BUENOS AIRES
+Precio en el Punto de Ingreso 
+en el Sistema de Transporte 
+($/m3)
+58,75 58,75
+Diferencias Diarias 
+Acumuladas ($/m3) -4,78 -4,78
+Precio Incluido en los Cargos 
+por m3 de Consumo ($/m3) 53,97 53,97
+Costo de Gas Retenido ($/m3) 2,46 2,46
+Costo de Transporte ($/m3)(1) 71,48 71,48
+COMPOSICIÓN DEL PIST CAPITAL FEDERAL BUENOS AIRES
+0,00% 0,00%
+72,88% 72,88%
+0,01% 0,01%
+1,53% 1,53%
+25,58% 25,58%
+COMPOSICIÓN DEL COSTO DE 
+TRANSPORTE CAPITAL FEDERAL BUENOS AIRES
+Neuquén - GBA I(2) 20,90 3,21% 3,21%
+TGN - GBA - GBA 6,81 0,70% 0,70%
+Neuquén - GBA II(3) 27,85 14,55% 14,55%
+TGS - Neuquén - GBA 26,97 59,61% 59,61%
+TGS - Tierra del Fuego - GBA 45,68 21,92% 21,92%
+(1) Incluye la actualización del adicional aprobado por Resolución ENRG N° 551/97.
+(2) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A. y Salliqueló - GBA de TGS.
+(3) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+EBP1-EBP2-EBP3
+CUENCA / SUBZONA
+NOROESTE
+NEUQUINA
+EBP3
+TARIFAS FINALES SEGÚN RÉGIMEN DE ENTIDADES DE BIEN PÚBLICO (EBP) - LEY N° 27.218 y CLUBES DE BARRIO Y PUEBLO - LEY N° 27.098 - SIN IMPUESTOS
+Participación por Ruta en la 
+Compra de Transporte (en %)
+Cargo por m3 de Consumo
+CATEGORÍA / SUBZONA
+EBP1-EBP2-EBP3
+EBP1-EBP2-EBP3
+METROGAS S.A.
+EBP1-EBP2-EBP3
+Cargo Fijo $/mes
+EBP1-EBP2
+EBP1-EBP2
+CHUBUT
+SANTA CRUZ
+TIERRA DEL FUEGO
+Participación por Cuenca en la 
+Compra de Gas
+(en %)
+EMPRESA-RUTA ($/m3) / SUBZONA
+EBP3
+EBP1-EBP2-EBP3
+CATEGORÍA / SUBZONA
+ITEM IMPORTE
+1 19.151     
+2 13.223     
+3 13.223     
+4 13.223     
+5 13.223     
+6 237.111   
+7 276.629   
+8 4.560        
+9 189.993   
+10 4.408        
+11 14.439     
+12 92.716     
+13 31.919     
+14 57.758     
+15 132.235   
+16 405.824   
+17 95.756     
+18 36.479     
+19 109.436   
+20 91.196     
+21 576.057   
+22 527.419   
+IMPORTES MÁXIMOS DE TASAS Y CARGOS AUTORIZADOS A COBRAR
+CONCEPTO
+Examen para instalador
+Matrícula instalador 1ra. Categoría
+Matrícula instalador 2da. Categoría
+Matrícula instalador 3ra. Categoría
+Reposición carnet instalador
+Matrícula de empresas constructoras de obras por terceros
+Renovación de la matrícula de empresas constructoras de obras por terceros, fuera de término
+Soldadura y/o perforación de tubería de servicio externa, sin zanjeo y tapada; y sin reparación de vereda (Baja y Media Presión)
+Colocación de medidor menor o igual a 10 m3/h
+Colocación de medidor mayor a 10 m3/h
+Reposición de medidor extraviado, sin colocación (Baja y Media Presión)
+Cargo por reconexión en Alta Presión - Reapertura de llave por causa imputable al usuario
+Conexión y habilitación del servicio con zanjeo y tapada - en Alta Presión
+Copia de plano
+Rotura y reparación de veredas del servicio (Baja Presión / Media Presión)
+Gestión y envío de aviso de deuda común bajo firma
+Notificación fehaciente de aviso de deuda mediante carta documento o telegrama
+Zanjeo y tapada del servicio (Baja Presión / Media Presión)
+Cargo por reconexión domiciliaria - Reapertura de llave por causa imputable al usuario, menor o igual a 10 m3/h (Baja Presión / Media Presión)
+Cargo por reconexión - Reapertura de llave por causa imputable al usuario, mayor 10 m3/h
+Servicio completo sin zanjeo y tapada (menor o igual a 1") y sin reparación de vereda (Baja y Media Presión)
+Servicio completo sin zanjeo y tapada (mayor a 1") y sin reparación de vereda (Baja y Media Presión), no unifamiliar
+NATURGY BAN S.A. BUENOS AIRES NORTE 208,94
+CAPITAL FEDERAL 203,76
+BUENOS AIRES  203,76
+MENDOZA 214,18
+SAN JUAN 214,18
+SAN LUIS 214,18
+CÓRDOBA 214,29
+LA RIOJA Y CATAMARCA 214,29
+SANTA FE 212,52
+BUENOS AIRES 212,52
+ENTRE RÍOS 214,73
+FORMOSA 214,73
+CHACO 214,73
+CORRIENTES 214,73
+SALTA 212,74
+LA PUNA 212,74
+TUCUMÁN 212,74
+BUENOS AIRES 212,03
+BAHÍA BLANCA 212,80
+LA PAMPA SUR 223,71
+LA PAMPA NORTE 220,40
+BUENOS AIRES SUR 207,12
+CHUBUT SUR 199,01
+PROV. DE NEUQUÉN 216,88
+CORDILLERANO 213,46
+SANTA CRUZ SUR 189,64
+TIERRA DEL FUEGO 183,96
+REDENGAS S.A. PARANÁ 213,68
+CAMUZZI GAS PAMPEANA S.A.  
+CAMUZZI GAS DEL SUR S.A. 
+$/m3
+Precio Anual Uniforme - PAU
+PRESTADORA SUBZONA TARIFARIA
+METROGAS S.A. 
+DISTRIBUIDORA GAS CUYANA S.A.
+DISTRIBUIDORA GAS DEL CENTRO S.A.
+LITORAL GAS S.A. 
+GASNEA S.A. 
+NATURGY NOA S.A.
+ 
+ 
+ 
+ 
+República Argentina - Poder Ejecutivo Nacional
+Año de la Grandeza Argentina
+ 
+Hoja Adicional de Firmas
+Anexo
+ 
+Número: 
+ 
+ 
+Referencia: METROGAS - ANEXO - SEP 26
+ 
+El documento fue importado por el sistema GEDO con un total de 6 pagina/s.
+ 
+ 

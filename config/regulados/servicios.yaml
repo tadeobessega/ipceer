@@ -50,20 +50,21 @@ componentes:
       variable de Edenor R2. Cargados los cuadros de enero (desde el 16), mayo y septiembre; faltan
       los demás meses y Edesur
   - id: gas
-    nombre: Gas natural (Metrogas, sin subsidio, 60,5 m3)
+    nombre: Gas natural (Metrogas, Ciudad, R2 2° sin subsidio, 60,5 m3, sin impuestos)
     partes:
-      - concepto: null
+      - concepto: "Metrogas R2 2° sin subsidio (Ciudad de Buenos Aires): cargo fijo"
         cantidad: 1
-      - concepto: "Metrogas R1 a R3 sin subsidio: cargo por metro cúbico"
+      - concepto: "Metrogas R1-R2 1° sin subsidio (Ciudad de Buenos Aires): cargo por metro cúbico"
         cantidad: 60.5
     detalle: 60,5 m3 por mes
     unidad: m3 por mes
-    pendiente: true
     fuente_cantidad: "IIEP, Reporte de tarifas y subsidios: consumo de 60,5 m3/mes"
     fuente_url: https://economicas.uba.ar/iiep/wp-content/uploads/INFORME-IIEP-MARZO-2026.pdf
     nota: >-
-      consumo del IIEP (60,5 m3 por mes, 726 al año, que cae en la categoría R2 y no en R1). Está
-      el cargo por m3 de noviembre; falta el cargo fijo de la categoría R2 (solo conseguimos el de R1)
+      consumo del IIEP (60,5 m3 por mes, 726 al año: categoría R2 2°, de 651 a 800 m3 anuales).
+      Valores leídos automáticamente de los cuadros del ENARGAS publicados en Infoleg (D-38). El
+      cargo por m3 es la primera línea del cuadro (R1-R2 1°), que en los cuadros vigentes es igual al
+      de R2 2°; si un cuadro los separa, hay que revisar este componente
   - id: agua
     nombre: Agua potable (AySA)
     concepto: null

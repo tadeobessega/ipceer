@@ -1,0 +1,848 @@
+TIPO DE CARGO BUENOS AIRES NORTE
+3.632,34
+8.106,16
+10.136,75
+12.495,98
+15.509,75
+18.947,28
+22.628,43
+26.654,80
+38.896,18
+300,66
+300,66
+300,66
+300,66
+300,66
+300,66
+300,66
+394,52
+COMPONENTES DEL CARGO 
+POR M3 DE CONSUMO
+BUENOS AIRES 
+NORTE
+Precio en el Punto de Ingreso 
+en el Sistema de Transporte 
+($/m3)
+218,97
+Diferencias Diarias 
+Acumuladas ($/m3) -4,64
+Precio Incluido en los Cargos 
+por m3 de Consumo ($/m3) 214,33
+Costo de Gas Retenido ($/m3) 8,40
+Costo de Transporte ($/m3) 77,93
+COMPOSICIÓN DEL PIST BUENOS AIRES NORTE
+0,00%
+95,20%
+0,12%
+1,67%
+3,01%
+COMPOSICIÓN DEL COSTO DE 
+TRANSPORTE
+BUENOS AIRES 
+NORTE
+Neuquén - GBA I(1) 21,01 22,49%
+TGN - GBA - GBA 6,81 0,69%
+Neuquén - GBA II(2) 27,96 6,49%
+TGS - Neuquén - GBA 26,97 42,82%
+TGS - Tierra del Fuego - GBA 45,68 3,41%
+Neuquén - GBA III(3) 31,47 24,10%
+(1) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A. y Salliqueló - GBA de TGS.
+(2) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+(3) Incluye la ruta Neuquén - Neuquén de TGS, Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+CATEGORÍA / SUBZONA
+R3 3°
+R3 4°
+Cargo Fijo $/mes
+R4
+R2 3°
+Cargo por m3 de Consumo
+R4
+EMPRESA-RUTA ($/m3) / SUBZONA
+RESIDENCIALES
+RESIDENCIALES
+RESIDENCIALES
+R1-R2 1°
+R3 2°
+R3 3°
+R3 4°
+R2 2°
+R3 1°
+CUENCA / SUBZONA
+Participación por Cuenca en la 
+Compra de Gas
+(en %)
+NOROESTE
+RESIDENCIALES
+RESIDENCIALES
+NEUQUINA
+CHUBUT
+SANTA CRUZ
+TIERRA DEL FUEGO
+NATURGY BAN S.A.
+TARIFAS FINALES A USUARIOS RESIDENCIALES SIN SUBSIDIOS ENERGÉTICOS FOCALIZADOS (DECRETO N° 943/2025) ABASTECIDOS CON GAS NATURAL - SIN IMPUESTOS
+CATEGORÍA / SUBZONA
+R1
+R2 1°
+R2 2°
+R2 3°
+R3 1°
+R3 2°
+Participación por Ruta en la 
+Compra de Transporte (en %)
+TIPO DE CARGO BUENOS AIRES NORTE
+20.455,62
+77.664,89
+157.386,62
+0  a  1000  m3 319,42
+1001  a  9000  m3 307,25
+más  de  9000  m3 301,38
+0  a  1000  m3 321,69
+1001  a  9000  m3 313,27
+más  de  9000  m3 304,88
+39,28
+COMPONENTES DEL CARGO 
+POR M3 DE CONSUMO
+BUENOS AIRES 
+NORTE
+Diferencias Diarias 
+Acumuladas ($/m3) -4,64
+3,84%
+54,55
+36,37
+COMPOSICIÓN DEL PIST BUENOS AIRES NORTE
+0,00%
+95,20%
+0,12%
+1,67%
+3,01%
+COMPOSICIÓN DEL COSTO DE 
+TRANSPORTE
+BUENOS AIRES 
+NORTE
+Neuquén - GBA I(3) 21,01 22,49%
+TGN - GBA - GBA 6,81 0,69%
+Neuquén - GBA II(4) 27,96 6,49%
+TGS - Neuquén - GBA 26,97 42,82%
+TGS - Tierra del Fuego - GBA 45,68 3,41%
+Neuquén - GBA III(5) 31,47 24,10%
+(1) Usuarios Servicio General P servicio completo según Decreto 730/2022 y modificatorias.
+(2) No incluye precio de gas ni costo de gas retenido.
+(3) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A. y Salliqueló - GBA de TGS.
+(4) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+(5) Incluye la ruta Neuquén - Neuquén de TGS, Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+TIERRA DEL FUEGO
+Participación por Ruta en la 
+Compra de Transporte (en %)
+P1-P2-P3
+P1-P2-P3
+Costo de Gas Retenido ($/m3)
+SDB (como  %  del  precio  a  sus  usuarios)
+P3
+CATEGORÍA / SUBZONA
+Precio en el Punto de Ingreso 
+en el Sistema de Transporte 
+($/m3)
+P1-P2-P3
+Precio Incluido en los Cargos 
+por m3 de Consumo ($/m3)
+Cargo Fijo $/mes
+P1-P2
+214,33
+8,40
+CUENCA / SUBZONA
+Costo de Transporte ($/m3) P1-P2-P3SDB  
+P3
+P1-P2-P3 218,97
+SDB(2)
+TARIFAS FINALES A USUARIOS SGP (P1, P2 y P3 (1)) y SDB ABASTECIDOS CON GAS NATURAL - SIN IMPUESTOS
+NATURGY BAN S.A.
+CATEGORÍA / SUBZONA
+SDB
+Cargo por m3 de consumo
+P1-P2
+Participación por Cuenca en la 
+Compra de Gas
+(en %)
+NOROESTE
+NEUQUINA
+CHUBUT
+SANTA CRUZ
+EMPRESA-RUTA ($/m3) / SUBZONA
+TIPO DE CARGO BUENOS AIRES NORTE
+471.020,25
+959.254,52
+440.905,06
+440.905,06
+1.907.011,58
+1.907.011,58
+1.907.011,58
+1.907.011,58
+0  a  1000  m3 44,41
+1001  a  9000  m3 35,99
+más  de  9000  m3 27,60
+0  a  5000  m3 36,72
+más  de  5000  m3 26,96
+21,44
+8,00
+70,24
+34,80
+56,45
+21,06
+1.577,51
+416,86
+1.179,57
+1.086,64
+COMPOSICIÓN DEL COSTO DE 
+TRANSPORTE(4)
+BUENOS AIRES 
+NORTE
+Neuquén - GBA I(5) 21,01 22,49%
+TGN - GBA - GBA 6,81 0,69%
+Neuquén - GBA II(6) 27,96 6,49%
+TGS - Neuquén - GBA 26,97 42,82%
+TGS - Tierra del Fuego - GBA 45,68 3,41%
+Neuquén - GBA III(7) 31,47 24,10%
+(1) Los usuarios pueden elegir el servicio y régimen tarifario aplicable, siempre que contraten los siguientes mínimos, sujeto a la disponibilidad del servicio: G, 1.000 m3/día; FD-FT, 10.000m3/día e ID-IT, 3.000.000 m3/año. FD-ID Conectados a redes de distribución y FT-IT conectados a gasoductos troncales.
+Las tarifas ID e IT no requieren cargo por reserva de capacidad. Las tarifas FD y FT requieren cargo por reserva de capacidad más cargo por m3 consumido.
+(2) Usuarios Servicio General P no alcanzados por lo establecido en  Decreto 730/2022 y modificatorias.
+(3) Cargo mensual por m3 diario de capacidad de transporte reservada.
+(4) Para los usuarios P3 se debe considerar un Factor de Carga de 0,5.
+(5) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A. y Salliqueló - GBA de TGS.
+(6) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+(7) Incluye la ruta Neuquén - Neuquén de TGS, Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+Nota: En caso de que la Distribuidora sea informada de devoluciones de gas retenido por parte de una transportista, deberá mensualmente notificar fehacientemente a sus Clientes unbundleados el volumen de gas en concepto de dicha devolución que les corresponde a cada uno, ponderando la devolución de gas
+retenido en relación con el volumen de gas transportado por la misma y cada uno de los clientes citados (conforme Informe Técnico N° IF-2021-33291729-APN-GT#ENARGAS obrante en el N° Expediente EX-2021-33013152- -APN-GT#ENARGAS).
+EMPRESA-RUTA / SUBZONA
+Cargo por m3 de Consumo
+P3
+G
+FD
+Participación por Ruta en la 
+Compra de Transporte (en %)
+Cargo por Reserva (m3/día)(3)
+G
+GNC FIRME
+FT
+CATEGORÍA / SUBZONA
+Cargo Fijo $/mes
+P3
+G
+GNC INTERRUMPIBLE
+GNC FIRME
+ID
+FD
+IT
+FT
+IT
+FT
+GNC INTERRUMPIBLE
+GNC FIRME
+ID
+FD
+NATURGY BAN S.A.
+TARIFAS DE DISTRIBUCIÓN A USUARIOS  (1) P3(2), G, GNC, FD, FT, ID e IT ABASTECIDOS CON GAS NATURAL - SIN IMPUESTOS
+TIPO DE CARGO BUENOS AIRES NORTE
+2.542,64
+5.674,31
+7.095,73
+8.747,19
+10.856,83
+13.263,10
+15.839,90
+18.658,36
+27.227,33
+210,46
+210,46
+210,46
+210,46
+210,46
+210,46
+210,46
+276,16
+CONCEPTO BUENOS AIRES NORTE
+74,08%
+74,08%
+74,08%
+74,08%
+74,08%
+74,08%
+74,08%
+56,46%
+R3 2°
+R3 3°
+R3 4°
+TARIFAS DIFERENCIALES FINALES (70%) A USUARIOS RESIDENCIALES SIN SUBSIDIOS ENERGÉTICOS FOCALIZADOS (DECRETO N° 943/2025) ABASTECIDOS CON GAS NATURAL - SIN IMPUESTOS
+CATEGORÍA / SUBZONA
+R1
+R2 1°
+R2 2°
+R2 3°
+NATURGY BAN S.A.
+R3 1°
+CATEGORÍA / SUBZONA
+R1-R2 1°
+R2 2°
+R3 2°
+R3 3°
+R3 4°
+R1-R2 1°
+R2 2°
+R3 2°
+R3 3°
+R3 4°
+R2 3°
+R3 1°
+R2 3°
+R3 1°
+Cargo Fijo $/mes
+R4
+Cargo por m3 de Consumo
+R4
+Incidencia del Precio del
+Gas sobre los cargos
+por m3 consumido (%)
+R4
+TIPO DE CARGO BUENOS AIRES NORTE
+1.816,17
+4.053,08
+5.068,38
+6.247,99
+7.754,88
+9.473,64
+11.314,22
+13.327,40
+19.448,09
+150,33
+150,33
+150,33
+150,33
+150,33
+150,33
+150,33
+197,26
+CONCEPTO BUENOS AIRES NORTE
+74,08%
+74,08%
+74,08%
+74,08%
+74,08%
+74,08%
+74,08%
+56,46%
+R3 3°
+R3 4°
+NATURGY BAN S.A.
+TARIFAS DIFERENCIALES FINALES (50%) A USUARIOS RESIDENCIALES SIN SUBSIDIOS ENERGÉTICOS FOCALIZADOS (DECRETO N° 943/2025) ABASTECIDOS CON GAS NATURAL - SIN IMPUESTOS
+CATEGORÍA / SUBZONA
+R1
+R2 1°
+R2 2°
+R2 3°
+R3 1°
+R3 2°
+R1-R2 1°
+R2 2°
+R3 2°
+R3 3°
+R3 4°
+R2 3°
+R3 1°
+CATEGORÍA / SUBZONA
+Cargo por m3 de Consumo
+R4
+R1-R2 1°
+R3 1°
+R3 2°
+R3 3°
+R3 4°
+R2 2°
+R2 3°Incidencia del Precio del
+Gas sobre los cargos
+por m3 consumido (%)
+R4
+Cargo Fijo $/mes
+R4
+TIPO DE CARGO BUENOS AIRES NORTE
+20.455,62
+77.664,89
+0  a  1000  m3 158,33
+1001  a  9000  m3 146,16
+más  de  9000  m3 140,29
+0  a  1000  m3 160,60
+1001  a  9000  m3 152,18
+más  de  9000  m3 143,79
+COMPONENTES DEL CARGO 
+POR M3 DE CONSUMO
+BUENOS AIRES 
+NORTE
+Precio en el Punto de Ingreso 
+en el Sistema de Transporte 
+($/m3)
+63,83
+Diferencias Diarias 
+Acumuladas ($/m3) -4,64
+Precio Incluido en los Cargos 
+por m3 de Consumo ($/m3) 59,19
+Costo de Gas Retenido ($/m3) 2,45
+Costo de Transporte ($/m3) 54,55
+COMPOSICIÓN DEL PIST BUENOS AIRES NORTE
+0,00%
+95,20%
+0,12%
+1,67%
+3,01%
+COMPOSICIÓN DEL COSTO DE 
+TRANSPORTE
+BUENOS AIRES 
+NORTE
+Neuquén - GBA I(1) 21,01 22,49%
+TGN - GBA - GBA 6,81 0,69%
+Neuquén - GBA II(2) 27,96 6,49%
+TGS - Neuquén - GBA 26,97 42,82%
+TGS - Tierra del Fuego - GBA 45,68 3,41%
+Neuquén - GBA III(3) 31,47 24,10%
+(1) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A. y Salliqueló - GBA de TGS.
+(2) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+(3) Incluye la ruta Neuquén - Neuquén de TGS, Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+CATEGORÍA / SUBZONA
+EBP1-EBP2-EBP3
+EBP1-EBP2-EBP3
+Participación por Ruta en la 
+Compra de Transporte (en %)
+TARIFAS FINALES SEGÚN RÉGIMEN DE ENTIDADES DE BIEN PÚBLICO (EBP) - LEY N° 27.218 y CLUBES DE BARRIO Y PUEBLO - LEY N° 27.098 - SIN IMPUESTOS
+CATEGORÍA / SUBZONA
+Cargo Fijo $/mes EBP1-EBP2EBP3
+EBP1-EBP2-EBP3
+EBP1-EBP2-EBP3
+Cargo por m3 de Consumo
+EBP1-EBP2
+NATURGY BAN S.A.
+EBP3
+EBP1-EBP2-EBP3
+CUENCA / SUBZONA
+SANTA CRUZ
+EMPRESA-RUTA ($/m3) / SUBZONA
+Participación por Cuenca en la 
+Compra de Gas
+(en %)
+NOROESTE
+NEUQUINA
+CHUBUT
+TIERRA DEL FUEGO
+TIPO DE CARGO BUENOS AIRES NORTE
+3.632,34
+8.106,16
+10.136,75
+12.495,98
+15.509,75
+18.947,28
+22.628,43
+26.654,80
+38.896,18
+139,57
+139,57
+139,57
+139,57
+139,57
+139,57
+139,57
+233,43
+COMPONENTES DEL CARGO 
+POR M3 DE CONSUMO
+BUENOS AIRES 
+NORTE
+Precio en el Punto de Ingreso 
+en el Sistema de Transporte 
+($/m3)
+63,83
+Diferencias Diarias 
+Acumuladas ($/m3) -4,64
+Precio Incluido en los Cargos 
+por m3 de Consumo ($/m3) 59,19
+Costo de Gas Retenido ($/m3) 2,45
+Costo de Transporte ($/m3) 77,93
+COMPOSICIÓN DEL PIST BUENOS AIRES NORTE
+0,00%
+95,20%
+0,12%
+1,67%
+3,01%
+COMPOSICIÓN DEL COSTO DE 
+TRANSPORTE
+BUENOS AIRES 
+NORTE
+Neuquén - GBA I(1) 21,01 22,49%
+TGN - GBA - GBA 6,81 0,69%
+Neuquén - GBA II(2) 27,96 6,49%
+TGS - Neuquén - GBA 26,97 42,82%
+TGS - Tierra del Fuego - GBA 45,68 3,41%
+Neuquén - GBA III(3) 31,47 24,10%
+(1) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A. y Salliqueló - GBA de TGS.
+(2) Incluye la ruta Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+(3) Incluye la ruta Neuquén - Neuquén de TGS, Neuquén - Salliqueló de Energía Argentina S.A., Salliqueló - GBA de TGS y GBA - GBA de TGN.
+TARIFAS FINALES SEGÚN RÉGIMEN DE ENTIDADES DE BIEN PÚBLICO (EBP) - LEY N° 27.218 y CLUBES DE BARRIO Y PUEBLO - LEY N° 27.098 - SIN IMPUESTOS
+EBP2 3°
+EBP4
+EBP2 3°
+Participación por Ruta en la 
+Compra de Transporte (en %)
+Cargo Fijo $/mes
+EBP4
+EBP1-EBP2 1°
+EBP3 1° 
+EBP3 1°
+EBP3 2°
+EBP3 3°
+EBP3 4°
+EBP3 2°
+NEUQUINA
+CHUBUT
+SANTA CRUZ
+TIERRA DEL FUEGO
+EBP1 EBP2 1° EBP2 2° EBP2 3° EBP3 1° EBP3 2° EBP3 3° 
+EBP3 4° EBP4
+EBP1 EBP2 1° EBP2 2° EBP2 3° EBP3 1° EBP3 2° EBP3 3° 
+EBP3 4° EBP4
+EBP1
+CATEGORÍA / SUBZONA
+CATEGORÍA / SUBZONA
+EBP1 EBP2 1° EBP2 2° EBP2 3° EBP3 1° EBP3 2° EBP3 3° 
+EBP3 4° EBP4
+CUENCA / SUBZONA
+EBP1 EBP2 1° EBP2 2° EBP2 3° EBP3 1° EBP3 2° EBP3 3° 
+EBP3 4° EBP4
+EMPRESA-RUTA ($/m3) / SUBZONA
+EBP3 3°
+EBP3 4°
+EBP2 2° 
+NATURGY BAN S.A.
+EBP2 1° 
+EBP2 2° 
+Participación por Cuenca en la 
+Compra de Gas
+(en %)
+NOROESTE
+EBP1 EBP2 1° EBP2 2° EBP2 3° EBP3 1° EBP3 2° EBP3 3° 
+EBP3 4° EBP4
+Cargo por m3 de Consumo
+TIPO DE CARGO BUENOS AIRES NORTE
+1.816,17
+4.053,08
+5.068,38
+6.247,99
+7.754,88
+9.473,64
+11.314,22
+13.327,40
+19.448,09
+69,79
+69,79
+69,79
+69,79
+69,79
+69,79
+69,79
+116,72
+CONCEPTO BUENOS AIRES NORTE
+44,16%
+44,16%
+44,16%
+44,16%
+44,16%
+44,16%
+44,16%
+26,41%
+EBP2 2° 
+EBP2 3°
+EBP3 1°
+EBP3 2°
+EBP1-EBP2 1°
+EBP3 2°
+NATURGY BAN S.A.
+EBP3 3°
+EBP3 4°
+Incidencia del Precio del
+Gas sobre los cargos
+por m3 consumido (%)
+Cargo Fijo $/mes
+EBP4
+EBP2 2° 
+EBP2 3°
+EBP3 1° 
+CATEGORÍA / SUBZONA
+EBP1
+EBP2 1° 
+Cargo por m3 de Consumo
+EBP4
+CATEGORÍA / SUBZONA
+EBP1-EBP2 1°
+EBP2 2° 
+EBP3 1° 
+EBP3 3°
+EBP3 4°
+EBP2 3°
+EBP3 2°
+TARIFAS DIFERENCIALES FINALES SEGÚN RÉGIMEN DE ENTIDADES DE BIEN PÚBLICO (EBP) - LEY N° 27.218 y CLUBES DE BARRIO Y PUEBLO - LEY N° 27.098 - SIN IMPUESTOS
+EBP3 3°
+EBP3 4°
+EBP4
+USUARIOS ABASTECIDOS CON GAS PROPANO/BUTANO INDILUIDO DISTRIBUÍDO POR REDES
+TRES SARGENTOS CUCULLÚ
+437,89 450,81
+437,89 450,81
+437,89 450,81
+TRES SARGENTOS CUCULLÚ
+12.495,98 12.495,98
+26.654,80 26.654,80
+26.654,80 26.654,80
+Precio de compra 
+reconocido ($/m3 de 
+9.300 kcal.)
+Diferencias diarias 
+acumuladas ($/m3 de 
+9.300 kcal.)
+Precio final incluido en 
+los cargos ($/m3 de 
+9.300 kcal.)
+Precio de compra 
+reconocido 
+($/tonelada)
+317,28 0,00 317,28 409.393,62
+317,28 0,00 317,28 409.393,62
+R2 - $/m3 de 9.300 kcal.
+SGP - $/m3 de 9.300 kcal.
+R2 - $/mes
+SGP - $/mes
+CUCULLÚ
+NATURGY BAN S.A.
+BUENOS AIRES GAS S.A. - BAGSA
+TRES SARGENTOS
+ TARIFAS FINALES A USUARIOS RESIDENCIALES SIN SUBSIDIOS ENERGÉTICOS FOCALIZADOS (DECRETO N° 943/2025) Y SGP - SIN IMPUESTOS 
+CARGO FIJO $/MES
+CATEGORÍA / LOCALIDAD
+R1 - $/mes
+LOCALIDAD / CONCEPTO
+CARGO POR M3 DE CONSUMO
+CATEGORÍA / LOCALIDAD
+R1 - $/m3 de 9.300 kcal.
+   Composición del precio del gas incluido en cada uno de los cargos por m3 consumido (en $/m3) - Todos los usuarios
+USUARIOS ABASTECIDOS CON GAS PROPANO/BUTANO INDILUIDO DISTRIBUÍDO POR REDES
+TRES SARGENTOS CUCULLÚ
+306,52 315,57
+306,52 315,57
+306,52 315,57
+TRES SARGENTOS CUCULLÚ
+8.747,19 8.747,19
+18.658,36 18.658,36
+18.658,36 18.658,36
+TRES SARGENTOS CUCULLÚ
+72,46% 70,38%
+72,46% 70,38%
+72,46% 70,38%
+R2 - $/m3 de 9.300 kcal.
+SGP - $/m3 de 9.300 kcal.
+R2 - $/mes
+SGP - $/mes
+CARGO POR M3 DE CONSUMO
+NATURGY BAN S.A.
+BUENOS AIRES GAS S.A. - BAGSA
+ TARIFAS DIFERENCIALES FINALES (70%) A USUARIOS RESIDENCIALES SIN SUBSIDIOS ENERGÉTICOS FOCALIZADOS (DECRETO N° 943/2025) Y SGP - SIN IMPUESTOS 
+Incidencia del Precio del Gas sobre los cargos por m3 consumidos (%)
+CATEGORÍA / LOCALIDAD
+R1 - $/m3 de 9.300 kcal.
+CARGO FIJO $/MES
+CATEGORÍA / LOCALIDAD
+R1 - $/mes
+R2
+SGP
+CATEGORÍA / LOCALIDAD
+R1
+USUARIOS ABASTECIDOS CON GAS PROPANO/BUTANO INDILUIDO DISTRIBUÍDO POR REDES
+TRES SARGENTOS CUCULLÚ
+218,95 225,41
+218,95 225,41
+TRES SARGENTOS CUCULLÚ
+6.247,99 6.247,99
+13.327,40 13.327,40
+TRES SARGENTOS CUCULLÚ
+72,46% 70,38%
+72,46% 70,38%
+R1 - $/mes
+CATEGORÍA / LOCALIDAD
+R1
+R1 - $/m3 de 9.300 kcal.
+CARGO FIJO $/MES
+CATEGORÍA / LOCALIDAD
+R2 - $/m3 de 9.300 kcal.
+R2 - $/mes
+ TARIFAS DIFERENCIALES FINALES (50%) A USUARIOS RESIDENCIALES SIN SUBSIDIOS ENERGÉTICOS FOCALIZADOS (DECRETO N° 943/2025) - SIN IMPUESTOS 
+R2
+NATURGY BAN S.A.
+Incidencia del Precio del Gas sobre los cargos por m3 consumidos (%)
+CARGO POR M3 DE CONSUMO
+CATEGORÍA / LOCALIDAD
+BUENOS AIRES GAS S.A. - BAGSA
+USUARIOS ABASTECIDOS CON GAS PROPANO/BUTANO INDILUIDO DISTRIBUÍDO POR REDES
+TRES SARGENTOS CUCULLÚ
+202,31 215,23
+202,31 215,23
+TRES SARGENTOS CUCULLÚ
+12.495,98 12.495,98
+26.654,80 26.654,80
+Precio de compra 
+reconocido ($/m3 de 
+9.300 kcal.)
+Diferencias diarias 
+acumuladas ($/m3 de 
+9.300 kcal.)
+Precio final incluido en 
+los cargos ($/m3 de 
+9.300 kcal.)
+Precio de compra 
+reconocido 
+($/tonelada)
+81,70 0,00 81,70 105.419,35
+81,70 0,00 81,70 105.419,35
+EBP2 - $/mes
+NATURGY BAN S.A.
+BUENOS AIRES GAS S.A. - BAGSA
+TARIFAS FINALES SEGÚN RÉGIMEN DE ENTIDADES DE BIEN PÚBLICO (EBP) - LEY N° 27.218 y CLUBES DE BARRIO Y PUEBLO - LEY N° 27.098 - SIN IMPUESTOS
+CARGO FIJO $/MES
+EBP2 - $/m3 de 9.300 kcal.
+CARGO POR M3 DE CONSUMO
+CATEGORÍA / LOCALIDAD
+EBP1 - $/m3 de 9.300 kcal.
+LOCALIDAD / CONCEPTO
+TRES SARGENTOS
+CUCULLÚ
+   Composición del precio del gas incluido en cada uno de los cargos por m3 consumido (en $/m3)
+CATEGORÍA / LOCALIDAD
+EBP1 - $/mes
+USUARIOS ABASTECIDOS CON GAS PROPANO/BUTANO INDILUIDO DISTRIBUÍDO POR REDES
+TRES SARGENTOS CUCULLÚ
+101,16 107,62
+101,16 107,62
+TRES SARGENTOS CUCULLÚ
+6.247,99 6.247,99
+13.327,40 13.327,40
+TRES SARGENTOS CUCULLÚ
+40,38% 37,96%
+40,38% 37,96%
+EBP2 - $/m3 de 9.300 kcal.
+EBP2 - $/mes
+EBP2
+CATEGORÍA / LOCALIDAD
+EBP1
+CARGO POR M3 DE CONSUMO
+CATEGORÍA / LOCALIDAD
+EBP1 - $/m3 de 9.300 kcal.
+CATEGORÍA / LOCALIDAD
+EBP1 - $/mes
+NATURGY BAN S.A.
+BUENOS AIRES GAS S.A. - BAGSA
+TARIFAS DIFERENCIALES FINALES SEGÚN RÉGIMEN DE ENTIDADES DE BIEN PÚBLICO (EBP) - LEY N° 27.218 y CLUBES DE BARRIO Y PUEBLO - LEY N° 27.098 - SIN IMPUESTOS
+CARGO FIJO $/MES
+Incidencia del Precio del Gas sobre los cargos por m3 consumidos (%)
+ITEM IMPORTE
+1 19.151     
+2 13.223     
+3 13.223     
+4 13.223     
+5 13.223     
+6 237.111   
+7 276.629   
+8 4.560        
+9 189.993   
+10 4.408        
+11 14.439     
+12 92.716     
+13 31.919     
+14 57.758     
+15 132.235   
+16 405.824   
+17 95.756     
+18 36.479     
+19 109.436   
+20 91.196     
+21 576.057   
+22 527.419   
+IMPORTES MÁXIMOS DE TASAS Y CARGOS AUTORIZADOS A COBRAR
+CONCEPTO
+Examen para instalador
+Matrícula instalador 1ra. Categoría
+Matrícula instalador 2da. Categoría
+Matrícula instalador 3ra. Categoría
+Reposición carnet instalador
+Matrícula de empresas constructoras de obras por terceros
+Renovación de la matrícula de empresas constructoras de obras por terceros, fuera de término
+Soldadura y/o perforación de tubería de servicio externa, sin zanjeo y tapada; y sin reparación de vereda (Baja y Media Presión)
+Colocación de medidor menor o igual a 10 m3/h
+Colocación de medidor mayor a 10 m3/h
+Reposición de medidor extraviado, sin colocación (Baja y Media Presión)
+Cargo por reconexión en Alta Presión - Reapertura de llave por causa imputable al usuario
+Conexión y habilitación del servicio con zanjeo y tapada - en Alta Presión
+Copia de plano
+Rotura y reparación de veredas del servicio (Baja Presión / Media Presión)
+Gestión y envío de aviso de deuda común bajo firma
+Notificación fehaciente de aviso de deuda mediante carta documento o telegrama
+Zanjeo y tapada del servicio (Baja Presión / Media Presión)
+Cargo por reconexión domiciliaria - Reapertura de llave por causa imputable al usuario, menor o igual a 10 m3/h (Baja Presión / Media Presión)
+Cargo por reconexión - Reapertura de llave por causa imputable al usuario, mayor 10 m3/h
+Servicio completo sin zanjeo y tapada (menor o igual a 1") y sin reparación de vereda (Baja y Media Presión)
+Servicio completo sin zanjeo y tapada (mayor a 1") y sin reparación de vereda (Baja y Media Presión), no unifamiliar
+NATURGY BAN S.A. BUENOS AIRES NORTE 208,94
+CAPITAL FEDERAL 203,76
+BUENOS AIRES  203,76
+MENDOZA 214,18
+SAN JUAN 214,18
+SAN LUIS 214,18
+CÓRDOBA 214,29
+LA RIOJA Y CATAMARCA 214,29
+SANTA FE 212,52
+BUENOS AIRES 212,52
+ENTRE RÍOS 214,73
+FORMOSA 214,73
+CHACO 214,73
+CORRIENTES 214,73
+SALTA 212,74
+LA PUNA 212,74
+TUCUMÁN 212,74
+BUENOS AIRES 212,03
+BAHÍA BLANCA 212,80
+LA PAMPA SUR 223,71
+LA PAMPA NORTE 220,40
+BUENOS AIRES SUR 207,12
+CHUBUT SUR 199,01
+PROV. DE NEUQUÉN 216,88
+CORDILLERANO 213,46
+SANTA CRUZ SUR 189,64
+TIERRA DEL FUEGO 183,96
+REDENGAS S.A. PARANÁ 213,68
+NATURGY NOA S.A.
+CAMUZZI GAS PAMPEANA S.A.  
+CAMUZZI GAS DEL SUR S.A. 
+Precio Anual Uniforme - PAU
+PRESTADORA SUBZONA TARIFARIA $/m3
+METROGAS S.A. 
+DISTRIBUIDORA GAS CUYANA S.A.
+DISTRIBUIDORA GAS DEL CENTRO S.A.
+LITORAL GAS S.A. 
+GASNEA S.A. 
+ 
+ 
+ 
+ 
+República Argentina - Poder Ejecutivo Nacional
+Año de la Grandeza Argentina
+ 
+Hoja Adicional de Firmas
+Anexo
+ 
+Número: 
+ 
+ 
+Referencia: NATURGY BAN - ANEXO - SEP 26
+ 
+El documento fue importado por el sistema GEDO con un total de 15 pagina/s.
+ 
+ 

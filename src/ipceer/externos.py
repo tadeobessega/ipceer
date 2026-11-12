@@ -16,16 +16,17 @@ from .indice import NACIONAL
 log = logging.getLogger(__name__)
 
 
-def tarifas(cfg: Config) -> pl.DataFrame:
+def tarifas(cfg: Config, solo_conceptos_manuales: bool = False) -> pl.DataFrame:
     """Tarifas cargadas a mano (config/regulados/tarifas.csv) más las leídas automáticamente de los
-    anexos de Infoleg que pasaron el control (normas.tarifas_automaticas, D-34). Si un mismo concepto
+    anexos de Infoleg y de los boletines de la Ciudad y la Provincia que pasaron el control
+    (normas.tarifas_automaticas, D-34; boletines.tarifas_automaticas, D-40). Si un mismo concepto
     y fecha de inicio está en las dos, manda la carga manual."""
     ruta = cfg.dir_config / "regulados" / "tarifas.csv"
     sch = {"codigo": pl.Utf8, "valor": pl.Float64}
     manual = pl.read_csv(ruta, schema_overrides=sch) if ruta.exists() else pl.DataFrame()
     try:
-        from .normas import tarifas_automaticas
-        auto = tarifas_automaticas(cfg)
+        from . import boletines, normas
+        auto = normas.tarifas_automaticas(cfg) + boletines.tarifas_automaticas(cfg)
     except Exception as e:
         log.warning("Tarifas automáticas: %s", e)
         auto = []
@@ -35,7 +36,43 @@ def tarifas(cfg: Config) -> pl.DataFrame:
     if manual.is_empty():
         return a
     a = a.join(manual.select("concepto", "vigente_desde"), on=["concepto", "vigente_desde"], how="anti")
+    if solo_conceptos_manuales:
+        # el índice de regulados usa solo los conceptos que ya estaban en la carga manual: lo leído
+        # automáticamente le agrega meses, no conceptos nuevos (eso cambiaría el método, D-38)
+        a = a.filter(pl.col("concepto").is_in(manual["concepto"].unique().to_list()))
     return pl.concat([manual, a.select(manual.columns)], how="vertical_relaxed")
+
+
+COLS_BASE = ["jurisdiccion", "servicio", "empresa", "categoria", "subzona", "componente", "concepto", "valor", "unidad",
+             "vigente_desde", "vigente_hasta", "rubro", "codigo", "region", "norma", "fuente_url", "origen", "control"]
+
+
+def base_regulados(cfg: Config) -> pl.DataFrame:
+    """Base única de tarifas reguladas para análisis posteriores (D-38): carga manual más todo lo
+    leído automáticamente de Infoleg y de los boletines de la Ciudad y la Provincia, incluidos los
+    valores que no pasaron el control (columna `control`). No se calcula nada: es el insumo para
+    medir, por ejemplo, la variación real de las tarifas por jurisdicción o la canasta completa."""
+    import csv as _csv
+    from . import boletines, normas
+    filas = []
+    ruta = cfg.dir_config / "regulados" / "tarifas.csv"
+    if ruta.exists():
+        for r in _csv.DictReader(open(ruta, encoding="utf-8")):
+            jur = "Ciudad" if "CABA" in r.get("norma", "") or r["concepto"].startswith(("Colectivo líneas de la Ciudad", "Subte")) \
+                else "Provincia" if "PBA" in r.get("norma", "") else "Nación"
+            filas.append({**r, "jurisdiccion": jur, "servicio": r["rubro"], "origen": "manual", "control": "ok"})
+    for p in (normas._dir(cfg) / "tarifas_auto.csv", boletines._dir(cfg) / "tarifas_caba.csv",
+              boletines._dir(cfg) / "tarifas_pba.csv"):
+        if p.exists():
+            filas += [{**r, "origen": r.get("origen") or "automatico", "jurisdiccion": r.get("jurisdiccion") or "Nación"}
+                      for r in _csv.DictReader(open(p, encoding="utf-8"))]
+    if not filas:
+        return pl.DataFrame()
+    df = pl.DataFrame([{c: (f.get(c) or None) for c in COLS_BASE} for f in filas], infer_schema_length=None)
+    df = df.with_columns(pl.col("valor").cast(pl.Float64, strict=False)).sort("jurisdiccion", "servicio", "concepto", "vigente_desde")
+    out = cfg.ruta("resultados") / "regulados_base.csv"
+    df.write_csv(out)
+    return df
 
 
 def _meses(desde: date, hasta: date) -> list[str]:
@@ -74,7 +111,7 @@ def precio_mensual(t: pl.DataFrame) -> pl.DataFrame:
 def indice_regulados(cfg: Config) -> pl.DataFrame | None:
     """Índice mensual por clase y región (formato de indices_mensual.csv). La variación de un mes
     existe solo si el mes y el anterior tienen precio; si no, ese mes queda sin dato."""
-    t = tarifas(cfg)
+    t = tarifas(cfg, solo_conceptos_manuales=True)
     if t.is_empty():
         return None
     pm = precio_mensual(t)

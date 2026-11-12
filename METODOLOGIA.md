@@ -255,7 +255,7 @@ el total no se presenta como nivel general.
 - **D-31. Validación.** Réplica (mismas clases, mismos pesos) y nivel general, por región y por clase
   (`resultados/validacion_indec.csv`).
 
-### 5.1 Regulados, salud y rubros sin precios propios (D-34 a D-36)
+### 5.1 Regulados, salud y rubros sin precios propios (D-34 a D-41)
 
 - **D-34. Normas de tarifas desde Infoleg.** El Boletín Oficial no permite robots (robots.txt), así
   que se usa Infoleg, que carga las mismas normas con sus anexos y no lo prohíbe. Infoleg numera las
@@ -311,6 +311,60 @@ el total no se presenta como nivel general.
   (D-34). Advertencia: "bienes" acá es el del INDEC; con nuestro índice de bienes la relación va a
   ser más débil, porque el nuestro es más ruidoso.
 
+- **D-38 (12 de noviembre de 2026). Gas leído solo, historia hacia atrás y base de regulados.**
+  (a) En las resoluciones del ENARGAS sobre Metrogas y Naturgy BAN se lee la página "residenciales
+  sin subsidios" del anexo: los 9 cargos fijos (R1, R2 1° a 3°, R3 1° a 4°, R4) de cada subzona
+  (Metrogas: Ciudad y conurbano; Naturgy BAN: conurbano norte) y el primer cargo por m3 (R1-R2 1°,
+  que en los cuadros de septiembre de 2026 es igual al de R2 2° y R2 3°; los demás se agrupan
+  distinto según la empresa y no se toman). La fecha de vigencia sale del articulado ("entrarán en
+  vigencia a partir del 1° de septiembre de 2026"). Las otras distribuidoras se registran pero no
+  se leen (no son del AMBA). (b) Además de los ids nuevos, cada corrida revisa 900 ids hacia atrás
+  hasta `historia_hasta_id` (402000, diciembre de 2023), para reconstruir la historia de las
+  tarifas; lleva unas 30 corridas. (c) Como ahora se leen valores viejos, el control de
+  plausibilidad compara contra el valor del mismo concepto más cercano en el tiempo (anterior o
+  posterior) y permite entre −30% y +60% por cada mes de distancia. (d) El texto de cada anexo
+  leído se archiva (`data/otras/normas/textos/`) para poder releerlo si cambia el método. (e) Todo
+  valor se guarda con jurisdicción, servicio, empresa, categoría, subzona y componente, y
+  `resultados/regulados_base.csv` junta carga manual y lectura automática (con su control), como
+  base para medir más adelante la variación real de las tarifas por jurisdicción y la canasta
+  completa. No se calcula ningún indicador nuevo con ella todavía. (f) El índice de regulados que
+  va a la validación y a la variante "completo" usa solo los conceptos que ya estaban en la carga
+  manual: lo leído solo le agrega meses, no conceptos (sumar conceptos sería un cambio de método
+  sin probar). (g) La canasta de servicios valoriza el gas con Metrogas Ciudad R2 2° (60,5 m3 por
+  mes son 726 al año, categoría R2 2°, de 651 a 800 m3) más 60,5 m3 al cargo por m3; antes faltaba
+  el cargo fijo de R2.
+- **D-39. Alquileres de GBA Norte, Oeste y Sur (Zonaprop).** Se bajan los informes mensuales de
+  las tres zonas además del de la Ciudad y se lee el alquiler medio de un 2 ambientes y su variación
+  (la frase de GBA es "El precio medio de alquiler de un departamento de 2 ambientes en GBA Norte se
+  ubica en ..."). Se muestran en la pestaña Precios frescos y alquileres, pero el índice sigue
+  usando solo la Ciudad hasta probar contra el INDEC si promediar las cuatro zonas (propuesta:
+  media geométrica con 25% cada una) reduce el error de 04.1.1 en GBA.
+- **D-40. Boletos y subte de la Ciudad y la Provincia, desde sus boletines.** Ciudad: la API pública
+  del Boletín Oficial porteño devuelve cada edición entera (normas, sumarios y anexos) en un JSON;
+  se recorre por número de edición (hacia adelante y 150 hacia atrás por corrida hasta diciembre de
+  2023), con un segundo de pausa. Se registran las normas de tarifas (transporte, subte, taxis,
+  estacionamiento, peajes, unidad tarifaria) y se leen: el cuadro mensual de colectivos de la
+  Secretaría de Transporte (es una imagen: se lee con OCR, tesseract; secciones 0-3, 3-6, 6-12 y
+  12-27 km de la tarifa plena; el mes sale de la referencia "Aprueba cuadros tarifarios - octubre
+  2026") y el cuadro del subte de SBASE (texto; 1 a 20 viajes con SUBE registrada; el mes sale de la
+  referencia "CUADROS TARIFARIOS NOVIEMBRE 2026" o, si no está, del 5° día hábil después de
+  publicado). Provincia: en normas.gba.gob.ar se buscan "valores tarifarios" y "cuadro tarifario"
+  desde 2024; se registran todas (colectivos, electricidad provincial, agua de ABSA, peajes de
+  AUBASA, fluvial) y se lee la tabla de servicios urbanos de GBA (0-3 km, tarifa nueva y sin
+  nominar) de las resoluciones del Ministerio de Transporte sobre autotransporte. Limitación: la
+  Provincia actualiza mes a mes por fórmula sin una resolución nueva cada vez (entre 2025 y 2026 hay
+  4 resoluciones: 81/25, 342/25, 66/26 y 122/26), así que los meses intermedios siguen en la carga
+  manual. Los robots.txt de los dos sitios no restringen nada. Verificación: octubre de 2026 de
+  colectivos de la Ciudad leído por OCR (0-3 km $920,48) igual a la carga manual; subte de
+  noviembre $1.887,00 contra $1.888 de la nota periodística cargada a mano.
+- **D-41. Precios de autos (Cámara del Comercio Automotor).** La guía oficial mensual de la CCA
+  (PDF público, robots.txt sin restricciones) se archiva una vez por mes y se pasa a una tabla larga
+  (marca, modelo, versión, año, valor, moneda) usando la posición de cada número en la página: cada
+  valor va a la columna del año cuyo borde derecho tiene más cerca. Noviembre de 2026: 18.038
+  valores, 70 marcas, 783 precios de 0 km (en dólares) y el resto usados (miles de pesos). Queda
+  guardada para 07.1.1 (compra de vehículos); no entra a ninguna variante hasta tener al menos dos
+  meses y compararla con el INDEC.
+
 ## 6. Qué falta para el índice completo
 
 Peso en la canasta nacional del INDEC (divisiones de `config/ponderadores_division.csv` ponderadas por
@@ -321,10 +375,10 @@ región) y estado:
 | Alimentos y bebidas no alcohólicas (01) | 27,0% | Medido con SEPA; dentro de él, carnes 8,9%, verduras 2,7% y frutas 1,3% están débiles | Comercios tradicionales (panaderías, carnicerías, verdulerías, almacenes) y frescos por kilo |
 | Bebidas alcohólicas y tabaco (02) | 3,5% | Bebidas medidas; tabaco no | Precios de cigarrillos (listas de las tabacaleras) |
 | Ropa y calzado (03) | 9,9% | Variante web, sin historia | Juntar historia y probar contra el INDEC |
-| Vivienda, agua, electricidad, gas (04) | 9,4% | Electricidad leída sola de Infoleg (D-34); gas y agua detectados, se cargan a mano; Zonaprop CABA | Lectura automática de gas y agua, cargo fijo de gas, factura base del agua, alquileres fuera de CABA, expensas |
+| Vivienda, agua, electricidad, gas (04) | 9,4% | Electricidad y gas (Metrogas, Naturgy BAN) leídos solos de Infoleg (D-34, D-38); agua detectada, a mano; Zonaprop Ciudad en el índice y GBA guardado (D-39) | Factura base del agua (AySA), probar alquileres de GBA, expensas (sin fuente pública) |
 | Equipamiento del hogar (05) | 6,4% | Limpieza medida; electrodomésticos en variante web | Historia web, servicio doméstico (salario por norma) |
 | Salud (06) | 8,0% | Prepagas desde la Superintendencia (D-35) y farmacias en línea, en variantes | Historia para probarlas; servicios médicos y odontológicos |
-| Transporte (07) | 11,0% | Combustibles medidos; normas nacionales de transporte detectadas; boletos de Ciudad y Provincia a mano | Boletos de Ciudad y Provincia automáticos (no salen en Infoleg), precios de autos |
+| Transporte (07) | 11,0% | Combustibles medidos; colectivos y subte de la Ciudad leídos de su boletín; colectivos de la Provincia de sus resoluciones (D-40); guía de autos de la CCA guardada (D-41) | Meses de la Provincia sin resolución, colectivos y trenes nacionales (anexos de Infoleg), probar autos contra el INDEC |
 | Comunicación (08) | 2,8% | No medido | Planes de telefonía e internet |
 | Recreación y cultura (09) | 7,3% | Muy poco (diarios, útiles) | Servicios digitales, turismo, libros |
 | Educación (10) | 2,3% | No medido | Cuotas de colegios privados |
@@ -354,8 +408,9 @@ cada uno en la pestaña Metodología del tablero.
     de 2 días (`descarga.procesar_local_tras_dias`); así, si GitHub falla, el dato llega igual con un
     día de demora. Sigue bajando y guardando los zips (el archivo propio de SEPA), que no consume
     procesador.
-  - `otras_fuentes.yml` (todos los días 09:41) baja Cañuelas, Mercado Central, Zonaprop, PAMI, BCRA,
-    prepagas y normas, y deja `otras.tar.gz`. La PC lo trae (`ipceer otras --desde-github`) en lugar
+  - `otras_fuentes.yml` (todos los días 09:41) baja Cañuelas, Mercado Central, Zonaprop (Ciudad y
+    GBA), PAMI, BCRA, prepagas, normas de Infoleg, boletines de la Ciudad y la Provincia (con OCR) y
+    la guía de autos de la CCA, y deja `otras.tar.gz`. La PC lo trae (`ipceer otras --desde-github`) en lugar
     de bajarlo; si GitHub no responde, lo baja ella.
   - `precios_web.yml` baja las tiendas en línea en cuatro partes; la PC trae el resultado.
   - En la PC quedan: la base de unos 15 GB (paneles), la consolidación semanal y mensual, la

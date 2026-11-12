@@ -436,6 +436,8 @@ mapa por provincia y partido, índice diario contra un día base para eventos, h
 cada uno en la pestaña Metodología del tablero.
 
 ## 8. Dónde corre cada parte (D-32, D-33)
+  *Retirado en noviembre de 2026:* los dos gráficos pasaron a la página de coyuntura del CEER
+  (publicaciones-ceer, pestaña Inflación), donde la carne se calcula también para el total del país.
 
 - **D-33. Plan A (11 de noviembre de 2026): bajar, procesar y almacenar en internet; la PC solo calcula.**
   - `respaldo_sepa.yml` baja los zips de SEPA a las 04:47, 08:17 y 20:17 y los guarda en el release

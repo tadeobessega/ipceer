@@ -177,6 +177,47 @@ def externos(cfg: Config) -> list[dict]:
     return pl.read_csv(ruta, schema_overrides={"valor": pl.Float64, "periodo": pl.Utf8, "region": pl.Utf8}).to_dicts()
 
 
+def errores_consultoras(cfg: Config) -> list[dict]:
+    """Error de cada estimación mensual publicada (config/externos.csv) contra el dato del INDEC del
+    mismo mes, rubro y región (D-29). Usa la variación mensual que publica el INDEC (v_m_IPC). Total
+    se compara con el nivel general y alimentos con "Alimentos y bebidas no alcohólicas"; sin región
+    se toma Nacional. Las regiones que el INDEC no publica (CABA, Bahía Blanca) quedan sin error."""
+    import io
+    from . import indec
+    ext = externos(cfg)
+    ruta = indec.directorio(cfg) / "serie_ipc_divisiones.csv"
+    if not ext or not ruta.exists():
+        return []
+    crudo = ruta.read_bytes()
+    try:
+        texto = crudo.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        texto = crudo.decode("latin-1")
+    df = pl.read_csv(io.StringIO(texto), separator=";", infer_schema=False)
+    of = {}
+    for cod, reg, per, v in df.select("Codigo", "Region", "Periodo", "v_m_IPC").iter_rows():
+        try:
+            of[(cod.strip(), reg.strip(), f"{per[:4]}-{per[4:6]}")] = float(v.replace(",", "."))
+        except (AttributeError, ValueError):
+            continue
+    cod = {"total": "0", "alimentos": "01"}
+    out, vistos = [], set()
+    for x in ext:
+        if x.get("medida") not in ("mensual", "proyeccion_mensual") or x.get("valor") is None:
+            continue
+        c = cod.get((x.get("rubro") or "").lower())
+        reg = x.get("region") or "Nacional"
+        clave = (x["fuente"], x["periodo"], x["medida"], x["rubro"], reg, x["valor"])
+        if not c or clave in vistos:
+            continue
+        vistos.add(clave)
+        o = of.get((c, reg, x["periodo"]))
+        out.append({"fuente": x["fuente"], "periodo": x["periodo"], "medida": x["medida"], "rubro": x["rubro"],
+                    "region": reg, "valor": x["valor"], "indec": o,
+                    "error": round(x["valor"] - o, 2) if o is not None else None, "url": x.get("url")})
+    return sorted(out, key=lambda r: (r["periodo"], r["rubro"], r["region"], r["fuente"]), reverse=False)
+
+
 def canasta_servicios(cfg: Config) -> dict:
     """Costo mensual de la canasta de servicios (config/regulados/servicios.yaml). Solo usa
     componentes con cantidad y tarifa con fuente; un mes tiene total solo si están todos."""

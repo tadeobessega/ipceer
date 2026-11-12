@@ -1,28 +1,15 @@
 name: Sonda de fuentes
-# Prueba si GitHub llega a cada fuente pública antes de programar su descarga. No guarda nada.
+# Prueba si GitHub llega a fuentes nuevas antes de programar su descarga. No guarda nada.
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [".github/workflows/sonda_fuentes.yml"]
+    paths: [".github/workflows/sonda_fuentes.yml", "scripts/sondas/**"]
 jobs:
   sonda:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - run: |
-          ua="IPCEER/1.0 (+https://github.com/tadeobessega/ipceer)"
-          for u in \
-            "https://cuadrostarifarios.sssalud.gob.ar/api/getPeriodo" \
-            "https://cuadrostarifarios.sssalud.gob.ar/api/getCuadrosTarifarios?page=1&per_page=5&periodo=202611&rnemp=614081" \
-            "https://servicios.infoleg.gob.ar/infolegInternet/verNorma.do?id=429488" \
-            "https://servicios.infoleg.gob.ar/infolegInternet/anexos/425000-429999/425421/res243-2.pdf" \
-            "https://www.argentina.gob.ar/normativa/nacional/norma-423435/texto" \
-            "https://www.enargas.gob.ar/secciones/precios-y-tarifas/cuadros-tarifarios.php" \
-            "https://www.buenosaires.gob.ar/movilidad/transporte-publico/tarifas" \
-            "https://www.indec.gob.ar/ftp/cuadros/economia/sh_ipc_precios_promedio.xls" \
-            "https://www.farmacity.com/api/catalog_system/pub/products/search?_from=0&_to=1" \
-            "https://datos.jus.gob.ar/dataset/base-de-datos-legislativos-infoleg" ; do
-            code=$(curl -s -o out.bin -w "%{http_code} %{size_download} %{time_total}" -A "$ua" -m 40 "$u")
-            echo "$code  $u"; head -c 300 out.bin | tr -d '\n'; echo; echo
-          done
+      - uses: actions/checkout@v4
+      - run: pip install requests pypdf
+      - run: python scripts/sondas/sonda2.py

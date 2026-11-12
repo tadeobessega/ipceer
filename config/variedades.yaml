@@ -1,0 +1,101 @@
+# Variedades dentro de cada clase de alimentos y bebidas.
+#
+# Para qué sirve: el INDEC no promedia todos los artículos de una clase por igual. Su nivel
+# elemental es la VARIEDAD (por ejemplo "fideos secos guiseros", "leche fresca entera en sachet"),
+# cada una con su ponderador de gasto (Metodología INDEC n° 32, apartados 5.1 y 5.2). En SEPA, en
+# cambio, una clase tiene miles de artículos y las variedades con muchas marcas y presentaciones
+# (galletitas, golosinas, fiambres) pesan mucho más que las que tienen pocas (pan, leche, azúcar).
+# Estas reglas agrupan los artículos de SEPA en variedades para poder promediar primero dentro de
+# cada variedad y después entre variedades (estratificación).
+#
+# Reglas: expresiones regulares sobre la descripción normalizada (minúsculas, sin tildes, todo lo
+# que no es letra o número pasa a espacio, con un espacio al principio y al final). Gana la primera
+# variedad cuyo patrón `incluir` matchea y cuyo `excluir` no. Lo que no matchea ninguna queda en
+# "otros" de su clase.
+#
+# `peso`: importancia relativa de la variedad dentro de su clase. El INDEC no publica los
+# ponderadores por variedad; estos pesos son una aproximación propia a partir de la estructura de
+# la canasta básica alimentaria del INDEC para GBA (gramos por adulto equivalente por precio
+# medio) y de la composición de la canasta del IPC. Se documentan en METODOLOGIA.md (decisión D-12).
+# Cambiarlos solo si mejora la prueba contra el INDEC.
+
+"01.1.1":   # Pan y cereales
+  - {id: pan_fresco, peso: 30, incluir: '\b(pan (frances|flauta|mignon|de campo|blanco|felipe)|flautitas?|mignon|felipes?)\b', excluir: 'rallado|lactal|hamburg|pancho|dulce|tostad|rallar|congel'}
+  - {id: pan_envasado, peso: 6, incluir: '\b(pan (lactal|de molde|de mesa|para hamburguesa|para pancho|integral|de salvado|arabe|de viena)|lactal|bollitos?|panes)\b', excluir: 'rallado|dulce'}
+  - {id: facturas_tortas, peso: 6, incluir: '\b(facturas?|medialunas?|bizcochos?|budin|budines|magdalenas?|vainillas|pan dulce|bizcochuelo|tortas?|roscas?|prepizzas?|pizzas?)\b'}
+  - {id: galletitas_agua, peso: 7, incluir: '\b(galletitas?|galletas?|crackers?|tostadas?|grisines|bizcochitos?)\b.*\b(agua|crackers?|saladas?|salvado|integral|tostadas?|grisines|criollitas?)\b|\b(crackers?|tostadas|grisines|criollitas)\b'}
+  - {id: galletitas_dulces, peso: 9, incluir: '\b(galletitas?|galletas?|obleas?|cookies?)\b'}
+  - {id: arroz, peso: 6, incluir: '\barroz\b', excluir: 'galleta|alfajor|crocante|bebida|leche'}
+  - {id: harinas, peso: 6, incluir: '\b(harina|polenta|semola|premezcla|fecula|maicena|almidon)\b', excluir: 'galletit|bizcochuelo|rebozador'}
+  - {id: fideos_secos, peso: 12, incluir: '\b(fideos?|spaghetti|tallarin|tallarines|mostachol|tirabuzon|codito|coditos|mo[nn]o|monos?|municion|dedalitos?|tallarin|cabello de angel|penne|fusilli|rigatti|tirabuzones|avemaria|ave maria|nidos?|lasagna|canelones?|pastas? secas?|guiseros)\b', excluir: 'fresc|rellen|ravioles|sorrent|capelet|noquis|sopa instant'}
+  - {id: pastas_frescas, peso: 8, incluir: '\b(ravioles|sorrentinos?|capelettis?|agnolottis?|noquis|gnocchi|tapas? (de|para) (empanadas?|tarta|pascualina)|masa para (tarta|empanadas?)|fideos? fresc|tallarines? fresc|pastas? fresc)\b'}
+  - {id: cereales, peso: 4, incluir: '\b(cereales?|copos|avena|granola|corn flakes|muesli|barras? de cereal)\b'}
+  - {id: rebozadores, peso: 2, incluir: '\b(pan rallado|rebozador|rebozadores)\b'}
+
+"01.1.2":   # Carnes y derivados
+  - {id: carne_vacuna, peso: 46, incluir: '\b(asado|nalga|cuadril|carnaza|paleta|bola de lomo|peceto|vacio|matambre|falda|osobuco|roast ?beef|lomo|bife|bifes|tapa de asado|colita|entra[nn]a|tortuguita|carne picada|picada|churrasco|aguja|palomita|cuadrada|tapa de nalga|novillo|ternera|vacuna|vacuno)\b', excluir: 'pollo|cerdo|hamburg|milanes|empanad|salchich|medallon|cerdo|pate|caldo|sopa|pizza|tarta|enlatad|picadillo|alimento para'}
+  - {id: pollo, peso: 16, incluir: '\b(pollo|pollos|pata muslo|patamuslo|muslos?|suprema|pechuga|alitas?|menudos)\b', excluir: 'hamburg|milanes|medallon|empanad|nugget|bocadit|caldo|sopa|salchich|pate|rebozad|formitas|pizza|tarta|alimento para'}
+  - {id: cerdo, peso: 5, incluir: '\b(cerdo|bondiola|carre|pechito|matambrito|costilla de cerdo|lechon)\b', excluir: 'hamburg|milanes|salchich|chorizo|jamon|fiambre|alimento para'}
+  - {id: fiambres, peso: 11, incluir: '\b(jamon|paleta cocida|salame|salamin|mortadela|bondiola (curada|feteada)|lomito|queso de cerdo|matambre (cocido|arrollado)|fiambre|fiambres|leberwurst|pate|picadillo)\b'}
+  - {id: embutidos, peso: 8, incluir: '\b(salchichas?|chorizos?|morcillas?|salchichon|longaniza|frankfurt|viena)\b'}
+  - {id: elaborados, peso: 10, incluir: '\b(hamburguesas?|medallon(es)?|milanesas?|nuggets?|patitas|bocaditos?|formitas|albondigas|supremas? rebozad|empanadas?)\b'}
+  - {id: pescado, peso: 4, incluir: '\b(atun|caballa|sardinas?|merluza|pescado|filet|salmon|mariscos?|langostinos?|calamar|kani)\b'}
+
+"01.1.4":   # Leche, productos lácteos y huevos
+  - {id: leche_fluida, peso: 30, incluir: '\bleche\b', excluir: 'polvo|chocolat|dulce de leche|con cereal|condensada|bebible|vegetal|almendr|soja|coco|arroz|avena|en barra|alfajor|galletit|flan'}
+  - {id: leche_polvo, peso: 6, incluir: '\bleche\b.*\bpolvo\b|\bpolvo\b.*\bleche\b'}
+  - {id: yogur, peso: 12, incluir: '\b(yogur|yoghurt|yogurt|yogures|bebible)\b'}
+  - {id: quesos, peso: 26, incluir: '\b(queso|quesos|muzzarella|mozzarella|mozarella|ricota|ricotta|reggianito|sardo|cremoso|port salut|cuartirolo|tybo|holanda|provoleta|provolone|roquefort|mascarpone|fundido|untable|crema de queso)\b', excluir: 'galletit|snack|pizza|tarta|empanad|sandwich|ravioles|sorrentin|papas?'}
+  - {id: manteca_crema, peso: 6, incluir: '\b(crema de leche|crema)\b', excluir: 'helad|batidora|dental|corporal|de manos|facial|cabello|peinar|afeitar|limpi|zapat|calzado|limon|chocolat|queso|cebolla|de arroz|de leche condensada'}
+  - {id: dulce_de_leche, peso: 8, incluir: '\bdulce de leche\b', excluir: 'alfajor|galletit|bombon|helad|oblea'}
+  - {id: postres, peso: 4, incluir: '\b(flan|postre|postres|mousse|serenito|danette|chocolatada|leche chocolatada)\b'}
+  - {id: huevos, peso: 8, incluir: '\bhuevos?\b', excluir: 'pascua|chocolat|fideos|tallarin|pasta|kinder|sorpresa'}
+
+"01.1.5":   # Aceites, grasas y manteca
+  - {id: aceite_girasol, peso: 55, incluir: '\baceite\b.*\b(girasol|mezcla|maiz|soja|canola|vegetal)\b|\b(girasol)\b.*\baceite\b'}
+  - {id: aceite_oliva, peso: 15, incluir: '\baceite\b.*\boliva\b'}
+  - {id: manteca_margarina, peso: 25, incluir: '\b(manteca|margarina|grasa)\b', excluir: 'galletit|bizcocho|cacao|mani'}
+  - {id: aerosol, peso: 5, incluir: '\b(rocio vegetal|aerosol|spray)\b'}
+
+"01.1.6":   # Frutas
+  - {id: fruta_fresca, peso: 75, incluir: '\b(manzanas?|bananas?|naranjas?|mandarinas?|peras?|limon(es)?|pomelos?|uvas?|frutillas?|kiwis?|duraznos?|ciruelas?|anan[aa]|melon|sandia|paltas?|frutas? (de estacion|fresca))\b', excluir: 'lata|almibar|conserva|jugo|bebida|gaseosa|agua|torta|rosca|helad|yogur|mermelada|jalea|dulce|caramelo|galletit|alfajor|barra|cereal|sabor|esencia|aroma|deshidrat|disecad|pasa|vinagre|te\b|tea|infusion|gelatina|postre|shampoo|jabon|desodor|bowl|lima de|lima banana|aromatizante|colonia|perfume|vela|detergente|limpiador|lavavajilla'}
+  - {id: fruta_conserva, peso: 15, incluir: '\b(duraznos?|ananas?|peras?|coctel de frutas|cerezas|higos?)\b.*\b(almibar|lata|mitades|conserva|en cubos|rodajas)\b|\b(almibar)\b'}
+  - {id: fruta_seca, peso: 10, incluir: '\b(pasas? de uva|ciruelas? (desecadas|sin carozo|secas?)|nueces|almendras|avellanas|castanas|frutas? secas?|mix de frutos|frutos secos|mani|pistacho|datiles|orejones)\b', excluir: 'chocolat|bombon|garrapi|turron|alfajor|manteca de mani|crema'}
+
+"01.1.7":   # Verduras, tubérculos y legumbres
+  - {id: papa, peso: 25, incluir: '\bpapas?\b', excluir: 'frita|fritas|snack|chips|pay|baston|congel|noisette|pure|lays|pringles|krachitos|kesitas|crax|rodajas'}
+  - {id: hortalizas_frescas, peso: 45, incluir: '\b(tomates?|cebollas?|lechugas?|zanahorias?|zapallos?|zapallitos?|batatas?|acelga|espinaca|morron(es)?|pimiento|ajo|ajos|apio|berenjenas?|pepinos?|choclos?|repollo|brocoli|coliflor|remolacha|rabanito|puerro|verdeo|radicheta|rucula|chaucha|hinojo|champinones?|hongos)\b', excluir: 'lata|conserva|congel|pure|salsa|extracto|triturad|en polvo|sopa|caldo|snack|chips|pickles?|encurtid|tarta|pizza|empanada|tapas?|deshidrat|condimento|sal de|ketchup|aderezo|jugo|en aceite|perita|disecad|sabor|fideo|ravioles|crema de'}
+  - {id: conservas_verduras, peso: 15, incluir: '\b(tomate|tomates) (perita|triturad|en lata|entero|pelado)|\b(pure de tomate|extracto de tomate|salsa de tomate|pulpa de tomate|arvejas|choclo|chauchas|jardinera|palmitos|champi|aceitunas|pickles|encurtid|morrones? (en|asado))\b'}
+  - {id: legumbres, peso: 7, incluir: '\b(lentejas?|porotos?|garbanzos?|arvejas secas|legumbres)\b'}
+  - {id: congelados, peso: 8, incluir: '\b(congelad|papas? (fritas? )?(baston|noisette|pay|congel)|vegetales congel|espinaca congel|mix de verduras|bastones de)\b', excluir: 'pollo|carne|helad|pescado|merluza|milanesa|hamburg|pizza'}
+
+"01.1.8":   # Azúcar, dulces, chocolate, golosinas
+  - {id: azucar, peso: 22, incluir: '\b(azucar)\b', excluir: 'sin azucar|cero azucar|0 azucar|light|bajo en azucar|reducid|impalpable decorac|galletit|caramel'}
+  - {id: edulcorante, peso: 4, incluir: '\b(edulcorante|stevia|sacarina|sucralosa)\b'}
+  - {id: dulces_mermeladas, peso: 12, incluir: '\b(mermelada|jalea|dulce de (membrillo|batata|leche|higo|zapallo)|confitura|miel)\b', excluir: 'alfajor|galletit|bombon|helad|oblea|caramel'}
+  - {id: chocolates, peso: 16, incluir: '\b(chocolate|chocolates|bombon|bombones|tableta|cacao en barra)\b', excluir: 'leche chocolatada|bebida|polvo|cacao amargo|galletit|alfajor|helad|cereal|postre|flan|yogur|cobertura'}
+  - {id: alfajores, peso: 10, incluir: '\balfajor(es)?\b'}
+  - {id: golosinas, peso: 14, incluir: '\b(caramelos?|chicles?|gomitas?|pastillas?|chupetin(es)?|turron(es)?|garrapi[nn]adas?|confites?|mantecol|bananita|obleas?|barritas?|grageas)\b'}
+  - {id: helados, peso: 14, incluir: '\b(helados?|palitos? helad|bombon helad|postre helad)\b'}
+  - {id: postres_polvo, peso: 8, incluir: '\b(gelatina|postre en polvo|flan en polvo|bizcochuelo|polvo para preparar|mousse en polvo)\b'}
+
+"01.1.9":   # Otros productos alimenticios
+  - {id: sal, peso: 8, incluir: '\bsal\b', excluir: 'salsa|salam|salch|salvado|salud|sales de|baño|bano|piscina|ba[nn]o|lavavajilla'}
+  - {id: aderezos, peso: 30, incluir: '\b(mayonesa|ketchup|mostaza|aderezo|salsa golf|salsa|savora|chimichurri|provenzal)\b', excluir: 'tomate'}
+  - {id: caldos_sopas, peso: 18, incluir: '\b(caldo|caldos|sopa|sopas|cubitos|saborizador)\b'}
+  - {id: especias, peso: 12, incluir: '\b(pimienta|oregano|aji molido|pimenton|condimento|comino|nuez moscada|especias?|laurel|ajo en polvo|provenzal)\b'}
+  - {id: vinagre, peso: 6, incluir: '\b(vinagre|aceto)\b'}
+  - {id: comidas_listas, peso: 18, incluir: '\b(comida|plato|listo para|pure instant|pure de papas|risotto|polvo para hornear|levadura|bicarbonato|esencia)\b'}
+  - {id: alimento_bebe, peso: 8, incluir: '\b(leche (infantil|de inicio|maternizada)|papilla|colado|nutricia|nutrilon|sancor bebe|vital ?3|nan |nido)\b'}
+
+"01.2.1":   # Café, té, yerba y cacao
+  - {id: yerba, peso: 50, incluir: '\byerba\b', excluir: 'saquit|mate cocido|cocido'}
+  - {id: cafe, peso: 20, incluir: '\bcafe\b', excluir: 'cafetera|taza|helado|bombon|licor|torta'}
+  - {id: te_mate_cocido, peso: 16, incluir: '\b(te|tea|mate cocido|cocido|saquitos?|hierbas?|manzanilla|tilo|boldo|infusion|infusiones)\b'}
+  - {id: cacao, peso: 14, incluir: '\b(cacao|chocolatada|nesquik|toddy|cacao en polvo|chocolate en polvo|polvo chocolatado)\b'}
+
+"01.2.2":   # Aguas, gaseosas y jugos
+  - {id: gaseosas, peso: 45, incluir: '\b(gaseosa|gaseosas|cola|coca|pepsi|sprite|fanta|seven up|7 up|7up|manaos|schweppes|tonica|soda|pomelo|lima limon|naranja|guarana|mirinda|paso de los toros|cunnington|secco)\b', excluir: 'jugo|polvo|agua mineral|agua saboriz|sin gas|helado|gomita|caramel|chocolat|vodka|fernet|whisky|ron|gin|licor'}
+  - {id: aguas, peso: 25, incluir: '\b(agua|aguas)\b', excluir: 'lavandina|oxigenada|colonia|micelar|perfum|desmaquill|tonica|ardiente|rosas|destilada|bidon de agua destilada'}
+  - {id: jugos, peso: 25, incluir: '\b(jugo|jugos|nectar|bebida de (fruta|manzana|naranja|durazno|pera)|tang|clight|baggio|cepita|ades|bebida a base)\b'}
+  - {id: energizantes, peso: 5, incluir: '\b(energizante|energy|isotonica|gatorade|powerade|speed|monster|red bull)\b'}

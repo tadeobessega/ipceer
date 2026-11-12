@@ -28,12 +28,22 @@ from .config import REGIONES, Config, ponderadores_clase, ponderadores_region
 
 log = logging.getLogger(__name__)
 
-VERSION = "1"   # cambia si cambia la forma de calcular alguna variante: invalida la prueba histórica
+VERSION = "2"   # cambia si cambia la forma de calcular alguna variante: invalida la prueba histórica
 FRESCOS = ("01.1.2", "01.1.3", "01.1.6", "01.1.7")
 
 # id, nombre, opciones de indice.calcular, ¿solo en el tramo actual? (necesita datos que antes no había)
 VARIANTES: list[tuple[str, str, dict, bool]] = [
-    ("base", "Publicado: precios de lista de SEPA, mismos productos, ponderadores del INDEC", {}, False),
+    ("base", "Publicado (método vigente en config.yaml)", {}, False),
+    ("anterior", "Método hasta noviembre de 2026: Jevons encadenado de todos los artículos, sin estratos",
+     {"estratificar": False, "populares": 0, "directo": False}, False),
+    ("estratificado", "Jevons por variedad y promedio ponderado de variedades (D-12)",
+     {"estratificar": True, "populares": 0, "directo": False}, False),
+    ("populares", "Solo códigos que venden 3 comercios o más en la región (D-13)",
+     {"estratificar": False, "populares": 3, "directo": False}, False),
+    ("directo", "Comparación directa contra diciembre del año anterior, sin encadenar (D-14)",
+     {"estratificar": False, "populares": 0, "directo": True}, False),
+    ("mejorado", "Directo + estratificado + populares (D-12 a D-14 juntas)",
+     {"estratificar": True, "populares": 3, "directo": True}, False),
     ("pond_propia", "Ponderadores actualizados con el nivel propio (método anterior)", {"ponderacion": "propia"}, False),
     ("efectivo", "Precio con promociones en lugar de precio de lista", {"precio": "efectivo"}, False),
     ("recortada", "Media recortada: sin el 5% de variaciones más bajas y más altas de cada clase", {"agregador": "recortada"}, False),
@@ -49,8 +59,19 @@ NOMBRES = {v[0]: v[1] for v in VARIANTES} | {
     "calibrado": "Publicado calibrado por regresión con 2017-2018 (experimental)"}
 
 
-def _firma(opciones: dict) -> str:
-    return hashlib.sha1((VERSION + json.dumps(opciones, sort_keys=True, default=str)).encode()).hexdigest()[:12]
+_CLAVES_METODO = ("precio", "ponderacion", "estratificar", "populares", "directo", "min_dias_mes", "min_productos_clase")
+
+
+def _firma(opciones: dict, cfg: Config | None = None) -> str:
+    """Identifica la definición de una variante: sus opciones y, para lo que no fija, el método de
+    config.yaml (así la variante publicada se vuelve a probar si cambia el método vigente)."""
+    met = {k: cfg["indice"].get(k) for k in _CLAVES_METODO} if cfg is not None else {}
+    try:
+        var = (cfg.dir_config / "variedades.yaml").read_text(encoding="utf-8") if cfg is not None else ""
+    except OSError:
+        var = ""
+    return hashlib.sha1((VERSION + json.dumps(opciones, sort_keys=True, default=str) + json.dumps(met, sort_keys=True)
+                         + hashlib.sha1(var.encode()).hexdigest()).encode()).hexdigest()[:12]
 
 
 def _prev(mes: str) -> str:
@@ -122,8 +143,25 @@ def correr(cfg: Config, opciones: dict, tramo: int | None) -> dict:
     wr = ponderadores_region(cfg)
     por_reg = dict(con.join(w, on=["codigo", "region"]).group_by("region").agg(pl.col("ponderacion").sum()).iter_rows())
     cobertura = sum(wr[r] * por_reg.get(r, 0.0) for r in REGIONES) / sum(wr.values())
+    # subíndices de alimentos y bebidas no alcohólicas (división 01): GBA y nacional (decisión D-16)
+    alim = {}
+    for reg in ("GBA", indice.NACIONAL):
+        a = ind.filter(pl.col("nivel") == "division", pl.col("codigo") == "01", pl.col("region") == reg).sort("periodo")
+        alim[reg] = {p: v for p, v in a.select("periodo", "var_pct").iter_rows() if v is not None and math.isfinite(v)}
     return {"meses": meses, "codigos": codigos, "cobertura": round(cobertura, 2),
-            "codigos_ultimo": sorted(set(con["codigo"].to_list()))}
+            "codigos_ultimo": sorted(set(con["codigo"].to_list())), "alimentos": alim}
+
+
+def referencias_alimentos(cfg: Config) -> dict[str, dict[str, float]]:
+    """Variación mensual del INDEC en Alimentos y bebidas no alcohólicas (división 01), GBA y nacional."""
+    from .indec import directorio
+    from .validacion import leer_indec
+    ind = leer_indec(directorio(cfg))
+    out = {}
+    for reg in ("GBA", indice.NACIONAL):
+        g = dict(ind.filter((pl.col("codigo") == "01") & (pl.col("region") == reg)).select("mes", "indice").iter_rows())
+        out[reg] = {m: (g[m] / g[_prev(m)] - 1) * 100 for m in g if _prev(m) in g}
+    return out
 
 
 def referencias(cfg: Config, codigos: list[str]) -> tuple[dict, dict]:
@@ -186,7 +224,7 @@ def historico(cfg: Config, solo: list[str] | None = None, forzar: bool = False) 
     for vid, _nombre, opciones, solo_actual in VARIANTES:
         if solo_actual or (solo and vid not in solo):
             continue
-        firma = _firma(opciones)
+        firma = _firma(opciones, cfg)
         if not forzar and guardado.get(vid, {}).get("firma") == firma:
             continue
         try:
@@ -196,7 +234,10 @@ def historico(cfg: Config, solo: list[str] | None = None, forzar: bool = False) 
             continue
         propio = {x["mes"]: x["var"] for x in r["meses"] if x["var"] is not None and "2017-01" <= x["mes"] <= "2018-12"}
         general, replica = referencias(cfg, r["codigos"])
-        guardado[vid] = {"firma": firma, "calculado": date.today().isoformat(), "codigos": r["codigos"],
+        ra = referencias_alimentos(cfg)
+        alim = {reg: {"vs_indec": puntuar({m: v for m, v in r["alimentos"][reg].items() if "2017-01" <= m <= "2018-12"},
+                                          ra.get(reg, {}))} for reg in r["alimentos"]}
+        guardado[vid] = {"firma": firma, "calculado": date.today().isoformat(), "codigos": r["codigos"], "alimentos": alim,
                          "meses": [{"mes": m, "propio": round(propio[m], 3),
                                     "general": round(general[m], 3) if m in general else None,
                                     "replica": round(replica[m], 3) if m in replica else None} for m in sorted(propio)],
@@ -283,6 +324,7 @@ def actual(cfg: Config) -> dict:
         propio = {x["mes"]: x["var"] for x in r["meses"] if x["var"] is not None}
         parcial = {x["mes"]: x["parcial"] for x in r["meses"]}
         general, replica = referencias(cfg, r["codigos"])
+        ra = referencias_alimentos(cfg)
         cerrados = {m: v for m, v in propio.items() if not parcial[m]}
         todos_meses |= set(propio)
         h = hist.get(vid) or {}
@@ -294,7 +336,18 @@ def actual(cfg: Config) -> dict:
                        "replica": round(replica[m], 3) if m in replica else None} for m, v in sorted(propio.items())],
             "actual_vs_general": puntuar(cerrados, general), "actual_vs_replica": puntuar(cerrados, replica),
             "historico_vs_general": h.get("vs_general"), "historico_vs_replica": h.get("vs_replica"),
-            "historico_al_dia": bool(h) and h.get("firma") == _firma(opciones)})
+            "alimentos": {reg: {"meses": [{"mes": m, "var": round(v, 3), "parcial": parcial.get(m, False),
+                                           "indec": round(ra[reg][m], 3) if m in ra.get(reg, {}) else None}
+                                          for m, v in sorted(r["alimentos"][reg].items())],
+                                "actual_vs_indec": puntuar({m: v for m, v in r["alimentos"][reg].items() if not parcial.get(m)},
+                                                           ra.get(reg, {})),
+                                "historico_vs_indec": ((h.get("alimentos") or {}).get(reg) or {}).get("vs_indec")}
+                          for reg in r["alimentos"]},
+            "historico_al_dia": bool(h) and h.get("firma") == _firma(opciones, cfg)})
+        anotar += [{"calculado": hoy, "mes": m, "variante": f"{vid}_alim_{'gba' if reg == 'GBA' else 'nac'}",
+                    "var_pct": round(v, 4), "parcial": parcial.get(m, False), "cobertura_pct": None}
+                   for reg in r["alimentos"] for m, v in r["alimentos"][reg].items()
+                   if m not in ra.get(reg, {}) and vid in ("base", "mejorado")]
         anotar += [{"calculado": hoy, "mes": m, "variante": vid, "var_pct": round(v, 4), "parcial": parcial[m],
                     "cobertura_pct": r["cobertura"]} for m, v in propio.items() if m not in general]
     base = next((v for v in variantes if v["id"] == "base" and v.get("meses")), None)

@@ -32,11 +32,24 @@ jobs:
           mkdir -p partes
           for f in data/web/gh_20*.parquet; do cp "$f" "partes/p${{ matrix.parte }}_$(basename "$f")"; done
           cp data/web/gh_estado.json "partes/p${{ matrix.parte }}_estado.json"
+      # el servicio de artefactos a veces falla (11/11/2026: respondió HTML en vez de JSON y se perdió
+      # una parte entera): se reintenta una vez después de un minuto
       - uses: actions/upload-artifact@v4
+        id: subir
+        continue-on-error: true
         with:
           name: parte-${{ matrix.parte }}
           path: partes/
           retention-days: 3
+      - if: steps.subir.outcome == 'failure'
+        run: sleep 90
+      - if: steps.subir.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: parte-${{ matrix.parte }}
+          path: partes/
+          retention-days: 3
+          overwrite: true
   juntar:
     needs: bajar
     if: always()

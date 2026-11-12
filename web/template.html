@@ -512,6 +512,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
         <div class="card s12"><h3>Qué estima cada método y cuánto se acercó al INDEC</h3><div class="tablewrap"><table id="t-car"></table></div><p class="cap" id="car-nota" style="margin-top:14px"></p></div>
         <div class="card s7"><h3 id="car-h-mes">Estimaciones del mes: métodos propios y consultoras</h3><div class="chart"><canvas id="c-car"></canvas></div><div class="src">Fuente: CEER en base a SEPA, tiendas en línea, INDEC y relevamientos privados publicados.</div></div>
         <div class="card s5"><h3>Cómo fue cambiando cada estimación</h3><div class="tablewrap" style="max-height:380px;overflow-y:auto"><table id="t-pron"></table></div></div>
+        <div class="card s12"><h3>IPCEER-alimentos: Gran Buenos Aires y nacional</h3><p class="cap" id="alim-sub" style="margin-bottom:12px"></p><div class="tablewrap"><table id="t-alim"></table></div></div>
       </div>
     </section>
     <section>
@@ -807,10 +808,25 @@ p(u, período) = exp( media_d [ ln p(u, día) ] )        d: días del período</
     <p>Se usan las seis regiones del IPC del INDEC. Cada sucursal se asigna por su provincia. En la provincia de Buenos Aires, una sucursal va a <b>GBA</b> si está a menos de <span class="f">${P.radio_gba_km} km</span> del Obelisco y a <b>Pampeana</b> si está más lejos. Si no tiene coordenadas, se decide por la localidad. Es una aproximación a los 24 partidos del conurbano: puede confundir algunas localidades de borde (por ejemplo, partes de Pilar, Escobar o Presidente Perón).</p>
     <p>GBA: CABA y 24 partidos. Pampeana: resto de Buenos Aires, Córdoba, Entre Ríos, La Pampa y Santa Fe. Noreste: Chaco, Corrientes, Formosa y Misiones. Noroeste: Catamarca, Jujuy, La Rioja, Salta, Santiago del Estero y Tucumán. Cuyo: Mendoza, San Juan y San Luis. Patagonia: Chubut, Neuquén, Río Negro, Santa Cruz y Tierra del Fuego.</p>`],
   ['elemental','Índice elemental',`
-    <p>Para cada rubro (código con ponderador) y región, la variación entre dos períodos consecutivos es la <b>media geométrica de los relativos de precio</b> de las unidades presentes en ambos períodos (índice de Jevons). Los índices se encadenan período a período.</p>
-    <div class="formula">R(c, r, t)  = exp( media_u [ ln( p(u, t) / p(u, t−1) ) ] )    u ∈ c, r, presentes en t−1 y t
-I(c, r, t)  = I(c, r, t−1) × R(c, r, t)                  I(c, r, base) = 100</div>
-    <p>Es la fórmula que usa el INDEC para sus agregados elementales. No pondera productos dentro del rubro: cada producto-cadena-región pesa lo mismo. Si en una región hay menos de <span class="f">${P.min_productos_clase}</span> productos comparables, se usa la variación nacional del rubro. Si tampoco alcanza, el rubro queda <b>sin dato</b> en ese período: no se repite el nivel anterior ni se le supone variación cero, y sale del cálculo de ese período (ver agregación). Los casos quedan registrados en <span class="f">resultados/calidad_*.csv</span>.</p>`],
+    <p>Para cada rubro (código con ponderador) y región, la variación se calcula en tres pasos, que copian lo que hace el INDEC con sus agregados elementales:</p>
+    <ul>
+    <li><b>Por variedad.</b> Dentro de cada clase de alimentos y bebidas, cada artículo se asigna a una variedad (pan fresco, galletitas, fideos secos, leche, quesos, carne vacuna, yerba, gaseosas, etc.; <span class="f">config/variedades.yaml</span>). Se calcula la media geométrica de los relativos dentro de cada variedad y después el promedio ponderado de las variedades. Sin esto, en una clase como Pan y cereales las miles de galletitas pesarían más que el pan. Los pesos de las variedades son propios: el INDEC no los publica.</li>
+    <li><b>Artículos populares.</b> Entran los códigos de barras que venden al menos ${P.populares||3} comercios distintos en la región, como el “artículo más vendido” que elige el encuestador del INDEC.</li>
+    <li><b>Comparación directa.</b> Cada período se compara contra una base fija (diciembre del año anterior, o el comienzo del tramo) y la variación es el cociente entre la comparación del período y la del anterior. Así no se acumula la deriva que aparece al encadenar mes a mes con artículos que entran y salen.</li>
+    </ul>
+    <div class="formula">J(c, r, b→t) = Σ_v w(v) · media_u∈v [ ln( p(u, t) / p(u, b) ) ] / Σ_v w(v)    u apareados entre b y t
+R(c, r, t)  = exp( J(c, r, b→t) − J(c, r, b→t−1) )                    b: base directa
+I(c, r, t)  = I(c, r, t−1) × R(c, r, t)</div>
+    <p>Estas tres piezas se adoptaron en noviembre de 2026 después de diagnosticar por qué el índice medía menos que el INDEC: en la prueba 2017-2018 bajaron el sesgo contra la réplica del INDEC de −0,30 a −0,05 puntos por mes y el error de 0,67 a 0,63 (ver “Por qué medíamos menos”). El método anterior se sigue calculando en la carrera de métodos. Si en una región hay menos de <span class="f">${P.min_productos_clase}</span> productos comparables, se usa la variación nacional del rubro. Si tampoco alcanza, el rubro queda <b>sin dato</b> en ese período: no se repite el nivel anterior ni se le supone variación cero. Los casos quedan registrados en <span class="f">resultados/calidad_*.csv</span>.</p>`],
+  ['sesgo','Por qué medíamos menos que el INDEC',`
+    <p>Entre enero de 2017 y marzo de 2018 el método anterior acumuló 23,0% contra 28,4% del INDEC con los mismos rubros y pesos, y 33,1% del nivel general. Son dos brechas distintas: la de <b>cobertura</b> (servicios, tarifas y alquileres, que no medimos y que subieron más) y la de <b>método y fuente</b>, dentro de los mismos rubros. Para la segunda se probó cada hipótesis por separado, clase por clase, en GBA y Pampeana:</p>
+    <ul>
+    <li>El sesgo era parejo en casi todas las clases, no de un rubro en particular: no era un problema de pesos entre rubros sino del promedio dentro de cada rubro.</li>
+    <li>Tres causas de método explicaban más de la mitad y se corrigieron: las variedades con muchos artículos pesaban de más, los artículos que vende una sola cadena suben menos, y encadenar mes a mes acumulaba deriva.</li>
+    <li>No ayudaron: usar precios con promociones, la media recortada, la mediana, ni sacar las cadenas que casi no actualizan precios en SEPA.</li>
+    <li>Lo que queda (unos 0,15 puntos por mes en GBA) viene de la fuente: el INDEC también releva almacenes, panaderías, carnicerías y verdulerías, que SEPA no tiene. Frutas y verduras son las clases con más error.</li>
+    </ul>
+    <p>Con el método nuevo, el total quedó en 27,4% contra 28,4% de la réplica. Limitar el índice a alimentos no da mejor: el error de alimentos contra su par del INDEC es 0,72 en el nacional y 0,86 en GBA. Por eso se publican los tres (total, alimentos nacional y alimentos GBA), cada uno contra su referencia. El detalle de cada prueba y cada decisión está en <span class="f">METODOLOGIA.md</span>.</p>`],
   ['ponderadores','Agregación y ponderadores',`
     <p>Lo que se mide es la <b>inflación</b>: la variación de nuestros precios, rubro por rubro, sumada con las <b>ponderaciones del INDEC</b>. Los ponderadores de la canasta del IPC (base diciembre 2016 = 100) se llevan al último mes que publicó el INDEC multiplicándolos por el índice oficial de cada rubro (así pesan como pesan hoy en la canasta, no como en 2016). De ese mes en adelante, hasta que sale el dato oficial siguiente, se actualizan con nuestras propias variaciones. La variación de un agregado es el promedio de las variaciones de los rubros <b>que tienen datos en ese período</b> con esos pesos. Un rubro sin datos sale de ese eslabón; nunca se completa con información de períodos anteriores ni con datos oficiales:</p>
     <div class="formula">p(c, r, t)   = w(c, r) · I_INDEC(c, r, T) · I(c, r, t−1) / I(c, r, T)      T = último mes publicado por el INDEC
@@ -879,7 +895,7 @@ prom. 4 mens.  = (1 + prom. 4 sem.)^(30,44 / 7) − 1</div>
     <p>Las fuentes que no están en SEPA se bajan en cada corrida de la tarea programada, solo si son públicas y se pueden bajar sin saltear protecciones. Para alquileres, el informe mensual Index Zonaprop de la Ciudad: se toma el alquiler medio publicado de un dos ambientes y su variación (los portales de avisos no permiten bajar sus listados con robots, por eso se usa el informe). Para medicamentos, el listado de PAMI (datos abiertos), que informa lo que paga el afiliado.</p>
     <p>Para alimentos frescos se suman dos mercados mayoristas: la hacienda en pie del Mercado Agroganadero de Cañuelas (importe sobre kilos vendidos en el mes, por categoría) y las frutas y hortalizas del Mercado Central de Buenos Aires (precio modal por kilo, promedio de los días del mes). Son precios mayoristas: se muestran como indicador adelantado y no entran al índice ni reemplazan ningún precio de góndola. Un mes que no se pudo bajar queda vacío.</p>`],
   ['carrera','Carrera de métodos y precios de tiendas en línea',`
-    <p>En cada corrida el índice se calcula de varias formas a la vez, también las que se descartaron: con precio de lista o con promociones, con media simple, media recortada o mediana, pesando por cantidad de sucursales, sin frutas ni verduras, sin frescos, con los ponderadores del método anterior, con precios de tiendas en línea y con tarifas, combustibles y alquileres. Cada variante se compara con el nivel general del INDEC y con la réplica del INDEC para las mismas clases (sesgo y error mensual), en 2017-2018 y en cada mes nuevo que el INDEC publica. Lo que cada variante estimó para un mes queda anotado con la fecha en que se calculó, y ese registro no se reescribe. La variante publicada cambia solo si otra baja el error contra el INDEC.</p>
+    <p>En cada corrida el índice se calcula de varias formas a la vez, también las que se descartaron: el método anterior (Jevons encadenado de todos los artículos), cada una de las tres mejoras por separado (variedades, artículos populares, comparación directa), con precio de lista o con promociones, con media simple, media recortada o mediana, pesando por cantidad de sucursales, sin frutas ni verduras, sin frescos, con los ponderadores del método anterior, con precios de tiendas en línea y con tarifas, combustibles y alquileres. Cada variante se compara con el nivel general del INDEC y con la réplica del INDEC para las mismas clases (sesgo y error mensual), y sus subíndices de alimentos de GBA y del país con la división de alimentos del INDEC, en 2017-2018 y en cada mes nuevo que el INDEC publica. Lo que cada variante estimó para un mes queda anotado con la fecha en que se calculó, y ese registro no se reescribe. La variante publicada cambia solo si otra baja el error contra el INDEC.</p>
     <p>Los precios de tiendas en línea (ropa, calzado, medicamentos, electrodomésticos, artículos del hogar y frescos por kilo) se bajan una vez por día del catálogo público de cada tienda, desde GitHub, identificándose como robot del IPCEER y de a un pedido por vez. Cada producto se asigna a una clase del IPC por la categoría de la tienda. Empezaron a juntarse el 11 de noviembre de 2026: no tienen historia para probarlos contra el INDEC, así que por ahora entran solo en sus variantes de la carrera y no en el número publicado.</p>`],
   ['diario','Índice diario y eventos',`
     <p>Para ver cómo reaccionan los precios a un evento puntual se arma un índice por día y por rubro. Cada día se compara <b>directamente con el día base</b> (el primero de la ventana, hoy los últimos ${((D.indicadores||{}).parametros||{}).diario_dias||120} días sin cortes) con un Jevons sobre los mismos productos de la misma cadena y región en los dos días. No se encadena día a día porque los ruidos diarios se acumularían.</p>
@@ -1596,6 +1612,21 @@ function renderCarrera(){
   document.getElementById('t-pron').innerHTML=dias.length?`<thead><tr><th>Calculado el</th><th class="n">Publicado</th><th class="n">Con tiendas en línea</th><th class="n">Completo</th></tr></thead><tbody>`+dias.map(d=>{const g=k=>(P.find(r=>r.calculado===d&&r.variante===k)||{}).var_pct; return `<tr><td class="mono">${esc(d)}</td><td class="n">${pct(g('base'),2)}</td><td class="n">${pct(g('web'),2)}</td><td class="n">${pct(g('completo'),2)}</td></tr>`;}).join('')+'</tbody>':'<tbody><tr><td class="muted">Sin historial todavía.</td></tr></tbody>';
 }
 
+/* ---------- IPCEER-alimentos (GBA y nacional) ---------- */
+function renderAlim(){
+  const C=D.carrera, t=document.getElementById('t-alim'); if(!t) return;
+  document.getElementById('alim-sub').innerHTML='Alimentos y bebidas no alcohólicas (división 01) con cada método, contra la misma división del INDEC. Es el rubro que SEPA cubre mejor: no depende de servicios ni de tarifas. El de GBA se compara con el IPC de GBA; el nacional, con el nacional.';
+  const V=((C||{}).variantes||[]).filter(v=>v.alimentos&&['base','anterior','estratificado','populares','directo'].includes(v.id));
+  if(!V.length){ t.innerHTML='<tbody><tr><td class="muted">Aparece con la próxima corrida de la tarea diaria.</td></tr></tbody>'; return; }
+  const meses=[...new Set(V.flatMap(v=>['GBA','Nacional'].flatMap(r=>((v.alimentos[r]||{}).meses||[]).map(x=>x.mes))))].sort().slice(-3);
+  const cel=(v,r,m)=>{const x=((v.alimentos[r]||{}).meses||[]).find(y=>y.mes===m); return x?pct(x.var,2)+(x.parcial?'*':''):'–';};
+  const ind=(r,m)=>{for(const v of V){const x=((v.alimentos[r]||{}).meses||[]).find(y=>y.mes===m); if(x&&x.indec!=null) return pct(x.indec,2);} return '–';};
+  const h=(v,r)=>(v.alimentos[r]||{}).historico_vs_indec;
+  t.innerHTML='<thead><tr><th rowspan="2">Método</th>'+['GBA','Nacional'].map(r=>`<th class="n" colspan="${meses.length+2}">${r==='GBA'?'Gran Buenos Aires':'Nacional'}</th>`).join('')+'</tr><tr>'+['GBA','Nacional'].map(()=>meses.map(m=>`<th class="n">${mesLbl(m)}</th>`).join('')+'<th class="n">Sesgo 17-18</th><th class="n">Error 17-18</th>').join('')+'</tr></thead><tbody>'+
+    V.map(v=>`<tr${v.id==='base'?' style="font-weight:600"':''}><td>${esc(v.nombre)}${v.id==='base'?' <span class="muted">(publicado)</span>':''}</td>`+['GBA','Nacional'].map(r=>meses.map(m=>`<td class="n">${cel(v,r,m)}</td>`).join('')+`<td class="n">${h(v,r)?num(h(v,r).sesgo,2):'–'}</td><td class="n">${h(v,r)?num(h(v,r).rmse,2):'–'}</td>`).join('')+'</tr>').join('')+
+    '<tr><td><b>INDEC, alimentos y bebidas</b></td>'+['GBA','Nacional'].map(r=>meses.map(m=>`<td class="n">${ind(r,m)}</td>`).join('')+'<td colspan="2"></td>').join('')+'</tr></tbody>';
+}
+
 /* ---------- regulados ---------- */
 function renderRegu(){
   const R=D.regulados||{}, I=(R.indice||[]).filter(r=>r.region==='Nacional'&&r.var_pct!=null);
@@ -1719,7 +1750,7 @@ function render(){
   if(tab==='cad') renderCad();
   if(tab==='hilo') renderHilo();
   if(tab==='met') renderMetodo();
-  if(tab==='val'){ renderCarrera(); renderVal(); renderExt(); renderMun(); renderVariantes(); tocVal(); }
+  if(tab==='val'){ renderCarrera(); renderAlim(); renderVal(); renderExt(); renderMun(); renderVariantes(); tocVal(); }
   if(tab==='regu') renderRegu();
   if(tab==='fre') renderFre();
   if(tab==='can') renderCan();

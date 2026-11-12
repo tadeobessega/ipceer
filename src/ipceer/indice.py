@@ -81,18 +81,32 @@ def _ruta_web(ruta: Path) -> Path:
     return ruta.parent.parent / f"web_{ruta.parent.name}" / ruta.name
 
 
-def _cargar(ruta: Path, col_precio: str, mapa: dict[str, str | None], web: bool = False) -> pl.DataFrame:
+def _cargar(ruta: Path, col_precio: str, mapa: dict[str, str | None], web: bool = False,
+            estratos: Path | None = None) -> pl.DataFrame:
+    """Panel de un período. `estratos`: directorio de config; si se da, agrega la variedad de cada
+    artículo (config/variedades.yaml) para la estratificación."""
     cols = [*CLAVE, "clase", col_precio, "n_dias", "dias_con_datos", "n_sucursales"]
-    df = pl.read_parquet(ruta, columns=cols).filter(pl.col("clase") != SIN_CLASIFICAR)
+    def leer(r: Path) -> pl.DataFrame:
+        disp = pl.read_parquet_schema(r)
+        c = cols + (["descripcion"] if estratos is not None and "descripcion" in disp else [])
+        d = pl.read_parquet(r, columns=c)
+        if "descripcion" not in d.columns:
+            d = d.with_columns(pl.lit(None, dtype=pl.Utf8).alias("descripcion"))
+        return d
+    df = leer(ruta).filter(pl.col("clase") != SIN_CLASIFICAR)
     if web and _ruta_web(ruta).exists():
-        w = pl.read_parquet(_ruta_web(ruta), columns=cols).filter(pl.col("clase").is_not_null())
+        w = leer(_ruta_web(ruta)).filter(pl.col("clase").is_not_null())
         df = pl.concat([df, w.select(df.columns)], how="vertical_relaxed")
-    return df.select(
-        *CLAVE, "clase", pl.col(col_precio).alias("precio"), "n_dias", "dias_con_datos",
+    df = df.select(
+        *CLAVE, "clase", pl.col(col_precio).alias("precio"), "n_dias", "dias_con_datos", "descripcion",
         pl.col("n_sucursales").cast(pl.Float64, strict=False).fill_null(1.0).fill_nan(1.0).alias("n_suc"),
     ).with_columns(
         pl.col("clase").replace_strict(mapa, default=None, return_dtype=pl.Utf8).alias("codigo")
     ).filter(pl.col("codigo").is_not_null())
+    if estratos is not None:
+        from . import variedades
+        df = variedades.con_variedad(df, estratos)
+    return df.drop("descripcion")
 
 
 def _en_curso(periodo: str, frecuencia: str, ultimo_dia: date | None) -> bool:
@@ -119,24 +133,38 @@ def _min_dias(dias_con_datos: int, minimo: int) -> int:
 
 
 def relativos(previo: pl.DataFrame, actual: pl.DataFrame, min_p: int, min_a: int,
-              cfg: Config, agregador: str = "media", peso: str | None = None) -> tuple[pl.DataFrame, pl.DataFrame]:
+              cfg: Config, agregador: str = "media", peso: str | None = None,
+              estratificar: bool = False, populares: int = 0) -> tuple[pl.DataFrame, pl.DataFrame]:
     """Relativos por código y región (y nacional por código) entre dos períodos.
 
     `agregador`: "media" (Jevons: media geométrica simple de los relativos, el método del índice),
     "recortada" (deja afuera el 5% más bajo y el 5% más alto de cada clase) o "mediana".
     `peso`: None (cada producto-cadena vale lo mismo) o "sucursales" (pesa por la cantidad de
-    sucursales de la cadena que informan ese producto). Las alternativas se calculan para comparar.
+    sucursales de la cadena que informan ese producto).
+    `estratificar`: Jevons dentro de cada variedad (columna `variedad`, ver variedades.py) y media
+    ponderada de las variedades con sus pesos (decisión D-12 de METODOLOGIA.md).
+    `populares`: si es > 0, solo entran los códigos de barras que venden al menos esa cantidad de
+    comercios distintos en la región en el período actual (aproxima "el artículo más vendido" que
+    elige el encuestador del INDEC; decisión D-13).
     """
     lim = cfg["limpieza"]
-    cols_a = [*CLAVE, "codigo", pl.col("precio").alias("p1")] + (["n_suc"] if "n_suc" in actual.columns else [])
+    extra = [c for c in ("n_suc", "variedad") if c in actual.columns]
+    cols_a = [*CLAVE, "codigo", pl.col("precio").alias("p1")] + extra
+    act = actual.filter(pl.col("n_dias") >= min_a)
+    if populares:
+        act = act.filter(pl.col("id_comercio").n_unique().over("id_producto", "region") >= populares)
     pares = (
         previo.filter(pl.col("n_dias") >= min_p).select(*CLAVE, pl.col("precio").alias("p0"))
-        .join(actual.filter(pl.col("n_dias") >= min_a).select(cols_a), on=CLAVE, how="inner")
+        .join(act.select(cols_a), on=CLAVE, how="inner")
         .with_columns((pl.col("p1") / pl.col("p0")).alias("rel"))
         .filter(pl.col("rel").is_between(lim["relativo_min"], lim["relativo_max"]))
         .with_columns(pl.col("rel").log().alias("logrel"))
     )
     pesar = peso == "sucursales" and "n_suc" in pares.columns
+    estratificar = estratificar and "variedad" in pares.columns
+    if estratificar:
+        from .variedades import MIN_ARTICULOS, PESO_OTROS, pesos
+        pv = pesos(cfg.dir_config)
 
     def agrupar(por: list[str], sufijo: str) -> pl.DataFrame:
         d = pares
@@ -149,9 +177,34 @@ def relativos(previo: pl.DataFrame, actual: pl.DataFrame, min_p: int, min_a: int
             valor = (pl.col("logrel") * pl.col("n_suc")).sum() / pl.col("n_suc").sum()
         else:
             valor = pl.col("logrel").mean()
-        return d.group_by(por).agg(valor.alias(f"logrel_{sufijo}"), pl.len().alias(f"n_{sufijo}"))
+        if not estratificar:
+            return d.group_by(por).agg(valor.alias(f"logrel_{sufijo}"), pl.len().alias(f"n_{sufijo}"))
+        v = (d.group_by(*por, "variedad").agg(valor.alias("_lr"), pl.len().alias("_n"))
+             .join(pv, on=["codigo", "variedad"], how="left")
+             .with_columns(pl.col("peso_var").fill_null(PESO_OTROS)))
+        # variedades con pocos artículos: no entran (si ninguna llega, la clase usa todos sus artículos)
+        ok = v.filter(pl.col("_n") >= MIN_ARTICULOS)
+        est = ok.group_by(por).agg(((pl.col("_lr") * pl.col("peso_var")).sum() / pl.col("peso_var").sum())
+                                   .alias(f"logrel_{sufijo}"), pl.col("_n").sum().alias(f"n_{sufijo}"))
+        todo = d.group_by(por).agg(valor.alias(f"logrel_{sufijo}"), pl.len().alias(f"n_{sufijo}"))
+        return pl.concat([est, todo.join(est.select(por), on=por, how="anti")], how="vertical_relaxed")
 
     return agrupar(["codigo", "region"], "reg"), agrupar(["codigo"], "nac")
+
+
+def _bases_directas(periodos: list[str], tramo: dict[str, int], frecuencia: str) -> dict[str, str]:
+    """Período base de la comparación directa de cada período (decisión D-14): el último período de
+    diciembre del año anterior dentro del mismo tramo (como la muestra fija del INDEC, que se
+    sigue desde la base); si el tramo no tiene diciembre previo, su primer período."""
+    out = {}
+    for i, p in enumerate(periodos):
+        if i == 0:
+            continue
+        anio = int(_mes_del_periodo(p, frecuencia)[:4])
+        previos = [q for q in periodos[:i] if tramo[q] == tramo[p]]
+        dic = [q for q in previos if _mes_del_periodo(q, frecuencia) == f"{anio - 1}-12"]
+        out[p] = dic[-1] if dic else (previos[0] if previos else periodos[i - 1])
+    return out
 
 
 def _mes_del_periodo(periodo: str, frecuencia: str) -> str:
@@ -186,7 +239,8 @@ def niveles_indec(cfg: Config, codigos: list[str]) -> tuple[pl.DataFrame, list[s
 def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None = None, web: bool = False,
              extra: pl.DataFrame | None = None, solo_tramo_actual: bool = False, solo_tramo: int | None = None,
              excluir: tuple[str, ...] = (), precio: str | None = None, agregador: str = "media",
-             peso: str | None = None) -> dict[str, pl.DataFrame]:
+             peso: str | None = None, estratificar: bool | None = None, populares: int | None = None,
+             directo: bool | None = None) -> dict[str, pl.DataFrame]:
     """Las opciones que siguen existen para la carrera de métodos (carrera.py): el índice publicado
     usa los valores por defecto.
     `excluir`: clases que se dejan afuera. `precio`: "lista" o "efectivo" (con promociones).
@@ -196,6 +250,10 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
     (tarifas por norma, combustibles de Energía, alquileres): columnas periodo, codigo, region,
     logrel. Solo se usan en las clases y períodos sin dato propio.
     `solo_tramo_actual`: calcula solo el último tramo de la serie (más rápido, para las variantes).
+    `estratificar`, `populares`, `directo`: ver METODOLOGIA.md (D-12, D-13, D-14). Si no se dan,
+    se toman de config.yaml (indice.estratificar, indice.populares, indice.directo).
+      directo: la variación de cada período sale de comparar contra una base fija (diciembre del año
+               anterior) y no de encadenar período a período: evita la deriva del encadenamiento.
     `ponderacion`:
       "indec"  (por defecto) los ponderadores de la canasta del INDEC se actualizan con los índices
                del INDEC hasta su último mes publicado; de ahí en adelante, con las variaciones
@@ -206,6 +264,10 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
     """
     ic = cfg["indice"]
     ponderacion = ponderacion or ic.get("ponderacion", "indec")
+    estratificar = ic.get("estratificar", False) if estratificar is None else estratificar
+    populares = int(ic.get("populares", 0) if populares is None else populares)
+    directo = ic.get("directo", False) if directo is None else directo
+    dir_estr = cfg.dir_config if estratificar else None
     col_precio = "precio_lista" if (precio or ic["precio"]) == "lista" else "precio_efectivo"
     min_dias = ic["min_dias_mes"] if frecuencia == "mensual" else ic["min_dias_semana"]
     pond = ponderadores_clase(cfg)
@@ -249,9 +311,12 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
     tramo = tramos(periodos, frecuencia, ic.get("max_meses_salto", 24))
     grilla = pl.DataFrame({"codigo": usados}).join(pl.DataFrame({"region": REGIONES}), how="cross")
     filas = []
-    previo, info_p = _cargar(rutas[0], col_precio, mapa, web), _info(rutas[0])
+    bases = _bases_directas(periodos, tramo, frecuencia) if directo else {}
+    paneles_base: dict[str, tuple[pl.DataFrame, tuple[int, int]]] = {}
+    ruta_de = dict(zip(periodos, rutas))
+    previo, info_p = _cargar(rutas[0], col_precio, mapa, web, dir_estr), _info(rutas[0])
     for ruta, per, per_prev in zip(rutas[1:], periodos[1:], periodos[:-1]):
-        actual, info_a = _cargar(ruta, col_precio, mapa, web), _info(ruta)
+        actual, info_a = _cargar(ruta, col_precio, mapa, web, dir_estr), _info(ruta)
         if tramo[per] != tramo[per_prev]:  # comienza un tramo nuevo: no se compara con el anterior
             filas.append(grilla.with_columns(
                 pl.lit(per).alias("periodo"), pl.lit(0.0).alias("logrel"), pl.lit("inicio_tramo").alias("origen"),
@@ -259,8 +324,23 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
             ).select("periodo", "codigo", "region", "logrel", "origen", "n_reg", "parcial"))
             previo, info_p = actual, info_a
             continue
-        reg, nac = relativos(previo, actual, _min_dias(info_p[0], min_dias), _min_dias(info_a[0], min_dias), cfg,
-                             agregador=agregador, peso=peso)
+        kw = dict(agregador=agregador, peso=peso, estratificar=estratificar, populares=populares)
+        b = bases.get(per)
+        if directo and b and b != per_prev:
+            # variación = (base -> actual) - (base -> anterior), con los mismos filtros
+            if b not in paneles_base:
+                paneles_base.clear()
+                paneles_base[b] = (_cargar(ruta_de[b], col_precio, mapa, web, dir_estr), _info(ruta_de[b]))
+            pb, info_b = paneles_base[b]
+            mb = _min_dias(info_b[0], min_dias)
+            r1, n1 = relativos(pb, actual, mb, _min_dias(info_a[0], min_dias), cfg, **kw)
+            r0, n0 = relativos(pb, previo, mb, _min_dias(info_p[0], min_dias), cfg, **kw)
+            reg = r1.join(r0.select("codigo", "region", pl.col("logrel_reg").alias("_r0")), on=["codigo", "region"]).with_columns(
+                (pl.col("logrel_reg") - pl.col("_r0")).alias("logrel_reg")).drop("_r0")
+            nac = n1.join(n0.select("codigo", pl.col("logrel_nac").alias("_n0")), on="codigo").with_columns(
+                (pl.col("logrel_nac") - pl.col("_n0")).alias("logrel_nac")).drop("_n0")
+        else:
+            reg, nac = relativos(previo, actual, _min_dias(info_p[0], min_dias), _min_dias(info_a[0], min_dias), cfg, **kw)
         r = (
             grilla.join(reg, on=["codigo", "region"], how="left")
             .join(nac, on="codigo", how="left")

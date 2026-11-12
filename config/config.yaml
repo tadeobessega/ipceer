@@ -51,6 +51,14 @@ indice:
   min_productos_clase: 8
   # Primer mes del índice (= 100). Si se deja vacío, se usa el primer mes con datos.
   mes_base: null
+  # Método del índice elemental (ver METODOLOGIA.md, decisiones D-12 a D-14). Las tres opciones
+  # se prueban siempre en la carrera de métodos; acá se fija la que se publica.
+  #   estratificar: Jevons dentro de cada variedad (config/variedades.yaml) y promedio ponderado.
+  #   populares: solo códigos de barras que venden al menos esta cantidad de comercios en la región (0 = todos).
+  #   directo: comparar contra diciembre del año anterior en lugar de encadenar período a período.
+  estratificar: true
+  populares: 3
+  directo: true
   # Si entre dos períodos con datos pasan más meses que esto, la serie se corta en tramos
   # (ej. la base 2016-2018 de Zenodo y la actual). Por debajo se compara a través del hueco.
   max_meses_salto: 24

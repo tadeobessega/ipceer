@@ -397,6 +397,17 @@ el total no se presenta como nivel general.
   guardada para 07.1.1 (compra de vehículos); no entra a ninguna variante hasta tener al menos dos
   meses y compararla con el INDEC.
 
+- **D-42. Carne vacuna con datos del INDEC (pestaña de frescos).** Dos gráficos que no salen del
+  índice propio: (a) variación mensual del precio promedio de cinco cortes vacunos en GBA (asado,
+  carne picada común, cuadril, nalga y paleta), del archivo de precios promedio del INDEC
+  (`sh_ipc_precios_promedio.xls`, que ahora se baja con las demás series); (b) incidencia de
+  "Carnes y derivados" (01.1.2) en la variación mensual del nivel general, para GBA y el total
+  nacional: peso de la clase en la canasta base diciembre de 2016 por la diferencia de su índice
+  entre t y t−1, sobre el índice del nivel general en t−1; el nacional suma las seis regiones con
+  su peso. Control: con las 12 divisiones, la suma de las incidencias da exactamente la variación
+  del nivel general (octubre de 2026 en GBA: 1,98% contra 1,98%). Muestran desde enero del año del
+  último dato y llevan el logo ceer_ (no ipceer), porque son datos del INDEC.
+
 ## 6. Qué falta para el índice completo
 
 Peso en la canasta nacional del INDEC (divisiones de `config/ponderadores_division.csv` ponderadas por

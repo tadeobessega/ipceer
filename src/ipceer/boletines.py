@@ -111,9 +111,10 @@ def leer_colectivo_caba(texto_ocr: str) -> dict:
     """Del OCR del cuadro I (servicios comunes, tarifa plena): 0-3, 3-6, 6-12 y 12-27 km, y el mes."""
     t = texto_ocr
     out = {}
-    m = re.search(r"cuadros tarifarios\s*-\s*(\w+)\s+(\d{4})", t, re.I)
-    if m and MESES.get(m.group(1).lower()):
-        out["mes"] = f"{m.group(2)}-{MESES[m.group(1).lower()]:02d}-01"
+    for m in re.finditer(r"cuadros? tarifarios?(?:\W+\w+){0,4}?\W+(\w+)\s+(?:de\s+)?(\d{4})", t, re.I):
+        if MESES.get(m.group(1).lower()):
+            out["mes"] = f"{m.group(2)}-{MESES[m.group(1).lower()]:02d}-01"
+            break
     bloque = t.split("Cuadro II")[0]
     for sec in ("0-3", "3-6", "6-12", "12-27"):
         s = re.search(rf"{sec}\s*km\s*\$\s*([\d. ]+,\s*\d+)", bloque)
@@ -139,6 +140,15 @@ def leer_colectivo_pba(texto: str) -> dict:
             if s.group(3):
                 out["0-3 sin nominar"] = _num(s.group(3))
     return out
+
+
+def vigencia_en_texto(texto: str) -> str | None:
+    """Primer día del mes desde el que rige, según el articulado ("a partir del 1° de julio de 2026")."""
+    t = re.sub(r"\s+", " ", texto)
+    for m in re.finditer(r"a partir del (?:d[ií]a )?(\d{1,2})°? de (\w+) de(?:l a[ñn]o)? (\d{4})", t, re.I):
+        if MESES.get(m.group(2).lower()):
+            return f"{m.group(3)}-{MESES[m.group(2).lower()]:02d}-01"
+    return None
 
 
 def _habiles(d: date, n: int) -> date:
@@ -195,7 +205,7 @@ def _procesar_norma_caba(s, d, x, fecha, rubro, tarifas) -> str:
     a = next((a for a in anexos if re.search(r"-ANX(-II)?\.pdf$", a["nombre_anexo"])), anexos[0])
     url = f"{DOCS_CABA}/{a['nombre_anexo']}"
     r = s.get(url, timeout=60)
-    if r.status_code != 200 or not r.content.startswith(b"%PDF"):
+    if (r.status_code != 200 or not r.content.startswith(b"%PDF")) and a.get("filenet_firmado"):
         r = s.get(a["filenet_firmado"], timeout=60)
     if not r.content.startswith(b"%PDF"):
         return "anexo no disponible"
@@ -224,8 +234,17 @@ def _procesar_norma_caba(s, d, x, fecha, rubro, tarifas) -> str:
         (d / "textos").mkdir(exist_ok=True)
         (d / "textos" / f"caba_{x['id_norma']}.txt").write_text(texto, encoding="utf-8")
         c = leer_colectivo_caba(texto)
-        if "mes" not in c or "0-3" not in c:
+        if "0-3" in c and "mes" not in c and x.get("url_norma"):
+            # el anexo no nombra el mes: se busca en el articulado de la resolución
+            rn = s.get(x["url_norma"], timeout=60)
+            if rn.content.startswith(b"%PDF"):
+                mes = vigencia_en_texto(_pdf_texto(rn.content))
+                if mes:
+                    c["mes"] = mes
+        if "0-3" not in c:
             return "cuadro no leído"
+        if "mes" not in c:
+            return "sin mes de vigencia"
         for sec in ("0-3", "3-6", "6-12", "12-27"):
             if sec in c:
                 con = COLECTIVO_CABA if sec == "0-3" else f"Colectivo líneas de la Ciudad: sección {sec} km con SUBE registrada"
@@ -278,6 +297,16 @@ def actualizar_caba(cfg: Config, conf: dict, pausa: float = 1.0, max_adelante: i
             log.info("Boletín CABA %s %s: %s (%s) %s", num, fecha, x["nombre"], rub, leida)
         return True
 
+    # colectivos y subte registrados pero no leídos (lector mejorado después): se reintentan
+    for n in [n for n in normas if n.get("rubro") in ("colectivo", "subte") and not str(n.get("leida", "")).endswith("valores")][:30]:
+        x = {"id_norma": n["id"], "nombre": n["nombre"], "url_norma": n.get("url", ""),
+             "anexos": [{"nombre_anexo": a, "filenet_firmado": ""} for a in (n.get("anexos") or "").split()]}
+        try:
+            n["leida"] = _procesar_norma_caba(s, d, x, n["fecha"], n["rubro"], tarifas) or n.get("leida", "")
+            log.info("Boletín CABA %s releída: %s", n["nombre"], n["leida"])
+        except Exception as e:
+            log.warning("Boletín CABA %s: %s", n["nombre"], e)
+        time.sleep(pausa)
     adelante = 0
     while adelante < max_adelante:
         num = est["ultimo"] + 1

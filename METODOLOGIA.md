@@ -356,7 +356,15 @@ el total no se presenta como nivel general.
   4 resoluciones: 81/25, 342/25, 66/26 y 122/26), así que los meses intermedios siguen en la carga
   manual. Los robots.txt de los dos sitios no restringen nada. Verificación: octubre de 2026 de
   colectivos de la Ciudad leído por OCR (0-3 km $920,48) igual a la carga manual; subte de
-  noviembre $1.887,00 contra $1.888 de la nota periodística cargada a mano.
+  noviembre $1.887,00 contra $1.888 de la nota periodística cargada a mano. Como la carga manual de
+  noviembre (colectivo $956,38 y subte $1.888) venía de una nota periodística y no coincidía con los
+  anexos oficiales ($956,69 y $1.887), se corrigió con el dato oficial. Si el anexo de colectivos no
+  nombra el mes, se toma del articulado de la resolución ("a partir del 1° de julio de 2026"); si
+  tampoco está, el valor queda registrado como "sin mes de vigencia" y no se usa. Las normas
+  registradas que no se pudieron leer se reintentan en las corridas siguientes (también las de luz y
+  gas de Infoleg detectadas antes de que existiera el lector de gas). Primera corrida (12/11/2026):
+  colectivos de la Ciudad de junio, septiembre y octubre y subte de julio a noviembre de 2026; gas
+  de octubre de Metrogas y Naturgy BAN; colectivos de la Provincia de mayo de 2026.
 - **D-41. Precios de autos (Cámara del Comercio Automotor).** La guía oficial mensual de la CCA
   (PDF público, robots.txt sin restricciones) se archiva una vez por mes y se pasa a una tabla larga
   (marca, modelo, versión, año, valor, moneda) usando la posición de cada número en la página: cada

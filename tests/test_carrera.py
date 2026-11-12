@@ -102,6 +102,9 @@ def test_boletines_ciudad_y_provincia():
     d = Path(__file__).parent / "datos"
     c = b.leer_colectivo_caba((d / "caba_colectivo_202610_ocr.txt").read_text(encoding="utf-8"))
     assert c == {"mes": "2026-10-01", "0-3": 920.48, "3-6": 1022.81, "6-12": 1101.59, "12-27": 1180.44}
+    c8 = b.leer_colectivo_caba((d / "caba_colectivo_202608_ocr.txt").read_text(encoding="utf-8"))
+    assert c8["mes"] == "2026-08-01" and c8["0-3"] == 852.9
+    assert b.vigencia_en_texto("los cuadros tarifarios regirán a partir del 1° de julio de 2026.") == "2026-07-01"
     t = (d / "caba_subte_253.txt").read_text(encoding="utf-8")
     assert b.leer_subte(t) == 1887.0 and b.mes_de_referencia(t) == "2026-11-01"
     p = b.leer_colectivo_pba((d / "pba_colectivo_122_26.txt").read_text(encoding="utf-8"))

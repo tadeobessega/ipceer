@@ -326,6 +326,16 @@ def actualizar(cfg: Config, max_ids: int = 600, racha_vacia: int = 60, pausa: fl
             vistos.add(int(n["id"]))
             log.info("Infoleg %s: %s %s %s (%s)", n["id"], n["organismo"], n["numero"], n["titulo"][:60], n["rubro"])
 
+    # normas de luz y gas ya registradas pero nunca leídas (por ejemplo, detectadas antes de que
+    # existiera el lector de gas): se leen ahora, hasta 40 por corrida
+    for n in [n for n in normas if n.get("rubro") in ("electricidad", "gas") and not n.get("leida")][:40]:
+        try:
+            nuevo = _procesar(s, d, int(n["id"]), conf, tarifas, pausa)
+            if nuevo and nuevo.get("leida") is not None:
+                n["leida"] = nuevo["leida"] or "sin lectura"
+                log.info("Infoleg %s releída: %s", n["id"], n["leida"])
+        except requests.RequestException as e:
+            log.warning("Infoleg %s: %s", n["id"], e)
     nid, vacios, ultimo, revisados = est["ultimo_id"], 0, est["ultimo_id"], 0
     while revisados < max_ids and vacios < racha_vacia:
         nid += 1

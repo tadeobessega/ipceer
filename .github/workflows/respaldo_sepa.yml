@@ -4,6 +4,7 @@ name: Respaldo diario de SEPA
 # que le falte. También avisa (abre un issue) si el respaldo falla o si la PC dejó de actualizar.
 on:
   schedule:
+    - cron: "47 7 * * *"    # 04:47 en Argentina (antes de la corrida de las 06:00 de la PC; D-33)
     - cron: "17 11 * * *"   # 08:17 en Argentina
     - cron: "17 23 * * *"   # 20:17
   workflow_dispatch:

@@ -52,7 +52,7 @@ VARIANTES: list[tuple[str, str, dict, bool]] = [
     ("sin_fyv", "Sin frutas ni verduras", {"excluir": ("01.1.6", "01.1.7")}, False),
     ("sin_frescos", "Sin carnes, pescados, frutas ni verduras", {"excluir": FRESCOS}, False),
     ("web", "Con precios de tiendas en línea (ropa, calzado, medicamentos, frescos por kilo)", {"web": True}, True),
-    ("completo", "Con tiendas en línea, tarifas, combustibles y alquileres", {"web": True, "extra": True}, True),
+    ("completo", "Con tiendas en línea, tarifas, combustibles, alquileres y prepagas", {"web": True, "extra": True}, True),
 ]
 NOMBRES = {v[0]: v[1] for v in VARIANTES} | {
     "base_mas_sesgo": "Publicado más el sesgo medio de 2017-2018 (experimental)",
@@ -81,8 +81,9 @@ def _prev(mes: str) -> str:
 
 def relativos_externos(cfg: Config) -> pl.DataFrame:
     """Variaciones mensuales de clases que no salen de precios relevados: tarifas por norma
-    (config/regulados/tarifas.csv), combustibles (Secretaría de Energía) y alquileres publicados
-    (informe de Zonaprop, solo GBA). Columnas: periodo, codigo, region, logrel, fuente."""
+    (config/regulados/tarifas.csv y las leídas de Infoleg), combustibles (Secretaría de Energía),
+    alquileres publicados (informe de Zonaprop, solo GBA) y cuotas de prepagas (Superintendencia de
+    Servicios de Salud). Columnas: periodo, codigo, region, logrel, fuente."""
     esquema = {"periodo": pl.Utf8, "codigo": pl.Utf8, "region": pl.Utf8, "logrel": pl.Float64, "fuente": pl.Utf8}
     partes = []
     try:
@@ -115,6 +116,13 @@ def relativos_externos(cfg: Config) -> pl.DataFrame:
                 partes.append(pl.DataFrame(filas, schema=esquema))
     except Exception as e:
         log.warning("Carrera, alquileres: %s", e)
+    try:
+        from . import prepagas
+        pp = prepagas.relativos_externos(cfg)
+        if not pp.is_empty():
+            partes.append(pp)
+    except Exception as e:
+        log.warning("Carrera, prepagas: %s", e)
     if not partes:
         return pl.DataFrame(schema=esquema)
     return pl.concat([p.select(list(esquema)).cast(esquema) for p in partes])

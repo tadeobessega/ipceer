@@ -1,0 +1,71 @@
+name: Procesar SEPA (Plan A)
+# Procesa en GitHub los zips de SEPA del release "sepa-archivo" y deja proc_AAAA-MM-DD.tar (panel
+# diario, mapa y municipios). La PC los trae y ya no descomprime ni procesa los zips
+# (METODOLOGIA.md, D-33). Corre después de cada respaldo y dos veces más por día.
+on:
+  workflow_run:
+    workflows: ["Respaldo diario de SEPA"]
+    types: [completed]
+  schedule:
+    - cron: "37 9 * * *"    # 06:37 en Argentina
+    - cron: "37 15 * * *"   # 12:37
+  workflow_dispatch:
+    inputs:
+      desde:
+        description: "Procesar desde esta fecha (AAAA-MM-DD); vacío = desde 3 días antes del último de la PC"
+        required: false
+      max:
+        description: "Máximo de días por corrida"
+        required: false
+        default: "4"
+  push:
+    branches: [main]
+    paths: [".github/workflows/procesar_sepa.yml", "scripts/procesar_sepa_gh.py", "src/ipceer/lectura.py"]
+permissions:
+  contents: write
+concurrency: procesar-sepa
+jobs:
+  procesar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: sepa-archivo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Lista del release y desde cuándo procesar
+        id: lista
+        run: |
+          gh release view "$TAG" --json assets -q '.assets[].name' > assets.txt
+          desde="${{ github.event.inputs.desde }}"
+          if [ -z "$desde" ] && gh release download "$TAG" -p estado_pc.json -O estado_pc.json 2>/dev/null; then
+            ult=$(python -c "import json;print(json.load(open('estado_pc.json'))['ultimo_dia'])")
+            desde=$(date -d "$ult - 3 days" +%F)
+          fi
+          echo "desde=$desde" >> "$GITHUB_OUTPUT"
+          echo "Desde: ${desde:-sin límite}"
+      - name: Límites de departamentos (Georef) para el mapa y los municipios
+        run: |
+          mkdir -p data/combustibles/geo
+          if ! gh release download "$TAG" -p geo_departamentos.geojson -O data/combustibles/geo/departamentos.geojson; then
+            # la primera vez se bajan de Georef (la misma fuente que usa la PC) y se guardan en el release
+            python -c "from ipceer.config import cargar_config; from ipceer.combustibles import descargar_geometria; descargar_geometria(cargar_config())"
+            if [ -f data/combustibles/geo/departamentos.geojson ]; then
+              cp data/combustibles/geo/departamentos.geojson geo_departamentos.geojson
+              gh release upload "$TAG" geo_departamentos.geojson --clobber
+            else
+              echo "Sin límites de departamentos: se procesa solo el panel diario"
+            fi
+          fi
+      - name: Procesar
+        run: |
+          d="${{ steps.lista.outputs.desde }}"
+          python scripts/procesar_sepa_gh.py assets.txt salida/ --max "${{ github.event.inputs.max || '4' }}" ${d:+--desde "$d"}
+      - name: Subir al release
+        run: |
+          shopt -s nullglob
+          for f in salida/proc_*.tar; do ls -la "$f"; gh release upload "$TAG" "$f" --clobber; done

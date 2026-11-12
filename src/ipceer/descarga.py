@@ -283,3 +283,105 @@ def desde_github(cfg: Config) -> list[Path]:
         _registrar(dir_crudos, Recurso(fecha_de_zip(destino), a["browser_download_url"], "github"), destino)
         nuevos.append(destino)
     return nuevos
+
+
+# --- Días ya procesados en GitHub Actions (Plan A, decisión D-33) ------------------------
+
+_PROC = re.compile(r"proc_(\d{4}-\d{2}-\d{2})\.tar")
+
+
+def miembros_validos(nombres: list[str], fecha: str) -> list[str]:
+    """Rutas que se aceptan dentro de un proc_AAAA-MM-DD.tar (relativas a data/): el panel del día,
+    el del mapa, los de cada municipio y la lista de cadenas. Cualquier otra cosa se ignora."""
+    ok = re.compile(rf"(panel/diario|geo/diario|municipios/\d+/panel/diario)/{fecha}\.parquet|cadenas\.csv")
+    return [n for n in nombres if ok.fullmatch(n)]
+
+
+def procesados_desde_github(cfg: Config) -> list[str]:
+    """Trae del release los días de SEPA que GitHub Actions ya procesó (proc_AAAA-MM-DD.tar) y que
+    la PC todavía no tiene, y los deja en data/ como si se hubieran procesado acá."""
+    import io
+    import tarfile
+    from .lectura import actualizar_cadenas
+    rr = _repo_respaldo(cfg)
+    if rr is None:
+        return []
+    repo, tag = rr
+    d = cfg["descarga"]
+    token = _token_github()
+    auth = {"Authorization": f"Bearer {token}"} if token else {}
+    try:
+        r = requests.get(f"https://api.github.com/repos/{repo}/releases/tags/{tag}", timeout=d["timeout_segundos"],
+                         headers={"Accept": "application/vnd.github+json", **auth})
+        r.raise_for_status()
+    except requests.RequestException as e:
+        log.warning("Procesados en GitHub: no disponible (%s)", e)
+        return []
+    dir_panel = cfg.ruta("panel_diario")
+    dir_data = dir_panel.parent.parent
+    hechos = []
+    for a in sorted(r.json().get("assets", []), key=lambda x: x.get("name", "")):
+        m = _PROC.fullmatch(a.get("name", ""))
+        if not m or (dir_panel / f"{m.group(1)}.parquet").exists():
+            continue
+        fecha = m.group(1)
+        tmp = dir_data / f".{a['name']}.parcial"
+        try:
+            if auth:
+                _bajar(a["url"], tmp, d["timeout_segundos"] * 5, d["reintentos"], {**auth, "Accept": "application/octet-stream"})
+            else:
+                _bajar(a["browser_download_url"], tmp, d["timeout_segundos"] * 5, d["reintentos"])
+            with tarfile.open(tmp) as tf:
+                nombres = miembros_validos(tf.getnames(), fecha)
+                if f"panel/diario/{fecha}.parquet" not in nombres:
+                    log.warning("Procesados en GitHub: %s no trae el panel del día", a["name"])
+                    continue
+                # el panel del día va último: si algo falla antes, el día queda pendiente y se reintenta
+                for n in sorted(nombres, key=lambda x: x == f"panel/diario/{fecha}.parquet"):
+                    datos = tf.extractfile(n).read()
+                    if n == "cadenas.csv":
+                        import polars as pl
+                        c = pl.read_csv(io.BytesIO(datos), schema_overrides={"id_comercio": pl.Utf8, "id_bandera": pl.Utf8,
+                                                                             "cadena": pl.Utf8})
+                        actualizar_cadenas(cfg, c.to_dicts())
+                        continue
+                    dest = dir_data / n
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    parcial = dest.with_suffix(".parcial")
+                    parcial.write_bytes(datos)
+                    parcial.replace(dest)
+            hechos.append(fecha)
+            log.info("Procesados en GitHub: %s", fecha)
+        except Exception as e:
+            log.warning("Procesados en GitHub: no se pudo traer %s: %s", a["name"], e)
+        finally:
+            tmp.unlink(missing_ok=True)
+    return hechos
+
+
+def bajar_asset(cfg: Config, nombre: str, destino: Path) -> bool:
+    """Baja un archivo del release de respaldo (por la API si hay token). Devuelve si lo pudo bajar."""
+    rr = _repo_respaldo(cfg)
+    if rr is None:
+        return False
+    repo, tag = rr
+    d = cfg["descarga"]
+    token = _token_github()
+    auth = {"Authorization": f"Bearer {token}"} if token else {}
+    try:
+        r = requests.get(f"https://api.github.com/repos/{repo}/releases/tags/{tag}", timeout=d["timeout_segundos"],
+                         headers={"Accept": "application/vnd.github+json", **auth})
+        r.raise_for_status()
+        a = next((x for x in r.json().get("assets", []) if x.get("name") == nombre), None)
+        if a is None:
+            return False
+        tmp = destino.with_name(destino.name + ".parcial")
+        if auth:
+            _bajar(a["url"], tmp, d["timeout_segundos"] * 5, d["reintentos"], {**auth, "Accept": "application/octet-stream"})
+        else:
+            _bajar(a["browser_download_url"], tmp, d["timeout_segundos"] * 5, d["reintentos"])
+        tmp.replace(destino)
+        return True
+    except Exception as e:
+        log.warning("Release: no se pudo bajar %s: %s", nombre, e)
+        return False

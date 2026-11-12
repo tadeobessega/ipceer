@@ -1,0 +1,20 @@
+Cuadro Tarifario
+vigencia a partir del 1° de junio de 2026
+
+EDENOR
+
+Tarifa 1 - R  sin subsidio
+
+R1 Cargo Fijo 0 -150 $/mes 1,661.690
+
+Cargo Variable 0 -150 $/kWh 146.551
+
+R2 Cargo Fijo 151-400 $/mes 3,544.120
+
+Cargo Variable 151-400 $/kWh 147.156
+
+R3 Cargo Fijo 401-450 $/mes 5,012.300
+
+Tarifa 2
+
+Cargo Fijo $/mes 47,932.100

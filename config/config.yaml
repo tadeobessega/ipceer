@@ -21,6 +21,10 @@ descarga:
   respaldo_github:
     repo: tadeobessega/ipceer
     tag: sepa-archivo
+  # Plan A (METODOLOGIA.md, D-33): GitHub Actions procesa cada zip y deja proc_AAAA-MM-DD.tar en el
+  # release; la PC lo trae. La PC procesa por su cuenta un zip solo si pasaron estos días y GitHub
+  # todavía no lo procesó (0 = procesar en la PC todo lo que falte, como antes).
+  procesar_local_tras_dias: 2
 
 regiones:
   # Una sucursal de la provincia de Buenos Aires se asigna a GBA si está a menos de

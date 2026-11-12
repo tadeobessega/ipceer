@@ -441,6 +441,19 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       </div>
     </section>
     <section>
+      <h2>Cuotas de medicina prepaga</h2>
+      <p class="sub" id="pp-sub"></p>
+      <div class="grid">
+        <div class="card s7"><h3>Variación mensual: cuadros de la Superintendencia contra el INDEC</h3><div class="chart short"><canvas id="c-pp"></canvas></div><div class="src">Fuente: CEER en base a la Superintendencia de Servicios de Salud (cuadros tarifarios, Res. 645/2025) e INDEC (clase 06.4.1, GBA).</div></div>
+        <div class="card s5"><h3>Detalle</h3><div class="tablewrap" style="max-height:340px;overflow-y:auto"><table id="t-pp"></table></div></div>
+      </div>
+    </section>
+    <section>
+      <h2>Normas de precios regulados detectadas</h2>
+      <p class="sub">Todos los días se revisan las normas nuevas que carga Infoleg (Ministerio de Justicia) y se guardan las de tarifas de luz, gas, agua, transporte, peajes, prepagas, medicamentos, comunicaciones y servicio doméstico. En los cuadros de Edenor y Edesur los valores residenciales sin subsidio se leen solos del anexo; si la variación contra el valor anterior está entre −30% y +60%, entran al registro de tarifas. Las demás se cargan a mano con su enlace.</p>
+      <div class="grid"><div class="card s12"><div class="tablewrap" style="max-height:420px;overflow-y:auto"><table id="t-normas"></table></div></div></div>
+    </section>
+    <section>
       <h2>Canasta de servicios públicos del AMBA (IIEP, UBA-CONICET)</h2>
       <p class="sub" id="af-sub"></p>
       <div class="grid">
@@ -1627,6 +1640,18 @@ function renderAlim(){
     '<tr><td><b>INDEC, alimentos y bebidas</b></td>'+['GBA','Nacional'].map(r=>meses.map(m=>`<td class="n">${ind(r,m)}</td>`).join('')+'<td colspan="2"></td>').join('')+'</tr></tbody>';
 }
 
+/* ---------- prepagas y normas ---------- */
+function renderPrepagas(){
+  const P=D.prepagas||{}, I=P.indice||[], ref=(P.indec||{}).GBA||{};
+  document.getElementById('pp-sub').innerHTML='Las prepagas tienen que declarar a la Superintendencia de Servicios de Salud el valor de cada plan, por edad y región, dentro de los cinco días hábiles posteriores al dato del INDEC. Con eso se mide la variación de la cuota de cada plan entre un mes y el anterior (los mismos planes, edades y regiones), ponderada por la cantidad de afiliados que declara cada entidad. Se bajan las entidades más grandes. Como se publica antes que el INDEC, anticipa la clase “Gastos de prepagas” del mes siguiente.';
+  if(I.length){
+    draw('c-pp',{type:'bar',data:{labels:I.map(r=>mesLbl(r.periodo)),datasets:[{label:'Superintendencia (CEER)',data:I.map(r=>r.var_pct),backgroundColor:PAL()[0]},{label:'INDEC GBA',data:I.map(r=>ref[r.periodo]??null),backgroundColor:css('--ambar')}]},options:baseOpts({scales:{y:{ticks:{callback:v=>pct(v,1)}}}})});
+    document.getElementById('t-pp').innerHTML='<thead><tr><th>Mes</th><th class="n">CEER</th><th class="n">Declarada</th><th class="n">INDEC GBA</th><th class="n">Afiliados</th></tr></thead><tbody>'+[...I].reverse().map(r=>`<tr><td>${mesLbl(r.periodo)}</td><td class="n">${pct(r.var_pct,2)}</td><td class="n">${pct(r.tasa_declarada_pct,2)}</td><td class="n">${pct(ref[r.periodo],2)}</td><td class="n">${num(r.capitas,0)}</td></tr>`).join('')+'</tbody>';
+  } else { sinDatos('c-pp','Todavía no se bajaron dos meses seguidos: aparece con la próxima corrida.'); document.getElementById('t-pp').innerHTML=''; }
+  const N=D.normas||[];
+  document.getElementById('t-normas').innerHTML=N.length?'<thead><tr><th>Publicada</th><th>Rubro</th><th>Norma</th><th>Título</th><th>Lectura automática</th></tr></thead><tbody>'+N.map(n=>`<tr><td class="mono">${esc(n.publicada||'')}</td><td>${esc((n.rubro||'').replace(/_/g,' '))}</td><td><a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.tipo+' '+n.numero)}</a> <span class="muted">${esc(n.organismo||'')}</span></td><td>${esc(n.titulo||'')}</td><td class="muted">${esc(n.leida||'')}</td></tr>`).join('')+'</tbody>':'<tbody><tr><td class="muted">Todavía no se revisó Infoleg: aparece con la próxima corrida de GitHub.</td></tr></tbody>';
+}
+
 /* ---------- regulados ---------- */
 function renderRegu(){
   const R=D.regulados||{}, I=(R.indice||[]).filter(r=>r.region==='Nacional'&&r.var_pct!=null);
@@ -1751,7 +1776,7 @@ function render(){
   if(tab==='hilo') renderHilo();
   if(tab==='met') renderMetodo();
   if(tab==='val'){ renderCarrera(); renderAlim(); renderVal(); renderExt(); renderMun(); renderVariantes(); tocVal(); }
-  if(tab==='regu') renderRegu();
+  if(tab==='regu'){ renderRegu(); renderPrepagas(); }
   if(tab==='fre') renderFre();
   if(tab==='can') renderCan();
 }

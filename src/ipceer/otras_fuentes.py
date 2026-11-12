@@ -209,11 +209,46 @@ def afispop(cfg: Config) -> list[dict]:
         return [dict(r, valor=float(r["valor"])) for r in csv.DictReader(f)]
 
 
-def actualizar(cfg: Config) -> dict:
+def desde_github(cfg: Config) -> dict | None:
+    """Plan A (D-33): trae lo que GitHub Actions ya bajó (otras.tar.gz y su resumen) en lugar de
+    bajarlo de nuevo desde la PC. Devuelve el resumen, o None si no se pudo (la PC baja por su cuenta)."""
+    import tarfile
+    from .descarga import bajar_asset
+    data = cfg.ruta("panel_diario").parent.parent
+    tgz, js = data / "otras.tar.gz", data / "otras_fuentes_github.json"
+    try:
+        if not (bajar_asset(cfg, "otras.tar.gz", tgz) and bajar_asset(cfg, "otras_fuentes_github.json", js)):
+            return None
+        with tarfile.open(tgz) as tf:
+            seguros = [m for m in tf.getmembers() if (m.isfile() or m.isdir()) and m.name.startswith("otras/")
+                       and ".." not in Path(m.name).parts and not Path(m.name).is_absolute()]
+            tf.extractall(data, members=seguros)
+        res = json.loads(js.read_text(encoding="utf-8"))
+        res["origen"] = "github"
+        (cfg.ruta("resultados") / "otras_fuentes.json").write_text(json.dumps(res, ensure_ascii=False, indent=1),
+                                                                   encoding="utf-8")
+        return res
+    except Exception as e:
+        log.warning("Otras fuentes desde GitHub: %s", e)
+        return None
+    finally:
+        tgz.unlink(missing_ok=True)
+        js.unlink(missing_ok=True)
+
+
+def actualizar(cfg: Config, desde_gh: bool = False) -> dict:
+    if desde_gh:
+        r = desde_github(cfg)
+        if r is not None:
+            log.info("Otras fuentes: traídas de GitHub (%s)", r.get("actualizado"))
+            return r
+        log.warning("Otras fuentes: GitHub no disponible, se bajan desde esta máquina")
     res = {"actualizado": datetime.now().isoformat(timespec="seconds")}
     from . import frescos
+    from . import normas, prepagas
     for nombre, f in (("alquileres_zonaprop", zonaprop), ("medicamentos_pami", pami), ("bcra", bcra),
-                      ("hacienda_canuelas", frescos.canuelas), ("frutas_hortalizas_mcba", frescos.mcba)):
+                      ("hacienda_canuelas", frescos.canuelas), ("frutas_hortalizas_mcba", frescos.mcba),
+                      ("prepagas", prepagas.actualizar), ("normas", normas.actualizar)):
         try:
             res[nombre] = f(cfg)
         except Exception as e:  # una fuente que falla no frena las demás

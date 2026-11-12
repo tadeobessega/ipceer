@@ -108,7 +108,7 @@ Paso "SEPA: descarga" { Ipceer descargar }
 Paso "SEPA: procesamiento" { Ipceer procesar }
 Paso "Nombres de las cadenas" { Ipceer cadenas }
 Paso "Municipios (Morón)" { Ipceer municipios }
-Paso "Alquileres y medicamentos" { Ipceer otras }
+Paso "Otras fuentes (traídas de GitHub)" { Ipceer otras --desde-github }
 Paso "Precios web (tiendas en línea)" { Ipceer web --sin-bajar }
 # Reconsolidar todo (2016 en adelante) tarda más de media hora: solo se hace si cambiaron las reglas
 # de clasificación; si no, se consolidan solo las semanas y meses nuevos.

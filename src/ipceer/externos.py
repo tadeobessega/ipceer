@@ -17,10 +17,25 @@ log = logging.getLogger(__name__)
 
 
 def tarifas(cfg: Config) -> pl.DataFrame:
+    """Tarifas cargadas a mano (config/regulados/tarifas.csv) más las leídas automáticamente de los
+    anexos de Infoleg que pasaron el control (normas.tarifas_automaticas, D-34). Si un mismo concepto
+    y fecha de inicio está en las dos, manda la carga manual."""
     ruta = cfg.dir_config / "regulados" / "tarifas.csv"
-    if not ruta.exists():
-        return pl.DataFrame()
-    return pl.read_csv(ruta, schema_overrides={"codigo": pl.Utf8, "valor": pl.Float64})
+    sch = {"codigo": pl.Utf8, "valor": pl.Float64}
+    manual = pl.read_csv(ruta, schema_overrides=sch) if ruta.exists() else pl.DataFrame()
+    try:
+        from .normas import tarifas_automaticas
+        auto = tarifas_automaticas(cfg)
+    except Exception as e:
+        log.warning("Tarifas automáticas: %s", e)
+        auto = []
+    if not auto:
+        return manual
+    a = pl.DataFrame(auto).with_columns(pl.col("valor").cast(pl.Float64), pl.col("codigo").cast(pl.Utf8))
+    if manual.is_empty():
+        return a
+    a = a.join(manual.select("concepto", "vigente_desde"), on=["concepto", "vigente_desde"], how="anti")
+    return pl.concat([manual, a.select(manual.columns)], how="vertical_relaxed")
 
 
 def _meses(desde: date, hasta: date) -> list[str]:

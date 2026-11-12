@@ -1,0 +1,18 @@
+# Entidades de medicina prepaga que se bajan de los cuadros tarifarios de la Superintendencia de
+# Servicios de Salud (https://cuadrostarifarios.sssalud.gob.ar). Son las de mayor cantidad de
+# afiliados; cada plan pondera por las cápitas que la entidad declara (D-35 de METODOLOGIA.md).
+# rnemp: número del Registro Nacional de Entidades de Medicina Prepaga (lo devuelve la misma API).
+entidades:
+  - {rnemp: 614081, nombre: OSDE}
+  - {rnemp: 113328, nombre: Swiss Medical}
+  - {rnemp: 112851, nombre: Galeno}
+  - {rnemp: 412258, nombre: Medifé}
+  - {rnemp: 113366, nombre: Omint}
+  - {rnemp: 311371, nombre: Sancor Salud}
+  - {rnemp: 111834, nombre: Medicus}
+  - {rnemp: 211947, nombre: Avalian}
+  - {rnemp: 116792, nombre: Prevención Salud}
+  - {rnemp: 413145, nombre: Hospital Italiano}
+  - {rnemp: 410863, nombre: Hospital Alemán}
+  - {rnemp: 412555, nombre: Hospital Británico}
+  - {rnemp: 614869, nombre: OSDEPYM}

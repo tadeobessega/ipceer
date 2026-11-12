@@ -1,0 +1,36 @@
+# Normas que se buscan en Infoleg para los precios regulados (src/ipceer/normas.py, D-34).
+# Gana el primer rubro cuyo `organismo` (expresión regular sobre el organismo, en mayúsculas) y cuyo
+# `tema` (sobre organismo, título y resumen) coinciden.
+# desde_id: id de Infoleg desde el que se empezó a revisar (norma 429488 = 1 de septiembre de 2026).
+desde_id: 429400
+rubros:
+  - id: electricidad
+    organismo: 'ENTE NACIONAL REGULADOR DE LA ELECTRICIDAD|ENTE NACIONAL REGULADOR DEL GAS Y LA ELECTRICIDAD'
+    tema: 'EDENOR|EDESUR'
+  - id: gas
+    organismo: 'ENTE NACIONAL REGULADOR DEL GAS'
+    tema: 'METROGAS|NATURGY|GAS NATURAL BAN|CAMUZZI|LITORAL GAS|GASNOR|ECOGAS|DISTRIBUIDORA DE GAS|GASNEA|REDENGAS|CUADRO|TARIF'
+  - id: energia_mayorista
+    organismo: 'SECRETAR[IÍ]A DE ENERG[IÍ]A|MINISTERIO DE ECONOM[IÍ]A'
+    tema: 'PRECIO ESTACIONAL|PRECIOS ESTACIONALES|PEST|PRECIO DE INGRESO AL SISTEMA|PIST|SUBSIDIO|BONIFICACI[OÓ]N|TARIFA SOCIAL|SUBSIDIOS ENERG[EÉ]TICOS'
+  - id: agua
+    organismo: 'AGUA Y SANEAMIENTOS|ENTE REGULADOR DE AGUA|AGENCIA DE PLANIFICACI[OÓ]N|SECRETAR[IÍ]A DE OBRAS P[UÚ]BLICAS|MINISTERIO DE ECONOM[IÍ]A'
+    tema: 'AYSA|AGUA Y SANEAMIENTOS|COEFICIENTE K|TARIF'
+  - id: transporte
+    organismo: 'SECRETAR[IÍ]A DE TRANSPORTE|MINISTERIO DE ECONOM[IÍ]A|COMISI[OÓ]N NACIONAL DE REGULACI[OÓ]N DEL TRANSPORTE'
+    tema: 'TARIFA|BOLETO|CUADRO TARIFARIO|PASAJE|SUBE'
+  - id: peajes
+    organismo: 'VIALIDAD|CORREDORES VIALES|AUTOPISTAS'
+    tema: 'PEAJE|TARIF'
+  - id: prepagas
+    organismo: 'SUPERINTENDENCIA DE SERVICIOS DE SALUD|MINISTERIO DE SALUD'
+    tema: 'CUOTA|AUMENTO|PREPAGA|MEDICINA PREPAGA'
+  - id: medicamentos
+    organismo: 'MINISTERIO DE SALUD|ADMINISTRACI[OÓ]N NACIONAL DE MEDICAMENTOS|SECRETAR[IÍ]A DE COMERCIO'
+    tema: 'PRECIO|MEDICAMENTO'
+  - id: comunicaciones
+    organismo: 'ENTE NACIONAL DE COMUNICACIONES'
+    tema: 'PRECIO|TARIF|ABONO|SERVICIO UNIVERSAL'
+  - id: servicio_domestico
+    organismo: 'COMISI[OÓ]N NACIONAL DE TRABAJO EN CASAS PARTICULARES|MINISTERIO DE CAPITAL HUMANO'
+    tema: 'CASAS PARTICULARES|REMUNERACI|SALARI'

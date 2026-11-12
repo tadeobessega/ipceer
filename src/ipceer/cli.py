@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import date
 import logging
 import sys
 from pathlib import Path
@@ -50,7 +51,19 @@ def cmd_descargar(cfg, args):
 
 
 def cmd_procesar(cfg, args):
+    # Plan A (D-33): primero se traen los días que GitHub Actions ya procesó; la PC procesa sola solo
+    # los zips que GitHub no procesó después de `procesar_local_tras_dias` días (o todos si es 0).
+    try:
+        n = descarga.procesados_desde_github(cfg)
+        log.info("Días procesados en GitHub y traídos: %d", len(n))
+    except Exception as e:
+        log.warning("Procesados en GitHub: %s", e)
+    espera = int((cfg["descarga"].get("procesar_local_tras_dias") or 0))
+    limite = date.today().toordinal() - espera
     for z in descarga.zips_sin_procesar(cfg):
+        if espera and descarga.fecha_de_zip(z).toordinal() > limite:
+            log.info("%s: se espera a que lo procese GitHub", z.name)
+            continue
         try:
             lectura.procesar_zip_diario(z, descarga.fecha_de_zip(z), cfg)
         except Exception as e:
@@ -198,6 +211,22 @@ def cmd_calcular(cfg, args):
                                           for k, v in json.loads(rh.read_text(encoding="utf-8")).items()}
     except Exception as e:
         log.warning("Carrera de métodos: %s", e)
+    try:
+        from . import normas, prepagas
+        pp = prepagas.resumen(cfg)
+        ind = validacion.leer_indec(indec.directorio(cfg)).filter(pl.col("codigo") == "06.4.1")
+        ref = {}
+        for (reg,), g in ind.group_by(["region"]):
+            x = dict(g.select("mes", "indice").iter_rows())
+            ref[reg] = {m: round((x[m] / x[p] - 1) * 100, 3) for m in x
+                        if (p := f"{int(m[:4]) - (m[5:] == '01')}-{12 if m[5:] == '01' else int(m[5:]) - 1:02d}") in x}
+        pp["indec"] = ref
+        datos["prepagas"] = resumen._limpio(pp)
+        rn = normas._dir(cfg) / "normas.csv"
+        if rn.exists():
+            datos["normas"] = pl.read_csv(rn, infer_schema_length=0).sort("id", descending=True).head(60).to_dicts()
+    except Exception as e:
+        log.warning("Prepagas y normas: %s", e)
     try:
         datos["afispop"] = otras_fuentes.afispop(cfg)
     except Exception as e:
@@ -374,8 +403,9 @@ def main(argv=None):
     c.add_argument("--variante", default="", help="con --historico: solo estas (ids separados por coma)")
     c.add_argument("--forzar", action="store_true")
     c.set_defaults(fn=cmd_carrera)
-    sub.add_parser("otras", help="alquileres (Index Zonaprop) y medicamentos (PAMI)").set_defaults(
-        fn=lambda cfg, a: otras_fuentes.actualizar(cfg))
+    o = sub.add_parser("otras", help="alquileres, medicamentos, frescos, BCRA, prepagas y normas de tarifas")
+    o.add_argument("--desde-github", action="store_true", help="traer lo que ya bajó GitHub Actions (Plan A)")
+    o.set_defaults(fn=lambda cfg, a: otras_fuentes.actualizar(cfg, desde_gh=a.desde_github))
     sub.add_parser("variantes", help="compara variantes de método contra el INDEC (2016-2018)").set_defaults(
         fn=lambda cfg, a: __import__("runpy").run_path(str(Path(__file__).resolve().parents[2] / "scripts" / "variantes.py"), run_name="__main__"))
     sub.add_parser("municipios", help="paneles e índices por municipio").set_defaults(

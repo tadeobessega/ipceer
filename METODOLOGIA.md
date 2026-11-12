@@ -123,9 +123,16 @@ Método vigente desde el 11 de noviembre de 2026 ("mejorado", D-15):
 ### 3.5 Semanal, mes en curso y escenarios (D-17, D-18)
 
 - **D-17.** Semana ISO (lunes a domingo), asignada al mes de su jueves. Mensualizada:
-  `(1+v)^(30,44/7) − 1`. Promedio de 4 semanas: media geométrica de los 4 relativos. El índice semanal
-  usa el mismo método elemental (D-12 a D-14); su base directa es la última semana de diciembre del año
-  anterior o la primera del tramo.
+  `(1+v)^(30,44/7) − 1`. Promedio de 4 semanas: media geométrica de los 4 relativos.
+- **D-37 (12 de noviembre de 2026). El índice semanal usa el método anterior** (Jevons encadenado de
+  todos los artículos, sin variedades, sin filtro de populares y sin comparación directa), configurable
+  en `indice.semanal`. Motivo: el método mejorado (D-12 a D-14) se validó solo contra el INDEC mensual;
+  aplicado a las semanas de octubre y noviembre de 2026 bajaba alimentos de GBA, que con el método
+  anterior daba 0,29% y 0,35% en las dos semanas cerradas, en línea con lo que publicaban las
+  consultoras (Econviews: 0,3% y 0,4%). Con un tramo semanal que empieza el 24 de octubre, la base de
+  la comparación directa es esa primera semana parcial, y el filtro de populares deja pocos artículos
+  por variedad. El mensual sigue con el método mejorado. Se vuelve a evaluar cuando haya meses de
+  2026 publicados por el INDEC para comparar ambos.
 - **D-18.** Mes en curso: **relevado** (promedio de las semanas observadas contra el mes anterior).
   **Arrastre** (las semanas que faltan quedan en el último nivel) y **proyección** (crecen al ritmo
   del promedio de 4 semanas) son **escenarios rotulados**: nunca reemplazan al dato relevado.

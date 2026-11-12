@@ -63,6 +63,14 @@ indice:
   estratificar: true
   populares: 3
   directo: true
+  # El semanal sigue con el método anterior (D-37): el mejorado se validó solo contra el INDEC mensual,
+  # y en las semanas de octubre y noviembre de 2026 bajaba alimentos de GBA de 0,29% y 0,35% (cerca
+  # de lo que publicaban las consultoras) a valores menores. Se revisa cuando haya meses de 2026
+  # para comparar.
+  semanal:
+    estratificar: false
+    populares: 0
+    directo: false
   # Si entre dos períodos con datos pasan más meses que esto, la serie se corta en tramos
   # (ej. la base 2016-2018 de Zenodo y la actual). Por debajo se compara a través del hueco.
   max_meses_salto: 24

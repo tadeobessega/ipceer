@@ -269,9 +269,12 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
     """
     ic = cfg["indice"]
     ponderacion = ponderacion or ic.get("ponderacion", "indec")
-    estratificar = ic.get("estratificar", False) if estratificar is None else estratificar
-    populares = int(ic.get("populares", 0) if populares is None else populares)
-    directo = ic.get("directo", False) if directo is None else directo
+    # El índice semanal puede tener su propio método (indice.semanal en config.yaml, decisión D-37):
+    # el método mejorado se probó solo contra el INDEC mensual.
+    met = {**ic, **(ic.get("semanal") or {})} if frecuencia == "semanal" else ic
+    estratificar = met.get("estratificar", False) if estratificar is None else estratificar
+    populares = int(met.get("populares", 0) if populares is None else populares)
+    directo = met.get("directo", False) if directo is None else directo
     dir_estr = cfg.dir_config if estratificar else None
     col_precio = "precio_lista" if (precio or ic["precio"]) == "lista" else "precio_efectivo"
     min_dias = ic["min_dias_mes"] if frecuencia == "mensual" else ic["min_dias_semana"]

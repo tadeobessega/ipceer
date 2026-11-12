@@ -27,7 +27,7 @@ Se publican tres números (D-16):
 
 | Dato | Fuente | Uso | Dónde se baja |
 |---|---|---|---|
-| Precios diarios de supermercados (unos 12 millones por día) | SEPA, Secretaría de Industria y Comercio (Res. 12/2016 y 678/2020), datos abiertos | Índice: es la base de todo | PC (tarea diaria) y GitHub Actions (`respaldo_sepa.yml`, dos veces por día, al release `sepa-archivo`); la PC trae del release lo que le falte |
+| Precios diarios de supermercados (unos 12 millones por día) | SEPA, Secretaría de Industria y Comercio (Res. 12/2016 y 678/2020), datos abiertos | Índice: es la base de todo | GitHub Actions baja los zips (`respaldo_sepa.yml`, tres veces por día) y los procesa (`procesar_sepa.yml`, D-33); la PC trae el resultado y guarda los zips |
 | SEPA histórico 2016-2018 | Base Precios Claros en Zenodo | Prueba contra el INDEC (2017-01 a 2018-03) | PC (una vez, `ipceer historico`) |
 | SEPA de días sueltos (abril de 2025) | Wayback Machine | Tramo aislado | PC (consulta diaria) |
 | IPC por región, división, grupo y clase; CBA y CBT | INDEC | Ponderadores actualizados, validación, empalme | PC |
@@ -35,12 +35,14 @@ Se publican tres números (D-16):
 | Combustibles por estación (precio y volumen) | Secretaría de Energía (Res. 1104/2004) | Clase 07.2.2 y variante "completo" | PC |
 | Tarifas reguladas (Edenor, Metrogas, AySA) | Cuadros tarifarios y normas, cargados a mano con fuente (`config/regulados/tarifas.csv`) | Canasta de servicios y variante "completo" | Carga manual |
 | Canasta de servicios del AMBA | IIEP (UBA-CONICET), AFISPOP (`config/regulados/afispop.csv`) | Referencia y empalme | Carga manual |
-| Hacienda en pie | Mercado Agroganadero de Cañuelas | Referencia mayorista, no entra al índice | GitHub Actions (`otras_fuentes.yml`) y PC |
-| Frutas y hortalizas | Mercado Central de Buenos Aires | Referencia mayorista, no entra al índice | GitHub Actions y PC |
-| Alquiler de un 2 ambientes en CABA | Informe Index Zonaprop | Variante "completo" (clase 04.1.1, GBA) | GitHub Actions y PC |
-| Medicamentos (copagos) | PAMI, datos abiertos | Referencia | GitHub Actions y PC |
-| Dólar mayorista, ICL, CER, UVA | BCRA, API v4.0 | Referencia | GitHub Actions y PC |
+| Hacienda en pie | Mercado Agroganadero de Cañuelas | Referencia mayorista, no entra al índice | GitHub Actions (`otras_fuentes.yml`); la PC trae el resultado (D-33) |
+| Frutas y hortalizas | Mercado Central de Buenos Aires | Referencia mayorista, no entra al índice | GitHub Actions; la PC trae el resultado |
+| Alquiler de un 2 ambientes en CABA | Informe Index Zonaprop | Variante "completo" (clase 04.1.1, GBA) | GitHub Actions; la PC trae el resultado |
+| Medicamentos (copagos) | PAMI, datos abiertos | Referencia | GitHub Actions; la PC trae el resultado |
+| Dólar mayorista, ICL, CER, UVA | BCRA, API v4.0 | Referencia | GitHub Actions; la PC trae el resultado |
 | Catálogos de tiendas en línea (ropa, calzado, hogar, medicamentos, frescos por kilo) | Catálogos públicos VTEX y Shopify (`config/web/`) | Variantes "web" y "completo" | GitHub Actions (`precios_web.yml`, cuatro partes); la PC trae el resultado |
+| Cuotas de medicina prepaga (valor de cada plan por edad y región, aumento y afiliados) | Superintendencia de Servicios de Salud, cuadros tarifarios (Res. SSS 645/2025), API pública de cuadrostarifarios.sssalud.gob.ar | Clase 06.4.1 en la variante "completo" y validación contra el INDEC (D-35) | GitHub Actions (`otras_fuentes.yml`); la PC trae el resultado |
+| Normas de tarifas (luz, gas, agua, transporte, peajes, prepagas, medicamentos, comunicaciones, servicio doméstico) | Infoleg (Ministerio de Justicia), fichas y anexos | Detección diaria; los cuadros de Edenor y Edesur se leen solos (D-34) | GitHub Actions (`otras_fuentes.yml`); la PC trae el resultado |
 | Estimaciones de consultoras | Notas publicadas, con enlace (`config/externos.csv`) | Comparación | Carga manual |
 
 ## 3. Cálculo
@@ -246,6 +248,62 @@ el total no se presenta como nivel general.
 - **D-31. Validación.** Réplica (mismas clases, mismos pesos) y nivel general, por región y por clase
   (`resultados/validacion_indec.csv`).
 
+### 5.1 Regulados, salud y rubros sin precios propios (D-34 a D-36)
+
+- **D-34. Normas de tarifas desde Infoleg.** El Boletín Oficial no permite robots (robots.txt), así
+  que se usa Infoleg, que carga las mismas normas con sus anexos y no lo prohíbe. Infoleg numera las
+  normas con un id correlativo: todos los días se revisan los ids nuevos de a uno, con un segundo de
+  pausa e identificándose, hasta una racha de 60 vacíos. Se guardan las normas de los organismos y
+  temas de `config/regulados/normas.yaml` (`data/otras/normas/normas.csv`) y se muestran en la
+  pestaña Regulados para cargarlas. En las resoluciones del ente regulador sobre Edenor y Edesur se
+  leen los anexos en PDF y se toman los cargos fijo y variable de R1 y R2 "sin subsidio", vigentes
+  desde la fecha del cuadro hasta fin de ese mes. Un valor leído entra al registro de tarifas solo
+  si su variación contra el último valor aceptado del mismo concepto está entre −30% y +60%; si no,
+  queda "a revisar". Si el mismo concepto y fecha está cargado a mano, manda la carga manual. Gas,
+  agua, transporte y peajes todavía se detectan pero no se leen solos: sus cuadros tienen formatos
+  distintos por empresa y jurisdicción (los colectivos de la Ciudad y de la Provincia no salen en
+  Infoleg). Los precios estacionales de la energía (Secretaría de Energía) también se detectan.
+- **D-35. Prepagas desde la Superintendencia de Servicios de Salud.** Desde la Res. SSS 645/2025 las
+  prepagas declaran el valor de cada plan, por edad y región, dentro de los 5 días hábiles después del
+  dato del INDEC, y la Superintendencia lo publica (cuadrostarifarios.sssalud.gob.ar, desde julio de
+  2025). La API devuelve también la cantidad de cápitas (afiliados) de cada celda. La variación del
+  mes es la media geométrica de los relativos de los mismos planes, edades y regiones entre un mes y
+  el anterior, ponderada por las cápitas del mes anterior (relativos fuera de [0,5; 2] se
+  descartan). Se bajan las 13 entidades más grandes (`config/regulados/prepagas.yaml`), de a 50
+  filas por pedido (con más, el servidor corta), hasta 3 meses por corrida, siempre los dos últimos
+  de nuevo porque se pueden corregir. Va a la clase 06.4.1 en todas las regiones, en la variante
+  "completo" de la carrera. No entra al índice publicado hasta compararla con el INDEC (la serie
+  06.4.1 de GBA existe desde 2017, así que hay 14 meses para probar).
+- **Farmacias.** Farmacity, Farmaonline, Farmaplus y Farmacias del Pueblo ya se bajan todos los días
+  con las tiendas en línea (unos 58.000 productos el 12/11/2026) y se clasifican en 06.1.1, 06.1.2 y
+  06.1.3. Entran en las variantes "web" y "completo"; necesitan historia para probarse.
+- **D-36. Rubros sin precios propios: qué los anticipa (sugerencias, nada adoptado).**
+  `scripts/correlaciones_rubros.py` compara cada rubro del INDEC con indicadores disponibles antes
+  que el IPC, con una regresión que se reestima cada mes con los 24 meses anteriores (fuera de
+  muestra) contra el promedio de esos 24 meses (resultados en `resultados/correlaciones_rubros.json`).
+  GBA, 2017-2026 (mejora del error fuera de muestra; correlación en julio 2024 a septiembre 2026):
+
+  | Rubro | Mejor indicador | Mejora | Correlación reciente |
+  |---|---|---|---|
+  | Restaurantes (11.1) | Bienes del mismo mes | 61% | 0,62 |
+  | Productos medicinales (06.1) | Bienes del mismo mes | 52% | 0,28 |
+  | Servicios (total) | Nivel general del mes anterior; CER | 49%; 46% | 0,64; 0,79 |
+  | Bienes y servicios varios (12) | Bienes del mismo mes | 46% | 0,50 |
+  | Alquiler (04.1.1) | El mismo rubro del mes anterior; ICL | 40%; 26% | 0,87; 0,92 |
+  | Telefonía e internet (08.3) | Nivel general del mes anterior | 35% | 0,33 |
+  | Servicios recreativos (09.4) | Nivel general del mes anterior | 26% | 0,20 |
+  | Ropa y calzado (03) | Bienes del mismo mes | 25% | 0,65 |
+  | Prepagas (06.4.1) | Nivel general del mes anterior | 21% | 0,75 |
+  | Transporte público (07.3) y tarifas (04.5) | Ninguno sirve | menos de 15% | cerca de 0 |
+  | Educación (10) | El mismo mes del año anterior (marzo) | 7% | 0,83 |
+
+  Lectura: los rubros que siguen al resto de los precios (restaurantes, medicamentos, servicios
+  varios, ropa) se anticipan con los bienes que ya medimos; los indexados (alquiler, prepagas,
+  servicios en general) con la inflación pasada o el ICL y el CER; los regulados (tarifas,
+  transporte) no se anticipan con nada: dependen de decisiones que hay que leer en las normas
+  (D-34). Advertencia: "bienes" acá es el del INDEC; con nuestro índice de bienes la relación va a
+  ser más débil, porque el nuestro es más ruidoso.
+
 ## 6. Qué falta para el índice completo
 
 Peso en la canasta nacional del INDEC (divisiones de `config/ponderadores_division.csv` ponderadas por
@@ -256,10 +314,10 @@ región) y estado:
 | Alimentos y bebidas no alcohólicas (01) | 27,0% | Medido con SEPA; dentro de él, carnes 8,9%, verduras 2,7% y frutas 1,3% están débiles | Comercios tradicionales (panaderías, carnicerías, verdulerías, almacenes) y frescos por kilo |
 | Bebidas alcohólicas y tabaco (02) | 3,5% | Bebidas medidas; tabaco no | Precios de cigarrillos (listas de las tabacaleras) |
 | Ropa y calzado (03) | 9,9% | Variante web, sin historia | Juntar historia y probar contra el INDEC |
-| Vivienda, agua, electricidad, gas (04) | 9,4% | Parcial: tarifas a mano, Zonaprop CABA | Cuadros tarifarios automáticos (ENRE, ENARGAS, AySA), cargo fijo de gas, factura base del agua, alquileres fuera de CABA, expensas |
+| Vivienda, agua, electricidad, gas (04) | 9,4% | Electricidad leída sola de Infoleg (D-34); gas y agua detectados, se cargan a mano; Zonaprop CABA | Lectura automática de gas y agua, cargo fijo de gas, factura base del agua, alquileres fuera de CABA, expensas |
 | Equipamiento del hogar (05) | 6,4% | Limpieza medida; electrodomésticos en variante web | Historia web, servicio doméstico (salario por norma) |
-| Salud (06) | 8,0% | Referencia PAMI | Cuotas de prepagas (aumentos autorizados), precios de farmacia |
-| Transporte (07) | 11,0% | Combustibles medidos; boleto a mano | Tarifas de colectivos y trenes automáticas, precios de autos |
+| Salud (06) | 8,0% | Prepagas desde la Superintendencia (D-35) y farmacias en línea, en variantes | Historia para probarlas; servicios médicos y odontológicos |
+| Transporte (07) | 11,0% | Combustibles medidos; normas nacionales de transporte detectadas; boletos de Ciudad y Provincia a mano | Boletos de Ciudad y Provincia automáticos (no salen en Infoleg), precios de autos |
 | Comunicación (08) | 2,8% | No medido | Planes de telefonía e internet |
 | Recreación y cultura (09) | 7,3% | Muy poco (diarios, útiles) | Servicios digitales, turismo, libros |
 | Educación (10) | 2,3% | No medido | Cuotas de colegios privados |
@@ -273,15 +331,31 @@ por región (modelo de efectos fijos producto-cadena), inflación por cadena, ca
 mapa por provincia y partido, índice diario contra un día base para eventos, hilo semanal. Detalle de
 cada uno en la pestaña Metodología del tablero.
 
-## 8. Dónde corre cada parte (D-32)
+## 8. Dónde corre cada parte (D-32, D-33)
 
-- **GitHub Actions**: respaldo de SEPA (dos veces por día), otras fuentes (diario), tiendas en línea
-  (diario, cuatro partes que después se juntan; cada parte reintenta la subida si falla). Todo queda
-  en el release `sepa-archivo`.
-- **PC**: base de unos 15 GB (paneles diarios, semanales y mensuales), INDEC, combustibles,
-  consolidación, carrera, cálculo, tablero y respaldo. GitHub Actions no la reemplaza: no tiene disco
-  persistente para la base y su horario es inexacto. Las opciones para mover más a internet están en
-  discusión (ver la respuesta del 11/11/2026).
+- **D-33. Plan A (11 de noviembre de 2026): bajar, procesar y almacenar en internet; la PC solo calcula.**
+  - `respaldo_sepa.yml` baja los zips de SEPA a las 04:47, 08:17 y 20:17 y los guarda en el release
+    `sepa-archivo`.
+  - `procesar_sepa.yml` corre después de cada respaldo (y a las 06:37 y 12:37): baja cada zip que no
+    tiene su `proc_AAAA-MM-DD.tar`, lo procesa con el mismo código que la PC
+    (`lectura.procesar_zip_diario`: panel diario, mapa por departamento y municipios) y sube el
+    `.tar`. Procesa hasta 4 días por corrida, empezando por los más nuevos, desde 3 días antes del
+    último día que tiene la PC (no reprocesa la historia). Los límites de departamentos los baja
+    una vez de Georef, la misma fuente que usa la PC, y los guarda en el release.
+  - La PC, en el paso "SEPA: procesamiento", primero trae los `.tar` y los desarma en `data/` (solo
+    acepta las rutas esperadas). Procesa por su cuenta un zip solo si GitHub no lo procesó después
+    de 2 días (`descarga.procesar_local_tras_dias`); así, si GitHub falla, el dato llega igual con un
+    día de demora. Sigue bajando y guardando los zips (el archivo propio de SEPA), que no consume
+    procesador.
+  - `otras_fuentes.yml` (todos los días 09:41) baja Cañuelas, Mercado Central, Zonaprop, PAMI, BCRA,
+    prepagas y normas, y deja `otras.tar.gz`. La PC lo trae (`ipceer otras --desde-github`) en lugar
+    de bajarlo; si GitHub no responde, lo baja ella.
+  - `precios_web.yml` baja las tiendas en línea en cuatro partes; la PC trae el resultado.
+  - En la PC quedan: la base de unos 15 GB (paneles), la consolidación semanal y mensual, la
+    carrera, el cálculo, el tablero y el respaldo.
+- Opciones siguientes (para decidir): B, todo el cálculo en GitHub con la base en Cloudflare R2;
+  C, un servidor gratuito de Oracle Cloud (hoy 2 procesadores y 12 GB, con riesgo de que lo
+  recuperen si está inactivo); D, otras máquinas como recolectoras.
 
 ## 9. Limitaciones
 

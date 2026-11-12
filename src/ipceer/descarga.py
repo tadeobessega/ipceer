@@ -293,7 +293,7 @@ _PROC = re.compile(r"proc_(\d{4}-\d{2}-\d{2})\.tar")
 def miembros_validos(nombres: list[str], fecha: str) -> list[str]:
     """Rutas que se aceptan dentro de un proc_AAAA-MM-DD.tar (relativas a data/): el panel del día,
     el del mapa, los de cada municipio y la lista de cadenas. Cualquier otra cosa se ignora."""
-    ok = re.compile(rf"(panel/diario|geo/diario|municipios/\d+/panel/diario)/{fecha}\.parquet|cadenas\.csv")
+    ok = re.compile(rf"(panel/diario|geo/diario|municipios/\d+/panel/diario)/{fecha}\.parquet|panel/cadenas\.csv")
     return [n for n in nombres if ok.fullmatch(n)]
 
 
@@ -339,7 +339,7 @@ def procesados_desde_github(cfg: Config) -> list[str]:
                 # el panel del día va último: si algo falla antes, el día queda pendiente y se reintenta
                 for n in sorted(nombres, key=lambda x: x == f"panel/diario/{fecha}.parquet"):
                     datos = tf.extractfile(n).read()
-                    if n == "cadenas.csv":
+                    if n == "panel/cadenas.csv":
                         import polars as pl
                         c = pl.read_csv(io.BytesIO(datos), schema_overrides={"id_comercio": pl.Utf8, "id_bandera": pl.Utf8,
                                                                              "cadena": pl.Utf8})

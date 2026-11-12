@@ -101,8 +101,8 @@ def test_plan_a_paquetes():
     from ipceer.descarga import miembros_validos
     f = "2026-11-12"
     ok = miembros_validos([f"panel/diario/{f}.parquet", f"geo/diario/{f}.parquet", f"municipios/06568/panel/diario/{f}.parquet",
-                           "cadenas.csv", "../../malo.parquet", f"panel/diario/2026-11-11.parquet", "/abs.parquet"], f)
-    assert ok == [f"panel/diario/{f}.parquet", f"geo/diario/{f}.parquet", f"municipios/06568/panel/diario/{f}.parquet", "cadenas.csv"]
+                           "panel/cadenas.csv", "cadenas.csv", "../../malo.parquet", f"panel/diario/2026-11-11.parquet", "/abs.parquet"], f)
+    assert ok == [f"panel/diario/{f}.parquet", f"geo/diario/{f}.parquet", f"municipios/06568/panel/diario/{f}.parquet", "panel/cadenas.csv"]
     spec = importlib.util.spec_from_file_location("pgh", Path(__file__).resolve().parents[1] / "scripts" / "procesar_sepa_gh.py")
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)

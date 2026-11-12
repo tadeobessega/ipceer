@@ -25,9 +25,9 @@ rubros:
   - id: prepagas
     organismo: 'SUPERINTENDENCIA DE SERVICIOS DE SALUD|MINISTERIO DE SALUD'
     tema: 'CUOTA|AUMENTO|PREPAGA|MEDICINA PREPAGA'
-  - id: medicamentos
-    organismo: 'MINISTERIO DE SALUD|ADMINISTRACI[OÓ]N NACIONAL DE MEDICAMENTOS|SECRETAR[IÍ]A DE COMERCIO'
-    tema: 'PRECIO|MEDICAMENTO'
+  - id: medicamentos   # ANMAT no: sus normas son habilitaciones y prohibiciones de productos, no precios
+    organismo: 'MINISTERIO DE SALUD|SECRETAR[IÍ]A DE COMERCIO|SECRETAR[IÍ]A DE INDUSTRIA Y COMERCIO'
+    tema: 'PRECIO.{0,40}MEDICAMENTO|MEDICAMENTO.{0,40}PRECIO'
   - id: comunicaciones
     organismo: 'ENTE NACIONAL DE COMUNICACIONES'
     tema: 'PRECIO|TARIF|ABONO|SERVICIO UNIVERSAL'

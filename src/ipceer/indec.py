@@ -231,7 +231,7 @@ def carne(cfg: Config, desde: str | None = None) -> dict:
     ix = {(c, r, m): v for c, r, m, v in ind.filter(pl.col("codigo").is_in(["0", "01.1.2"]))
           .select("codigo", "region", "mes", "indice").iter_rows()}
     pc = ponderadores_clase(cfg)
-    w = {r: float(pc.filter(pl.col("codigo") == "01.1.2")[r][0]) / 100 for r in ("GBA", "Pampeana", "Noreste", "Noroeste", "Cuyo", "Patagonia")}
+    w = {r: float(v) / 100 for r, v in pc.filter(pl.col("codigo") == "01.1.2").select("region", "ponderacion").iter_rows()}
     wr = ponderadores_region(cfg)
     meses = sorted({m for (c, r, m) in ix if c == "01.1.2" and r == "GBA" and desde and m >= desde})
     inc = []

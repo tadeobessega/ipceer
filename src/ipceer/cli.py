@@ -225,6 +225,15 @@ def cmd_calcular(cfg, args):
         rn = normas._dir(cfg) / "normas.csv"
         if rn.exists():
             datos["normas"] = pl.read_csv(rn, infer_schema_length=0).sort("id", descending=True).head(60).to_dicts()
+        from . import boletines
+        bol = []
+        for nombre in ("normas_caba.csv", "normas_pba.csv"):
+            rb = boletines._dir(cfg) / nombre
+            if rb.exists():
+                bol += pl.read_csv(rb, infer_schema_length=0).filter(pl.col("rubro") != "otras").to_dicts()
+        # las más recientes primero (fecha dd/mm/aaaa)
+        bol.sort(key=lambda n: (n.get("fecha") or "")[6:] + (n.get("fecha") or "")[3:5] + (n.get("fecha") or "")[:2], reverse=True)
+        datos["normas_boletines"] = bol[:60]
     except Exception as e:
         log.warning("Prepagas y normas: %s", e)
     try:

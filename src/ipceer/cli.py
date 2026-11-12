@@ -102,6 +102,55 @@ def cmd_consolidar(cfg, args):
         panel.actualizar_paneles(cfg, f, todos=getattr(args, "todos", False))
 
 
+def _datos_fuentes(cfg, datos: dict) -> None:
+    """Partes del tablero que salen de otras fuentes y regulados (baratas de recalcular): las arma
+    `calcular` y las refresca `sitio`, así una corrida de otras fuentes se ve sin recalcular el índice."""
+    try:
+        ro = cfg.ruta("resultados") / "otras_fuentes.json"
+        if ro.exists():
+            datos["otras"] = json.loads(ro.read_text(encoding="utf-8"))
+    except Exception as e:
+        log.warning("Otras fuentes: %s", e)
+    try:
+        from . import normas, prepagas
+        pp = prepagas.resumen(cfg)
+        ind = validacion.leer_indec(indec.directorio(cfg)).filter(pl.col("codigo") == "06.4.1")
+        ref = {}
+        for (reg,), g in ind.group_by(["region"]):
+            x = dict(g.select("mes", "indice").iter_rows())
+            ref[reg] = {m: round((x[m] / x[p] - 1) * 100, 3) for m in x
+                        if (p := f"{int(m[:4]) - (m[5:] == '01')}-{12 if m[5:] == '01' else int(m[5:]) - 1:02d}") in x}
+        pp["indec"] = ref
+        datos["prepagas"] = resumen._limpio(pp)
+        rn = normas._dir(cfg) / "normas.csv"
+        if rn.exists():
+            datos["normas"] = pl.read_csv(rn, infer_schema_length=0).sort("id", descending=True).head(60).to_dicts()
+        from . import boletines
+        bol = []
+        for nombre in ("normas_caba.csv", "normas_pba.csv"):
+            rb = boletines._dir(cfg) / nombre
+            if rb.exists():
+                bol += pl.read_csv(rb, infer_schema_length=0).filter(pl.col("rubro") != "otras").to_dicts()
+        # las más recientes primero (fecha dd/mm/aaaa)
+        bol.sort(key=lambda n: (n.get("fecha") or "")[6:] + (n.get("fecha") or "")[3:5] + (n.get("fecha") or "")[:2], reverse=True)
+        datos["normas_boletines"] = bol[:60]
+    except Exception as e:
+        log.warning("Prepagas y normas: %s", e)
+    try:
+        datos["afispop"] = otras_fuentes.afispop(cfg)
+    except Exception as e:
+        log.warning("Canasta del IIEP: %s", e)
+    try:
+        datos["servicios"] = resumen._limpio(externos.canasta_servicios(cfg))
+    except Exception as e:
+        log.warning("Canasta de servicios: %s", e)
+    try:
+        datos["regulados"] = resumen._limpio(externos.datos_regulados(cfg))
+        datos["externos"] = resumen._limpio(externos.externos(cfg))
+    except Exception as e:
+        log.warning("Regulados y consultoras: %s", e)
+
+
 def cmd_calcular(cfg, args):
     res = {}
     for f in ("semanal", "mensual"):
@@ -187,12 +236,6 @@ def cmd_calcular(cfg, args):
     except Exception as e:
         log.warning("Series del INDEC para el empalme: %s", e)
     try:
-        ro = cfg.ruta("resultados") / "otras_fuentes.json"
-        if ro.exists():
-            datos["otras"] = json.loads(ro.read_text(encoding="utf-8"))
-    except Exception as e:
-        log.warning("Otras fuentes: %s", e)
-    try:
         rv = cfg.ruta("resultados") / "variantes.json"
         if rv.exists():
             datos["variantes"] = json.loads(rv.read_text(encoding="utf-8"))
@@ -211,44 +254,7 @@ def cmd_calcular(cfg, args):
                                           for k, v in json.loads(rh.read_text(encoding="utf-8")).items()}
     except Exception as e:
         log.warning("Carrera de métodos: %s", e)
-    try:
-        from . import normas, prepagas
-        pp = prepagas.resumen(cfg)
-        ind = validacion.leer_indec(indec.directorio(cfg)).filter(pl.col("codigo") == "06.4.1")
-        ref = {}
-        for (reg,), g in ind.group_by(["region"]):
-            x = dict(g.select("mes", "indice").iter_rows())
-            ref[reg] = {m: round((x[m] / x[p] - 1) * 100, 3) for m in x
-                        if (p := f"{int(m[:4]) - (m[5:] == '01')}-{12 if m[5:] == '01' else int(m[5:]) - 1:02d}") in x}
-        pp["indec"] = ref
-        datos["prepagas"] = resumen._limpio(pp)
-        rn = normas._dir(cfg) / "normas.csv"
-        if rn.exists():
-            datos["normas"] = pl.read_csv(rn, infer_schema_length=0).sort("id", descending=True).head(60).to_dicts()
-        from . import boletines
-        bol = []
-        for nombre in ("normas_caba.csv", "normas_pba.csv"):
-            rb = boletines._dir(cfg) / nombre
-            if rb.exists():
-                bol += pl.read_csv(rb, infer_schema_length=0).filter(pl.col("rubro") != "otras").to_dicts()
-        # las más recientes primero (fecha dd/mm/aaaa)
-        bol.sort(key=lambda n: (n.get("fecha") or "")[6:] + (n.get("fecha") or "")[3:5] + (n.get("fecha") or "")[:2], reverse=True)
-        datos["normas_boletines"] = bol[:60]
-    except Exception as e:
-        log.warning("Prepagas y normas: %s", e)
-    try:
-        datos["afispop"] = otras_fuentes.afispop(cfg)
-    except Exception as e:
-        log.warning("Canasta del IIEP: %s", e)
-    try:
-        datos["servicios"] = resumen._limpio(externos.canasta_servicios(cfg))
-    except Exception as e:
-        log.warning("Canasta de servicios: %s", e)
-    try:
-        datos["regulados"] = resumen._limpio(externos.datos_regulados(cfg))
-        datos["externos"] = resumen._limpio(externos.externos(cfg))
-    except Exception as e:
-        log.warning("Regulados y consultoras: %s", e)
+    _datos_fuentes(cfg, datos)
     try:
         datos["municipios"] = resumen._limpio(municipios.calcular(cfg))
     except Exception as e:
@@ -278,7 +284,10 @@ def cmd_calcular(cfg, args):
 
 
 def cmd_sitio(cfg, args):
-    datos = json.loads((cfg.ruta("resultados") / "datos.json").read_text(encoding="utf-8"))
+    ruta = cfg.ruta("resultados") / "datos.json"
+    datos = json.loads(ruta.read_text(encoding="utf-8"))
+    _datos_fuentes(cfg, datos)
+    ruta.write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
     destino = sitio.construir(cfg, datos)
     log.info("Sitio: %s", destino)
 

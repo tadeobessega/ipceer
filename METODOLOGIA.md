@@ -252,6 +252,30 @@ el total no se presenta como nivel general.
   en semanas de ofertas al revés: LCG atribuyó su −0,2% de la primera semana de noviembre de 2026 al
   CyberMonday. Econviews publica su relevamiento en X, que no se puede leer de forma automática: se
   carga a mano cuando aparece en notas.
+  Octubre de 2026 (INDEC, publicado el 12/11: nivel general 2,2% nacional y 2,0% en GBA; alimentos
+  2,0% nacional y 1,9% en GBA). Error = estimación menos INDEC, en puntos porcentuales:
+
+  | Consultora | Rubro y región | Estimó | INDEC | Error |
+  |---|---|---|---|---|
+  | Analytica | Total, nacional | 2,0 | 2,2 | −0,2 |
+  | BBVA Research (modelo, no relevamiento) | Total, nacional | 2,0 | 2,2 | −0,2 |
+  | EcoGo (RPM) | Total, nacional | 1,8 y 2,1 (dos notas) | 2,2 | −0,4 y −0,1 |
+  | Equilibra | Total, nacional | 1,8 | 2,2 | −0,4 |
+  | LCG | Total, nacional | 1,8 | 2,2 | −0,4 |
+  | Fundación Libertad y Progreso | Total, nacional | 1,8 | 2,2 | −0,4 |
+  | REM del BCRA (mediana) | Total, nacional | 1,8 | 2,2 | −0,4 |
+  | C&T | Total, GBA | 2,0 y 1,9 | 2,0 | 0,0 y −0,1 |
+  | C&T | Alimentos, GBA | 1,9 | 1,9 | 0,0 |
+  | EcoGo | Alimentos, nacional | 2,4 | 2,0 | +0,4 |
+  | Equilibra | Alimentos, nacional | 2,1 | 2,0 | +0,1 |
+  | LCG (supermercados del AMBA) | Alimentos | 2,3 | 2,0 nacional; 1,9 GBA | +0,3; +0,4 |
+
+  Lectura: casi todas subestimaron el nivel general (en 0,4 puntos la mayoría) y sobrestimaron
+  alimentos; la que más se acercó fue C&T, que releva en GBA. FIEL (Ciudad) y las mediciones de Bahía
+  Blanca no tienen dato del INDEC equivalente. El octubre propio no se puede medir: el tramo de datos
+  actual no tiene septiembre completo para comparar (D-14), así que no hay variación mensual nuestra
+  de octubre. El tablero calcula esta tabla sola con cada dato nuevo del INDEC
+  (`externos.errores_consultoras`, con la variación que publica el INDEC).
 - **D-31. Validación.** Réplica (mismas clases, mismos pesos) y nivel general, por región y por clase
   (`resultados/validacion_indec.csv`).
 

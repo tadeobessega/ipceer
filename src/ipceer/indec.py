@@ -180,11 +180,13 @@ def precios_promedio_gba(dir_indec: Path) -> dict[str, dict[str, float]]:
     hoja = fastexcel.read_excel(str(ruta)).load_sheet_by_name("GBA", header_row=None).to_polars()
     filas = [list(f) for f in hoja.iter_rows()]
     i_anio = next(i for i, f in enumerate(filas) if any(isinstance(v, str) and v.startswith("Año") for v in f))
+    # desde 2023 el encabezado dice solo "2023", sin "Año"
     anios, meses, anio = filas[i_anio], filas[i_anio + 1], None
     col_mes = {}
     for j, (a, m) in enumerate(zip(anios, meses)):
-        if isinstance(a, str) and re.match(r"Año \d{4}", a):
-            anio = int(a[4:8])
+        ma = re.search(r"(20\d\d)", str(a)) if a is not None else None
+        if ma and j > 1:
+            anio = int(ma.group(1))
         if anio and isinstance(m, str) and MESES_LARGOS.get(m.strip().lower()):
             col_mes[j] = f"{anio}-{MESES_LARGOS[m.strip().lower()]:02d}"
     out = {}

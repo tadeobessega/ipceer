@@ -7,3 +7,4 @@ logs/
 __pycache__/
 *.egg-info/
 .pytest_cache/
+resultados/regulados_base.csv

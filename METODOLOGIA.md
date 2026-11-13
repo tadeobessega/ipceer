@@ -116,8 +116,8 @@ Método vigente desde el 11 de noviembre de 2026 ("mejorado", D-15):
   oficial de la serie más específica de cada rubro, y desde ahí con las variaciones propias. La
   variación de un agregado es la suma de las variaciones propias de cada clase con esos pesos; una
   clase sin dato sale del eslabón. En 2017-2018 da prácticamente lo mismo que actualizar los pesos con
-  el nivel propio (0,695 contra 0,687 contra la réplica). **Pendiente de decisión de Tadeo**: dejarla
-  o volver a la ponderación propia.
+  el nivel propio (0,695 contra 0,687 contra la réplica; con el método nuevo, 0,629 contra 0,625).
+  **Decisión de Tadeo (13/11/2026): queda la ponderación "indec".**
 - Nacional: regiones con su peso en el gasto por el peso cubierto en cada una.
 
 ### 3.5 Semanal, mes en curso y escenarios (D-17, D-18)
@@ -407,6 +407,72 @@ el total no se presenta como nivel general.
   su peso. Control: con las 12 divisiones, la suma de las incidencias da exactamente la variación
   del nivel general (octubre de 2026 en GBA: 1,98% contra 1,98%). Muestran desde enero del año del
   último dato y llevan el logo ceer_ (no ipceer), porque son datos del INDEC.
+
+- **D-43 (13 de noviembre de 2026). Tarifas en términos reales.** Para cada componente de la
+  canasta de servicios (colectivos de la Ciudad y de la Provincia, subte, factura de luz de Edenor
+  con 265 kWh y de gas de Metrogas con 60,5 m3) se arma la serie mensual del precio o de la factura
+  y se deflacta con el IPC del INDEC de GBA (nivel general): índice real con base 100 en el primer
+  mes con dato de cada tarifa, y variaciones del mes, del año, interanual y desde el inicio,
+  nominales y reales. Un mes sin tarifa vigente todo el mes corta la serie; después del último IPC
+  publicado queda solo la serie nominal. Está en la pestaña Rubros, sección regulados
+  (`externos.tarifas_reales`). El agua no entra: AySA cobra un cargo fijo que depende de la
+  superficie, la zona y la antigüedad del inmueble (coeficiente zonal y K) más el consumo medido
+  si tiene medidor, y el IIEP solo dice que usa "un hogar de coeficiente zonal medio de la CABA"
+  sin publicar los parámetros; hasta tener esos datos de un hogar tipo, no se puede valorizar la
+  factura sin inventarlos. Tampoco hay total de la canasta: falta la cantidad de viajes de
+  colectivo y subte de un hogar tipo, que el IIEP tampoco publica (solo el gasto total).
+- **D-44. Rotación: movimiento promedio de los precios.** Además de la inflación (variación
+  ponderada por la canasta), la rotación informa el promedio simple de la variación semanal de
+  todos los precios apareados (los que no cambian cuentan como cero) y el promedio del cambio en
+  valor absoluto. Cada precio pesa lo mismo: mide cuánto se mueven los precios, no la inflación.
+  El gráfico de precios que subieron y bajaron tiene la opción "apilados": de los precios que se
+  movieron, qué parte subió y qué parte bajó (suman 100).
+- **D-45. Variante "todo" de la carrera.** Todo lo que todavía no está probado contra el INDEC,
+  junto: la variante "completo" (tiendas en línea, incluidas farmacias, tarifas, combustibles,
+  alquileres de la Ciudad y prepagas) más todas las tarifas leídas automáticamente (no solo los
+  conceptos de la carga manual), alquileres de GBA como media geométrica de Ciudad, GBA Norte,
+  Oeste y Sur (25% cada una, con las zonas que tengan dato ese mes) y autos (relativo de las mismas
+  versiones y años de usados entre dos guías de la CCA, cuando haya dos). Corre en la carrera
+  todos los días y se compara con EcoGo y el resto de las consultoras; no reemplaza al publicado.
+  Prueba de alquileres hacia atrás: Zonaprop Ciudad tiene 9 meses con dato del INDEC y queda en
+  promedio 0,9 puntos por mes por debajo del 04.1.1 de GBA (error absoluto medio 1,1 puntos),
+  porque mide alquileres nuevos publicados y el INDEC el stock de contratos que se ajustan por
+  índices; con las cuatro zonas hay un solo mes completo, así que todavía no se puede decir si el
+  promedio mejora. Los informes más viejos no están en la dirección que usa la descarga (Zonaprop
+  los sube en carpetas de otros meses). La guía de la CCA solo publica el mes vigente: no hay
+  historia de autos para probar; se prueba con el IPC de noviembre (recordatorio para el 11 de
+  diciembre de 2026).
+- **D-46. Rubros sin precios propios: ¿imputarles bienes, el nivel general o un modelo?**
+  `scripts/faltantes_vs_nivel_general.py` compara fuera de muestra (2019-2026, GBA) el error de
+  tres formas de completar cada rubro: A, lo que hace hoy el índice al repartir el peso (equivale a
+  imputarle la inflación de bienes del mismo mes); B, el nivel general del mismo mes; C, la mejor
+  regresión con indicadores disponibles antes del IPC (D-36), con la prueba de Diebold y Mariano.
+  Resultado (RMSE en puntos por mes):
+
+  | Rubro | A: bienes | B: nivel general | C: mejor modelo | p de C contra A |
+  |---|---|---|---|---|
+  | Alquiler (04.1.1) | 4,31 | 3,73 | 1,90 (el mismo rubro, mes anterior) | 0,013 |
+  | Electricidad y gas (04.5) | 9,72 | 9,06 | 8,39 (nivel general, 3 meses antes) | 0,32 |
+  | Prepagas (06.4.1) | 4,76 | 4,25 | 4,52 | 0,53 |
+  | Transporte público (07.3) | 8,81 | 8,43 | 8,41 | 0,37 |
+  | Telefonía e internet (08.3) | 4,33 | 3,83 | 3,54 (nivel general, mes anterior) | 0,067 |
+  | Servicios recreativos (09.4) | 3,48 | 2,94 | 2,91 (nivel general, mes anterior) | 0,22 |
+  | Educación (10) | 7,25 | 6,89 | 6,84 (estacionalidad) | 0,80 |
+  | Restaurantes (11.1) | 1,68 | 1,29 | 1,35 (bienes) | 0,10 |
+  | Vehículos (07.1), ropa (03), medicamentos (06.1), varios (12) | igual o mejor que B y C | | | |
+
+  Lectura: para los servicios, imputar la inflación general es mejor que imputar la de bienes
+  (que es lo que se hace hoy), y la diferencia sale significativa en varios; ningún modelo propio
+  supera al nivel general con significancia al 1% salvo, casi, el alquiler con su propio rezago
+  (p = 0,013). Para los bienes que no medimos (vehículos, ropa, medicamentos, varios), los bienes
+  del mismo mes son tan buenos o mejores. Como el nivel general del mes no se conoce en el momento,
+  la versión aplicable es imputar a los servicios faltantes la inflación general del mes anterior
+  (fila "nivel general, mes anterior", que da errores parecidos) y al alquiler su propio rezago.
+  Es una propuesta: no se adopta hasta probarla contra el INDEC con la regla de dispersión.
+- **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
+  pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
+  movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del
+  INDEC en su propia carpeta (vacía) y caía a la ponderación "propia": ahora usa la carpeta común.
 
 ## 6. Qué falta para el índice completo
 

@@ -130,7 +130,11 @@ def _datos_fuentes(cfg, datos: dict) -> None:
         for nombre in ("normas_caba.csv", "normas_pba.csv"):
             rb = boletines._dir(cfg) / nombre
             if rb.exists():
-                bol += pl.read_csv(rb, infer_schema_length=0).filter(pl.col("rubro") != "otras").to_dicts()
+                for n in pl.read_csv(rb, infer_schema_length=0).to_dicts():
+                    if n.get("jurisdiccion") == "Ciudad":   # se reclasifica con las reglas vigentes
+                        n["rubro"] = boletines.rubro_caba(n.get("nombre") or "", n.get("sumario") or "")
+                    if n.get("rubro") and n["rubro"] != "otras":
+                        bol.append(n)
         # las más recientes primero (fecha dd/mm/aaaa)
         bol.sort(key=lambda n: (n.get("fecha") or "")[6:] + (n.get("fecha") or "")[3:5] + (n.get("fecha") or "")[:2], reverse=True)
         datos["normas_boletines"] = bol[:60]

@@ -47,7 +47,7 @@ API_CABA = "https://api-restboletinoficial.buenosaires.gob.ar"
 DOCS_CABA = "https://documentosboletinoficial.buenosaires.gob.ar/publico"
 PBA = "https://normas.gba.gob.ar"
 INTERES_CABA = (r"/SECT/|SBASE|SUBTE|cuadros? tarifari|tarifa|boleto|taxímetro|Estacionamiento Regulado|"
-                r"peaje|AUSA|Unidad Tarifaria")
+                r"\bpeajes?\b|\bAUSA\b|Unidad Tarifaria")
 COLECTIVO_CABA = "Colectivo líneas de la Ciudad: boleto mínimo (0-3 km) con SUBE registrada"
 SUBTE = "Subte: pasaje de 1 a 20 viajes mensuales con SUBE registrada"
 COLECTIVO_PBA = "Colectivo líneas provinciales (200 en adelante): boleto mínimo (0-3 km) con SUBE registrada"
@@ -82,11 +82,12 @@ def rubro_caba(nombre: str, sumario: str) -> str | None:
         return "subte"
     if "/SECT/" in nombre and re.search(r"cuadros? tarifari", s, re.I) and re.search(r"colectivo|automotor", s, re.I):
         return "colectivo"
-    if re.search(r"taxímetro", s, re.I):
+    tarifaria = re.search(r"tarif|boleto|cuadro", s, re.I)
+    if re.search(r"taxímetro", s, re.I) and tarifaria:
         return "taxi"
-    if re.search(r"Estacionamiento", s, re.I):
+    if re.search(r"Estacionamiento", s, re.I) and tarifaria:
         return "estacionamiento"
-    if re.search(r"peaje|AUSA", s, re.I):
+    if re.search(r"\bpeajes?\b|\bAUSA\b", s) and tarifaria:
         return "peajes"
     if re.search(r"Unidad Tarifaria", s, re.I):
         return "unidad_tarifaria"

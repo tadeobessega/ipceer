@@ -1568,12 +1568,11 @@ function renderDots(E){
   document.getElementById('dots-cap').textContent=stDots.f==='s'?`Variación semanal publicada por cada consultora (${rub==='total'?'nivel general':'alimentos y bebidas'}) y la del ipceer para la misma semana${regN==='GBA'?' (alimentos de Gran Buenos Aires, donde relevan las consultoras)':''}, redondeada a un decimal como publican ellas. Las semanas de las consultoras no siempre coinciden con las nuestras.`:`Variación mensual estimada por cada consultora (${rub==='total'?'nivel general':'alimentos y bebidas'}). Las que publican por semana se encadenan dentro del mes (semanas de lunes a domingo; cada una va al mes de su jueves), así que un mes con menos semanas queda incompleto.`;
   if(!per.length){ sinDatos('c-dots','Todavía no hay mediciones para esta combinación.'); return; }
   /* apilado horizontal: los valores que se tocan (a menos de un paso) se reparten alrededor de la vertical del período */
-  const rg=Math.max(...[...pts,...nos].map(q=>q.y))-Math.min(...[...pts,...nos].map(q=>q.y))||1, paso=rg/40, sep=Math.min(.09,.8/Math.max(1,...per.map(p=>pts.filter(q=>q.p===p).length)));
-  const dat=[]; per.forEach((p,i)=>{ const g=pts.filter(q=>q.p===p).sort((a,b)=>a.y-b.y); let k=0; while(k<g.length){ let j=k; while(j+1<g.length&&g[j+1].y-g[k].y<paso) j++; const n=j-k+1; for(let t=k;t<=j;t++) dat.push({x:i+(t-k-(n-1)/2)*sep,y:g[t].y,f:g[t].f}); k=j+1; } });
-  /* lo nuestro redondeado a un decimal, como publican las consultoras */
-  /* si coincide con una consultora, el punto propio se corre a un costado para que se vean los dos */
-  const nd=nos.map(q=>{ const i=per.indexOf(q.p), y=Math.round(q.y*10)/10, choca=dat.some(d=>Math.abs(d.x-i)<sep&&Math.abs(d.y-y)<paso);
-    return {x:choca?i+Math.max(sep,.12):i,y,f:q.f+' (redondeado a un decimal)'}; });
+  /* lo nuestro va redondeado a un decimal, como publican las consultoras, y se acomoda como un punto más:
+     los valores que se tocan (a menos de un paso) se reparten lado a lado alrededor de la vertical del período */
+  const todos=[...pts.map(q=>({...q,nos:false})),...nos.map(q=>({p:q.p,y:Math.round(q.y*10)/10,f:q.f+' (redondeado a un decimal)',nos:true}))];
+  const rg=Math.max(...todos.map(q=>q.y))-Math.min(...todos.map(q=>q.y))||1, paso=rg/40, sep=Math.min(.09,.8/Math.max(1,...per.map(p=>todos.filter(q=>q.p===p).length)));
+  const dat=[], nd=[]; per.forEach((p,i)=>{ const g=todos.filter(q=>q.p===p).sort((a,b)=>a.y-b.y||(a.nos-b.nos)); let k=0; while(k<g.length){ let j=k; while(j+1<g.length&&g[j+1].y-g[k].y<paso) j++; const n=j-k+1; for(let t=k;t<=j;t++) (g[t].nos?nd:dat).push({x:i+(t-k-(n-1)/2)*sep,y:g[t].y,f:g[t].f}); k=j+1; } });
   /* mediana de las consultoras en cada período: una rayita horizontal sobre la vertical */
   const med=per.map((p,i)=>{ const v=pts.filter(q=>q.p===p).map(q=>q.y).sort((a,b)=>a-b); if(!v.length) return null; const h=Math.floor(v.length/2); return {x:i,y:v.length%2?v[h]:(v[h-1]+v[h])/2,f:`Mediana de ${v.length} ${v.length>1?'mediciones':'medición'}`}; }).filter(Boolean);
   draw('c-dots',{type:'scatter',data:{datasets:[

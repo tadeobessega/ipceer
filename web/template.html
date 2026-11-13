@@ -1581,7 +1581,10 @@ function renderDots(E){
       if(im>=0){ /* la mediana queda en la vertical; los demás, alternando a la derecha y a la izquierda (lo nuestro, a la derecha) */
         const m=grp.splice(im,1)[0]; dest(m).push({x:i,y:m.y,f:m.f});
         grp.sort((a,b)=>(b.tipo==='nos')-(a.tipo==='nos')).forEach((q,t)=>dest(q).push({x:i+(t%2?-1:1)*Math.ceil((t+1)/2)*sep,y:q.y,f:q.f})); }
-      else { grp.sort((a,b)=>(a.tipo==='nos')-(b.tipo==='nos')); const n=grp.length; grp.forEach((q,t)=>dest(q).push({x:i+(t-(n-1)/2)*sep,y:q.y,f:q.f})); }
+      else { grp.sort((a,b)=>(a.tipo==='nos')-(b.tipo==='nos')); const n=grp.length;
+        /* si la mediana del período cae muy cerca (sin tocarse por valor), este grupo deja libre la vertical para la cruz */
+        const mp=meds.find(m=>m.p===p), cerca=mp&&Math.abs(mp.y-grp[0].y)<2.5*paso;
+        grp.forEach((q,t)=>dest(q).push({x:cerca?i+(t%2?-1:1)*Math.ceil((t+1)/2)*sep:i+(t-(n-1)/2)*sep,y:q.y,f:q.f})); }
       k=j+1; } });
   draw('c-dots',{type:'scatter',data:{datasets:[
     {label:'Consultoras',data:dat,backgroundColor:css('--ambar'),pointRadius:6,pointHoverRadius:8,order:3},

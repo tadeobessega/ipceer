@@ -1573,7 +1573,9 @@ function renderDots(E){
   /* mediana de las consultoras de cada período: un "+" negro del tamaño de un punto, redondeado a un decimal como todos */
   const meds=per.map(p=>{ const v=pts.filter(q=>q.p===p).map(q=>q.y).sort((a,b)=>a-b); if(!v.length) return null; const h=Math.floor(v.length/2); const md=v.length%2?v[h]:(v[h-1]+v[h])/2; return {p,y:Math.round(md*10+1e-9)/10,f:`Mediana de ${v.length} ${v.length>1?'mediciones':'medición'}: ${pct(md,2)} (en el gráfico, redondeada a un decimal como el resto)`,tipo:'med'}; }).filter(Boolean);
   const todos=[...pts.map(q=>({...q,tipo:'con'})),...nos.map(q=>({p:q.p,y:Math.round(q.y*10)/10,f:q.f+' (redondeado a un decimal)',tipo:'nos'})),...meds];
-  const rg=Math.max(...todos.map(q=>q.y))-Math.min(...todos.map(q=>q.y))||1, paso=rg/40, sep=Math.min(.09,.8/Math.max(1,...per.map(p=>todos.filter(q=>q.p===p).length)));
+  const rg=Math.max(...todos.map(q=>q.y))-Math.min(...todos.map(q=>q.y))||1, paso=rg/40;
+  /* separación fija en píxeles (la misma en la vista mensual y en la semanal): un punto al lado del otro, sin aire extra */
+  const anchoG=Math.max(300,(document.getElementById('c-dots').parentElement||{}).clientWidth||1100)-60, sep=Math.min(18/(anchoG/per.length),.8/Math.max(1,...per.map(p=>todos.filter(q=>q.p===p).length)));
   /* los valores que se tocan (a menos de un paso) se reparten lado a lado; si en el grupo está la mediana, va en el centro */
   const dat=[], nd=[], med=[]; per.forEach((p,i)=>{ const g=todos.filter(q=>q.p===p).sort((a,b)=>a.y-b.y); let k=0; while(k<g.length){ let j=k; while(j+1<g.length&&g[j+1].y-g[k].y<paso) j++;
       /* la mediana es un punto más del grupo: ocupa el lugar del medio; lo nuestro va al final */

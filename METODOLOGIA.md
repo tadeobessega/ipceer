@@ -407,6 +407,8 @@ el total no se presenta como nivel general.
   su peso. Control: con las 12 divisiones, la suma de las incidencias da exactamente la variación
   del nivel general (octubre de 2026 en GBA: 1,98% contra 1,98%). Muestran desde enero del año del
   último dato y llevan el logo ceer_ (no ipceer), porque son datos del INDEC.
+  *Retirado en noviembre de 2026:* los dos gráficos pasaron a la página de coyuntura del CEER
+  (publicaciones-ceer, pestaña Inflación), donde la carne se calcula también para el total del país.
 
 - **D-43 (13 de noviembre de 2026). Tarifas en términos reales.** Para cada componente de la
   canasta de servicios (colectivos de la Ciudad y de la Provincia, subte, factura de luz de Edenor

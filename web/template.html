@@ -392,14 +392,6 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       </div>
     </section>
     <section>
-      <h2>Carne vacuna en el IPC del INDEC</h2>
-      <p class="sub" id="carne-sub"></p>
-      <div class="grid">
-        <div class="card s6" data-logo="ceer"><h3>Variación mensual del precio de los cortes vacunos</h3><p class="cap">Gran Buenos Aires, precio promedio por kilo. En %.</p><div class="chart"><canvas id="c-cortes"></canvas></div><div class="src">Fuente: CEER en base a INDEC (precios promedio de productos seleccionados).</div></div>
-        <div class="card s6" data-logo="ceer"><h3>Incidencia de la carne en la inflación mensual</h3><p class="cap">Aporte de “Carnes y derivados” a la variación del nivel general. En puntos porcentuales.</p><div class="chart"><canvas id="c-carne-inc"></canvas></div><div class="src">Fuente: CEER en base a INDEC (IPC por región y ponderadores base diciembre de 2016).</div></div>
-      </div>
-    </section>
-    <section>
       <h2>Frutas y hortalizas: Mercado Central de Buenos Aires</h2>
       <p class="sub" id="fre-sub2"></p>
       <div class="grid">
@@ -1846,18 +1838,6 @@ function renderFre(){
     document.getElementById('t-mag').innerHTML='<thead><tr><th>Mes</th>'+cats.map(c=>`<th class="n">${c[1]}</th>`).join('')+'</tr></thead><tbody>'+[...M].reverse().map(r=>`<tr><td>${mesLbl(r.mes)}${r.parcial?'*':''}</td>${cats.map(([k])=>`<td class="n">${pct((r.var||{})[k],1,true)}</td>`).join('')}</tr>`).join('')+'</tbody>';
   } else { sinDatos('c-mag',O.hacienda_canuelas&&O.hacienda_canuelas.error?'No se pudo bajar: '+O.hacienda_canuelas.error:'Todavía no se bajó: aparece con la próxima corrida de la tarea diaria.'); document.getElementById('t-mag').innerHTML=''; }
 
-  const K=D.carne||{}, CO=K.cortes||{}, IN=K.incidencia||[];
-  const ult=IN.length?IN[IN.length-1]:null;
-  document.getElementById('carne-sub').innerHTML='Datos del INDEC, desde enero del último año publicado. A la izquierda, la variación mensual del precio promedio de cinco cortes vacunos en Gran Buenos Aires. A la derecha, cuántos puntos de la inflación de cada mes explicó la clase “Carnes y derivados”: su peso en la canasta por cuánto subió, sobre el nivel general del mes anterior (índices y ponderadores base diciembre de 2016, que suman exactamente la variación del nivel general).'+(ult&&ult.nacional!=null?` En ${mesLbl(ult.mes)} aportó <b>${num(ult.nacional,2)}</b> puntos de los ${num(ult.nacional_nivel_general,1)}% nacionales.`:'');
-  const mesesC=[...new Set(Object.values(CO).flat().map(r=>r[0]))].sort();
-  if(mesesC.length) draw('c-cortes',{type:'line',data:{labels:mesesC.map(mesLbl),datasets:Object.entries(CO).map(([n,v],i)=>({label:n,data:mesesC.map(m=>{const r=v.find(x=>x[0]===m); return r?r[1]:null;}),borderColor:['#2840a5',css('--ambar'),css('--cian'),'#473a9a','#9c9ea5'][i%5],backgroundColor:['#2840a5',css('--ambar'),css('--cian'),'#473a9a','#9c9ea5'][i%5],borderWidth:2,pointRadius:2}))},
-    options:baseOpts({layout:{padding:{right:150}},plugins:{etiquetasFinales:{on:true},legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+c.dataset.label+': '+pct(c.parsed.y,2)}}},scales:{y:{ticks:{callback:v=>num(v,0)+'%'}}}})});
-  else sinDatos('c-cortes','Todavía no se bajaron los precios promedio del INDEC: aparecen con la próxima corrida de la tarea diaria.');
-  if(IN.length) draw('c-carne-inc',{type:'line',data:{labels:IN.map(r=>mesLbl(r.mes)),datasets:[
-      {label:'Nacional',data:IN.map(r=>r.nacional??null),borderColor:css('--accent'),backgroundColor:css('--accent'),borderWidth:2.5,pointRadius:2},
-      {label:'GBA',data:IN.map(r=>r.gba??null),borderColor:css('--cian'),backgroundColor:css('--cian'),borderWidth:2,pointRadius:2}]},
-    options:baseOpts({layout:{padding:{right:70}},plugins:{etiquetasFinales:{on:true},legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>{const r=IN[c.dataIndex], k=c.dataset.label==='GBA'?'gba':'nacional'; return ` ${c.dataset.label}: ${num(c.parsed.y,2)} pp de ${num(r[k+'_nivel_general'],1)}%`;}}}},scales:{y:{ticks:{callback:v=>num(v,1)}}}})});
-  else sinDatos('c-carne-inc');
   const C=O.frutas_hortalizas_mcba||{}, S=C.serie||[];
   const meses=[...new Set(S.map(r=>r.mes))].sort().slice(-6);
   const esp=[...new Set(S.filter(r=>meses.includes(r.mes)).map(r=>r.tipo+'|'+r.especie))].sort();

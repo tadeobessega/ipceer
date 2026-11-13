@@ -1547,14 +1547,15 @@ function renderExt(){
 /* gráfico de puntos como el de la Fed: todas las mediciones de un período sobre la misma vertical; si dos coinciden, quedan lado a lado */
 const stDots={f:'m',r:'total'}, DOTS_DESDE_SEM='2026-W44';
 function renderDots(E){
-  const rub=stDots.r, cod=RUBRO_COD[rub], sN=((D.series.Nacional||{})[cod]||{}), esR=x=>(x.rubro||'').toLowerCase()===rub&&x.valor!=null;
+  /* alimentos semanal: las consultoras relevan supermercados de GBA, así que lo nuestro es alimentos de GBA */
+  const rub=stDots.r, cod=RUBRO_COD[rub], regN=(stDots.f==='s'&&rub==='alimentos')?'GBA':'Nacional', sN=((D.series[regN]||{})[cod]||{}), esR=x=>(x.rubro||'').toLowerCase()===rub&&x.valor!=null;
   const mesDeSem=w=>{ const d=lunesISO(w); d.setUTCDate(d.getUTCDate()+3); return d.toISOString().slice(0,7); }; /* la semana va al mes de su jueves */
   let per=[], pts=[], nos=[], fmtP;
   if(stDots.f==='s'){
     /* la vista semanal arranca en la cuarta semana de octubre de 2026 (antes casi no hay mediciones comparables) */
     const W=E.filter(x=>x.medida==='semanal'&&esR(x)&&x.periodo>=DOTS_DESDE_SEM); per=[...new Set(W.map(x=>x.periodo))].sort(); fmtP=semCorta;
     pts=W.map(x=>({p:x.periodo,y:x.valor,f:x.fuente}));
-    nos=per.map(w=>{const r=(sN.semanal||[]).find(y=>y.semana===w); return r&&r.var!=null?{p:w,y:r.var,f:'ipceer'+(r.parcial?' (semana incompleta)':'')}:null;}).filter(Boolean);
+    nos=per.map(w=>{const r=(sN.semanal||[]).find(y=>y.semana===w); return r&&r.var!=null?{p:w,y:r.var,f:'ipceer'+(regN==='GBA'?' GBA':'')+(r.parcial?' (semana incompleta)':'')}:null;}).filter(Boolean);
   } else {
     const M=E.filter(x=>(x.medida==='mensual'||x.medida==='proyeccion_mensual')&&esR(x));
     /* las semanales de cada consultora se encadenan dentro del mes (4 o 5 semanas) */
@@ -1564,7 +1565,7 @@ function renderDots(E){
     per=[...new Set(pts.map(q=>q.p))].sort(); fmtP=m=>mesLbl(m);
     nos=per.map(m=>{const r=(sN.mensual||[]).find(y=>y.mes===m); if(!r||r.var==null) return null; const pr=r.parcial&&sN.proyeccion&&sN.proyeccion.mes===m; return r.parcial&&!pr?null:{p:m,y:pr?sN.proyeccion.proyeccion:r.var,f:'ipceer'+(pr?' (proyección)':'')};}).filter(Boolean);
   }
-  document.getElementById('dots-cap').textContent=stDots.f==='s'?`Variación semanal publicada por cada consultora (${rub==='total'?'nivel general':'alimentos y bebidas'}) y la del ipceer para la misma semana. Las semanas de las consultoras no siempre coinciden con las nuestras.`:`Variación mensual estimada por cada consultora (${rub==='total'?'nivel general':'alimentos y bebidas'}). Las que publican por semana se encadenan dentro del mes (semanas de lunes a domingo; cada una va al mes de su jueves), así que un mes con menos semanas queda incompleto.`;
+  document.getElementById('dots-cap').textContent=stDots.f==='s'?`Variación semanal publicada por cada consultora (${rub==='total'?'nivel general':'alimentos y bebidas'}) y la del ipceer para la misma semana${regN==='GBA'?' (alimentos de Gran Buenos Aires, donde relevan las consultoras)':''}, redondeada a un decimal como publican ellas. Las semanas de las consultoras no siempre coinciden con las nuestras.`:`Variación mensual estimada por cada consultora (${rub==='total'?'nivel general':'alimentos y bebidas'}). Las que publican por semana se encadenan dentro del mes (semanas de lunes a domingo; cada una va al mes de su jueves), así que un mes con menos semanas queda incompleto.`;
   if(!per.length){ sinDatos('c-dots','Todavía no hay mediciones para esta combinación.'); return; }
   /* apilado horizontal: los valores que se tocan (a menos de un paso) se reparten alrededor de la vertical del período */
   const rg=Math.max(...[...pts,...nos].map(q=>q.y))-Math.min(...[...pts,...nos].map(q=>q.y))||1, paso=rg/40, sep=Math.min(.09,.8/Math.max(1,...per.map(p=>pts.filter(q=>q.p===p).length)));
@@ -1574,9 +1575,9 @@ function renderDots(E){
   /* mediana de las consultoras en cada período: una rayita horizontal sobre la vertical */
   const med=per.map((p,i)=>{ const v=pts.filter(q=>q.p===p).map(q=>q.y).sort((a,b)=>a-b); if(!v.length) return null; const h=Math.floor(v.length/2); return {x:i,y:v.length%2?v[h]:(v[h-1]+v[h])/2,f:`Mediana de ${v.length} medición${v.length>1?'es':''}`}; }).filter(Boolean);
   draw('c-dots',{type:'scatter',data:{datasets:[
-    {label:'Consultoras',data:dat,backgroundColor:css('--ambar'),pointRadius:6,pointHoverRadius:8},
-    {label:'Mediana',data:med,borderColor:css('--fg'),backgroundColor:css('--fg'),pointStyle:'line',pointRadius:16,pointHoverRadius:18,borderWidth:3,pointBorderWidth:3},
-    {label:'ipceer',data:nd,backgroundColor:css('--accent'),pointStyle:'rectRot',pointRadius:8,pointHoverRadius:10}]},
+    {label:'Consultoras',data:dat,backgroundColor:css('--ambar'),pointRadius:6,pointHoverRadius:8,order:3},
+    {label:'Mediana',data:med,borderColor:css('--fg'),backgroundColor:css('--fg'),pointStyle:'line',pointRadius:16,pointHoverRadius:18,borderWidth:3,pointBorderWidth:3,order:2},
+    {label:'ipceer',data:nd,backgroundColor:css('--accent'),borderColor:'#ffffff',borderWidth:1.5,pointStyle:'rectRot',pointRadius:8,pointHoverRadius:10,order:1}]},
     options:baseOpts({interaction:{mode:'nearest',intersect:true,axis:'xy'},plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{title:t=>fmtP(per[Math.round(t[0].parsed.x)]),label:c=>' '+c.raw.f+': '+pct(c.parsed.y,dec())}}},
       scales:{x:{type:'linear',min:-0.5,max:per.length-0.5,afterBuildTicks:ax=>{ ax.ticks=per.map((_,i)=>({value:i})); },grid:{display:true,color:css('--line')},ticks:{autoSkip:false,color:css('--muted'),font:{size:11},callback:v=>Number.isInteger(v)&&per[v]?fmtP(per[v]):''}},y:{grid:{color:css('--line')},border:{display:false},ticks:{font:{family:css('--mono'),size:11},color:css('--muted'),callback:v=>pct(v,1)}}}})});
 }

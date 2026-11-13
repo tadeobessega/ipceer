@@ -220,3 +220,30 @@ def armar_datos(cfg: Config, mensual: pl.DataFrame | None, semanal: pl.DataFrame
             "relativo_min": cfg["limpieza"]["relativo_min"], "relativo_max": cfg["limpieza"]["relativo_max"],
             "radio_gba_km": cfg["regiones"]["radio_gba_km"]},
     })
+
+
+def canasta_cobertura(cfg) -> list[dict]:
+    """Cada clase (hoja) de la canasta del IPC con su peso nacional (ponderador de la clase en cada
+    región por el peso de la región), si es bien o servicio y su estado en el ipceer según
+    config/cobertura.yaml. Para el gráfico de torta de la Metodología."""
+    import csv
+    import yaml
+    d = cfg.dir_config
+    est = yaml.safe_load(open(d / "cobertura.yaml", encoding="utf-8"))
+    filas = list(csv.DictReader(open(d / "ponderadores_clase.csv", encoding="utf-8")))
+    wr = {r["region"]: float(r["ponderacion"]) for r in csv.DictReader(open(d / "ponderadores_region.csv", encoding="utf-8"))}
+    cods = [r["codigo"] for r in filas]
+    hojas = [r for r in filas if not any(o != r["codigo"] and o.startswith(r["codigo"] + ".") for o in cods)]
+
+    def busca(c, lista):
+        return max((len(p) for p in lista if c == p or c.startswith(p + ".")), default=0)
+
+    out = []
+    for r in hojas:
+        c = r["codigo"]
+        peso = sum(w * float(r.get(g) or 0) for g, w in wr.items())
+        ls = {k: busca(c, est.get(k) or []) for k in ("incluido", "relevado", "estimado")}
+        estado = max(ls, key=ls.get) if max(ls.values()) else "sin_relevar"
+        out.append({"codigo": c, "nombre": r["nombre"], "peso": round(peso, 3),
+                    "tipo": "servicio" if busca(c, est.get("servicios") or []) else "bien", "estado": estado})
+    return out

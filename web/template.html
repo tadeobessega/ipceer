@@ -153,6 +153,12 @@ td.n{font-family:var(--mono)}
 .toc{position:sticky;top:120px;font-size:13px;border-top:2px solid var(--fg);padding-top:10px}
 .toc a{display:block;color:var(--fg2);text-decoration:none;padding:4px 0}
 .toc a:hover{color:var(--accent)}
+.cobgrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:start;margin:8px 0 18px}
+.cob-det h4{font:700 15px var(--mono);margin:0 0 6px;display:flex;align-items:center;gap:8px}
+.cob-det i{display:inline-block;width:12px;height:12px;margin-right:8px;vertical-align:-1px}
+.cob-det .cob-pct{font:600 26px var(--mono);margin:0 0 10px}
+.cob-det table{width:100%;font-size:13px}.cob-det td{padding:4px 6px;border-bottom:1px solid var(--line)}
+@media (max-width:900px){.cobgrid{grid-template-columns:1fr}}
 .toc-tit{font:700 22px/1.2 var(--mono);margin:0 0 12px;padding:0;border:0;color:var(--fg)}
 .tabmet .toc{border-top:0;padding-top:0}
 .tabmet .toc-links{border-top:2px solid var(--fg);padding-top:10px}
@@ -863,6 +869,9 @@ function renderMetodo(){
   const P=D.parametros, R=['GBA','Pampeana','Noreste','Noroeste','Cuyo','Patagonia'];
   const pr=D.ponderadores.region, pd=D.ponderadores.division, pc=D.ponderadores.clase||[];
   const secs=[
+  ['canasta','Qué parte de la canasta medimos',`
+    <p>Cada porción es una parte del consumo de los hogares según la canasta del IPC del INDEC (ponderadores de cada región por el peso de la región; base diciembre de 2016). Las porciones lisas son bienes y las rayadas, servicios. Tocá una porción para ver sus principales rubros.</p>
+    <div class="cobgrid"><div class="chart tall"><canvas id="c-cob"></canvas></div><div id="cob-det" class="cob-det"></div></div>`],
   ['fuente','Fuente de datos',`
     <p>Los precios salen de la base <b>SEPA</b> (Sistema Electrónico de Publicidad de Precios Argentinos), que alimenta el sitio Precios Claros. Por la Resolución 12/2016 (actualizada por la Resolución 678/2020), los comercios minoristas grandes están obligados a informar todos los días el precio de cada producto en cada sucursal. La Secretaría de Industria y Comercio la publica como datos abiertos (licencia CC BY 4.0) en <span class="f">datos.produccion.gob.ar/dataset/sepa-precios</span>.</p>
     <p>Cada archivo diario trae, por comercio, tres tablas: <span class="f">comercio</span> (cadena y bandera), <span class="f">sucursales</span> (dirección, provincia, localidad, coordenadas) y <span class="f">productos</span> (código EAN o interno, descripción, marca, presentación, precio de lista y hasta dos promociones), con alrededor de 12 millones de precios diarios.</p>
@@ -1016,6 +1025,7 @@ prom. 4 mens.  = (1 + prom. 4 sem.)^(30,44 / 7) − 1</div>
   ];
   document.getElementById('toc').innerHTML = secs.map((s,i)=>`<a href="#m-${s[0]}"><span class="mono">${String(i+1).padStart(2,'0')}</span> ${s[1]}</a>`).join('');
   document.getElementById('metodo').innerHTML = secs.map((s,i)=>`<h3 id="m-${s[0]}"><span class="k">${String(i+1).padStart(2,'0')}</span>${s[1]}</h3>${s[2]}`).join('');
+  renderCobertura();
 }
 
 
@@ -1766,9 +1776,10 @@ const NOTAS={
   'c-var':'Variación mensual de cada variante de cálculo del índice y del INDEC.',
   'c-mun1':'Promedio de 4 semanas, mensualizado.',
   'c-mun2':'Variación mensual del municipio y de su región.',
+  'c-cob':'Pesos de la canasta del IPC del INDEC (base dic-2016) por estado en el ipceer. Rayado: servicios.',
   'c-ext':'Cada medición publicada por una consultora junto al ipceer equivalente: mismo rubro, período y medida.',
   'c-dots':()=>'Cada punto es una consultora; la cruz es su mediana. Valores redondeados a un decimal, como publican.'+(stDots.f==='m'?' Las que publican por semana se encadenan dentro del mes.':'')};
-const UNID={'c-sem':'Variación semanal, %','c-men':'Variación mensual, %','c-rot1':'% de los precios relevados','c-rot4':'Variación semanal, %','c-rot2':'Variación semanal, %','c-rot3':'% de la canasta y de los precios relevados','c-regu':'Variación mensual, %','c-real':'Índice real, base 100 en el primer mes con dato','c-pp':'Variación mensual, %','c-af':'Pesos por mes','c-cs':'Pesos por mes','c-mag':'Pesos por kilo vivo','c-comb1':'Variación mensual, %','c-comb2':'Desvío estándar, %','c-comb3':'%','c-dia':'Índice','c-niv':'Índice, base octubre de 2026 = 100','c-emp':'Índice','c-reg':'Variación mensualizada, %','c-nreg':'Diferencia con el promedio del país, %','c-nreg2':'Índice, promedio del país = 100','c-can1':'Pesos por adulto equivalente','c-can2':'Variación mensual, %','c-can3':'Pesos por adulto equivalente','c-cad1':'Índice, mediana de las cadenas = 100','c-cad2':'Índice, promedio de las cadenas = 100','c-cad3':'%','c-cad4':'Variación semanal, %','c-car':'Variación mensual, %','c-v1':'Índice','c-v2':'Variación mensual, %','c-v3':'Puntos porcentuales','c-v4':'%','c-v5':'Puntos porcentuales','c-var':'Variación mensual, %','c-mun1':'Variación mensualizada, %','c-mun2':'Variación mensual, %','c-ext':'Variación, %','c-dots':()=>`Variación ${stDots.f==='s'?'semanal':'mensual'}, %`};
+const UNID={'c-sem':'Variación semanal, %','c-men':'Variación mensual, %','c-rot1':'% de los precios relevados','c-rot4':'Variación semanal, %','c-rot2':'Variación semanal, %','c-rot3':'% de la canasta y de los precios relevados','c-regu':'Variación mensual, %','c-real':'Índice real, base 100 en el primer mes con dato','c-pp':'Variación mensual, %','c-af':'Pesos por mes','c-cs':'Pesos por mes','c-mag':'Pesos por kilo vivo','c-comb1':'Variación mensual, %','c-comb2':'Desvío estándar, %','c-comb3':'%','c-dia':'Índice','c-niv':'Índice, base octubre de 2026 = 100','c-emp':'Índice','c-reg':'Variación mensualizada, %','c-nreg':'Diferencia con el promedio del país, %','c-nreg2':'Índice, promedio del país = 100','c-can1':'Pesos por adulto equivalente','c-can2':'Variación mensual, %','c-can3':'Pesos por adulto equivalente','c-cad1':'Índice, mediana de las cadenas = 100','c-cad2':'Índice, promedio de las cadenas = 100','c-cad3':'%','c-cad4':'Variación semanal, %','c-car':'Variación mensual, %','c-v1':'Índice','c-v2':'Variación mensual, %','c-v3':'Puntos porcentuales','c-v4':'%','c-v5':'Puntos porcentuales','c-var':'Variación mensual, %','c-mun1':'Variación mensualizada, %','c-mun2':'Variación mensual, %','c-ext':'Variación, %','c-cob':'% del consumo de los hogares','c-dots':()=>`Variación ${stDots.f==='s'?'semanal':'mensual'}, %`};
 /* pestañas cuyos gráficos dependen de la región y la serie elegidas arriba */
 const CON_FILTRO_GLOBAL=new Set(['res','rot','ser']);
 function partirLineas(x,txt,ancho){ const ps=txt.split(/\s+/), ls=[]; let l=''; ps.forEach(p=>{ const t=l?l+' '+p:p; if(x.measureText(t).width>ancho&&l){ ls.push(l); l=p; } else l=t; }); if(l) ls.push(l); return ls; }
@@ -1917,6 +1928,29 @@ function renderReales(){
     C.map(c=>{const u=c.serie[c.serie.length-1]; return `<tr><td>${esc(c.nombre)}</td><td class="muted">${esc(c.unidad)}</td><td>${mesLbl(c.desde)}</td><td class="n">$ ${num(u.precio,0)} <span class="muted">(${mesLbl(u.mes)})</span></td><td class="n">${v(c.var_mes_nominal)}</td><td class="n">${v(c.var_mes_real)}</td><td class="n">${v(c.var_anio_nominal)}</td><td class="n">${v(c.var_anio_real)}</td><td class="n">${v(c.var_ia_real)}</td><td class="n">${v(c.var_total_real)}</td></tr>`;}).join('')+'</tbody>';
 }
 
+/* ---------- metodología: qué parte de la canasta medimos ---------- */
+const COB_EST=[['incluido','Relevados e incluidos','#1b6e3a'],['relevado','Relevados, sin incluir todavía','#8fd19e'],['estimado','Sin relevar, estimados','#f2c94c'],['sin_relevar','Sin relevar','#af3e30']];
+function rayado(col){ const c=document.createElement('canvas'); c.width=c.height=10; const x=c.getContext('2d'); x.fillStyle=col; x.fillRect(0,0,10,10);
+  x.strokeStyle='rgba(255,255,255,.75)'; x.lineWidth=2.2; x.beginPath(); x.moveTo(-2,12); x.lineTo(12,-2); x.moveTo(-2,2); x.lineTo(2,-2); x.moveTo(8,12); x.lineTo(12,8); x.stroke(); return x.createPattern(c,'repeat'); }
+function renderCobertura(){
+  const C=D.cobertura_canasta||[]; if(!C.length){ sinDatos('c-cob','Falta la clasificación de la canasta.'); return; }
+  const tot=C.reduce((a,x)=>a+x.peso,0), sl=[];
+  COB_EST.forEach(([e,nom,col])=>['bien','servicio'].forEach(t=>{ const xs=C.filter(x=>x.estado===e&&x.tipo===t); const v=xs.reduce((a,x)=>a+x.peso,0); if(v>0) sl.push({e,nom,col,t,v:100*v/tot,xs}); }));
+  const det=document.getElementById('cob-det');
+  const mostrar=i=>{ const o=sl[i]; const xs=[...o.xs].sort((a,b)=>b.peso-a.peso);
+    det.innerHTML=`<h4><i style="background:${o.col}"></i>${o.nom} · ${o.t==='bien'?'bienes':'servicios'}</h4><p class="cob-pct">${num(o.v,1)}% del consumo</p><table><tbody>`+
+      xs.slice(0,10).map(x=>`<tr><td class="mono muted">${x.codigo}</td><td>${esc(x.nombre)}</td><td class="n">${num(100*x.peso/tot,1)}%</td></tr>`).join('')+`</tbody></table>${xs.length>10?`<p class="muted">y ${xs.length-10} rubros más.</p>`:''}`; };
+  const resumen=()=>{ det.innerHTML='<h4>Resumen</h4><table><tbody>'+COB_EST.map(([e,nom,col])=>{ const v=sl.filter(o=>o.e===e).reduce((a,o)=>a+o.v,0); return `<tr><td><i style="background:${col}"></i>${nom}</td><td class="n">${num(v,1)}%</td></tr>`; }).join('')+
+    `<tr><td colspan="2" class="muted" style="padding-top:10px">Bienes ${num(sl.filter(o=>o.t==='bien').reduce((a,o)=>a+o.v,0),1)}% · servicios ${num(sl.filter(o=>o.t==='servicio').reduce((a,o)=>a+o.v,0),1)}%</td></tr></tbody></table>`; };
+  /* porcentaje sobre cada porción (si es mayor al 2%) */
+  const etiq={id:'cobEtiq',afterDatasetsDraw(ch){ const x=ch.ctx, m=ch.getDatasetMeta(0); x.save(); x.font=`700 13px ${css('--mono')}`; x.textAlign='center'; x.textBaseline='middle';
+    m.data.forEach((a,i)=>{ const v=sl[i].v; if(v<2) return; const ang=(a.startAngle+a.endAngle)/2, r=(a.innerRadius+a.outerRadius)/2, px=a.x+Math.cos(ang)*r, py=a.y+Math.sin(ang)*r, t=num(v,1)+'%';
+      const w=x.measureText(t).width+8; x.fillStyle='rgba(255,255,255,.92)'; x.fillRect(px-w/2,py-9,w,18); x.fillStyle='#171a24'; x.fillText(t,px,py); }); x.restore(); }};
+  draw('c-cob',{type:'doughnut',plugins:[etiq],data:{labels:sl.map(o=>`${o.nom} · ${o.t==='bien'?'bienes':'servicios'}`),datasets:[{data:sl.map(o=>o.v),backgroundColor:sl.map(o=>o.t==='bien'?o.col:rayado(o.col)),borderColor:'#ffffff',borderWidth:2,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'52%',animation:false,onClick:(ev,els)=>{ if(els.length) mostrar(els[0].index); else resumen(); },
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+num(c.parsed,1)+'% del consumo'}}}}});
+  resumen();
+}
 /* ---------- índice de cada pestaña: columna lateral como la de Metodología ---------- */
 /* function (no const) porque armarIndices corre antes de esta línea */
 function tabNom(){ return {res:'Resumen',rot:'Rotación',rub:'Rubros',ser:'Series',reg:'Regiones',can:'Canastas',cad:'Cadenas',cons:'Consultoras',hilo:'Hilo'}; }

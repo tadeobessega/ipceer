@@ -491,6 +491,26 @@ el total no se presenta como nivel general.
   su participación; en trenes, promedio geométrico por ramal; en agua, la factura promedio de unas
   10.000 cuentas. La referencia para replicarlo son los usuarios y consumos por categoría del ENRE y
   del ENARGAS, no la ENGHo (que en servicios releva gasto, no cantidades).
+- **D-48 (13/11/2026). Cuadros del ENRE y factura de luz contra el INDEC.** `ipceer.enre` baja el
+  archivo público de cuadros tarifarios del ENRE (377 documentos, diciembre de 2017 a noviembre de
+  2026, Edenor y Edesur; robots.txt lo permite, un pedido cada 1,5 segundos, con curl porque el
+  servidor solo acepta cifrados viejos) y deja `resultados/enre_cuadros.csv` (6.649 cargos
+  residenciales). `scripts/electricidad_vs_indec.py` arma la factura sin impuestos con cuatro
+  juegos de cantidades y la compara con 04.5 del IPC de GBA (106 meses): 265 kWh sin subsidio
+  (IIEP) R² 0,333; 265 kWh con 35% de usuarios subsidiados (ENRE, Res. 119 y 120/2025) R² 0,359;
+  tramos de consumo (R1 y R2 = 60% de los usuarios según el sector; el resto, supuesto) R² 0,329;
+  tramos con 35% subsidiados R² 0,345 y la mejor sincronía de los aumentos (62%). Las diferencias son
+  chicas porque 04.5 junta luz y gas: falta la historia de los cuadros de gas (ENARGAS) para
+  separar. Pendiente: cuadros de gas hacia atrás y la distribución de usuarios por categoría.
+- **Revisiones del índice semanal cuando publica el INDEC.** Con la ponderación "indec" (D-11), los
+  pesos de un período se llevan al último mes publicado por el INDEC antes de ese período. Cuando
+  el INDEC publicó octubre (12/11/2026), las semanas de noviembre pasaron a ponderarse con los
+  precios relativos de octubre en lugar de los de septiembre: por eso alimentos de GBA de la semana
+  45 pasó de 0,352% a 0,346% sin que cambiaran los precios (los paneles de esa semana no se tocan
+  desde el 9/11). Pasa una vez por mes y solo en las semanas del mes en curso.
+- **Cobertura de la canasta.** `config/cobertura.yaml` marca cada clase como relevada e incluida,
+  relevada sin incluir, estimada o sin relevar, y como bien o servicio; el gráfico de torta de la
+  Metodología lo muestra con los pesos nacionales del INDEC.
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del

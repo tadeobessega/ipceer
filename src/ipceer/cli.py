@@ -156,6 +156,14 @@ def _datos_fuentes(cfg, datos: dict) -> None:
         datos["indec_var"] = resumen._limpio(externos.indec_variaciones(cfg))
     except Exception as e:
         log.warning("Regulados y consultoras: %s", e)
+    try:
+        # series oficiales nacionales para la serie empalmada (se refrescan apenas el INDEC publica)
+        ind = validacion.leer_indec(indec.directorio(cfg)).filter(
+            (pl.col("region") == "Nacional") & pl.col("codigo").is_in(["0", "B", "01"]))
+        datos["indec"] = {c: [[m, round(i, 4)] for m, i in g.sort("mes").select("mes", "indice").iter_rows()]
+                          for (c,), g in ind.group_by(["codigo"])}
+    except Exception as e:
+        log.warning("Series del INDEC para el empalme: %s", e)
 
 
 def cmd_calcular(cfg, args):

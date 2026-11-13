@@ -110,8 +110,8 @@ def proyeccion_mes(semanal: list[dict], mes: str) -> dict | None:
 
 
 def recortar_series(datos: dict) -> None:
-    """Deja en las series del tablero solo el tramo publicado (desde INICIO_SEMANA / INICIO_MES), para
-    que `sitio` lo aplique también sobre un datos.json armado antes de este cambio."""
+    """Deja en las series del tablero solo el tramo publicado (desde INICIO_SEMANA / INICIO_MES), con
+    base 100 en su primer período, y lo aplica también sobre un datos.json armado antes de este cambio."""
     for cods in (datos.get("series") or {}).values():
         for d in cods.values():
             if d.get("semanal"):
@@ -119,6 +119,14 @@ def recortar_series(datos: dict) -> None:
                 d["saltos"] = [x for x in d.get("saltos", []) if str(x.get("desde", [""])[0] if isinstance(x.get("desde"), list) else x.get("desde", "")) >= "2026-10"]
             if d.get("mensual"):
                 d["mensual"] = [x for x in d["mensual"] if x["mes"] >= INICIO_MES]
+            # base = 100 en el primer período publicado (semana 43 y octubre de 2026)
+            for k in ("semanal", "mensual"):
+                xs = d.get(k) or []
+                if xs and xs[0].get("indice"):
+                    b = xs[0]["indice"]
+                    for x in xs:
+                        if x.get("indice") is not None:
+                            x["indice"] = round(x["indice"] / b * 100, 4)
                 d["saltos_mensual"] = [x for x in d.get("saltos_mensual", []) if str(x.get("desde", "")) >= INICIO_MES]
 
 

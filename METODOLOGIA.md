@@ -471,6 +471,26 @@ el total no se presenta como nivel general.
   la versión aplicable es imputar a los servicios faltantes la inflación general del mes anterior
   (fila "nivel general, mes anterior", que da errores parecidos) y al alquiler su propio rezago.
   Es una propuesta: no se adopta hasta probarla contra el INDEC con la regla de dispersión.
+- **D-47. Completar los servicios con el nivel general del mes anterior: prueba con el agregado.**
+  `scripts/imputacion_servicios.py` simula con el IPC del INDEC (GBA, 2020-09 a 2026-10, 74 meses)
+  un índice que mide perfecto lo que hoy medimos (47,8% del gasto) y prueba solo cómo completar el
+  resto; el error queda contra el nivel general. Incidencias base dic-2016, controladas: suman el
+  nivel general con un desvío máximo de 0,005 pp. RMSE en pp por mes (todo el período / últimos 24):
+  hoy (lo no medido al ritmo de lo medido) 0,969 / 0,393; servicios con el nivel general t−1 y bienes
+  no medidos con los bienes del mismo mes 0,874 / 0,287 (p = 0,11 contra hoy); servicios con la
+  inflación de servicios t−1 0,848 / 0,381; cada servicio con su propio dato t−1 0,860 / 0,408.
+  Alquiler, sobre la anterior: su dato t−1 0,846 / 0,276; promedio de t−1 y t−2 0,843 / 0,280; ICL
+  del mismo mes 0,846 / 0,275 (sesgo +0,05 contra +0,09 del rezago); ninguna variante del alquiler
+  difiere de las demás con significancia (p ≥ 0,18). Lectura: la propuesta baja el error un 10% en
+  todo el período y un 27% en los últimos 24 meses; la del alquiler suma poco. No adoptado todavía:
+  lo decide Tadeo (13/11/2026).
+- **Regulados: de dónde salen las cantidades.** La metodología del IPC (INDEC, 2016, secciones 9.1,
+  9.2, 9.5 y 9.9) no usa cantidades de la ENGHo para los regulados: en luz y gas arma una factura
+  promedio por tipo de usuario y tramo con el consumo promedio de cada tramo, empresa y área (ENRE y
+  ENARGAS, 2015) y pondera por participación de mercado; en colectivos pondera las 4 secciones por
+  su participación; en trenes, promedio geométrico por ramal; en agua, la factura promedio de unas
+  10.000 cuentas. La referencia para replicarlo son los usuarios y consumos por categoría del ENRE y
+  del ENARGAS, no la ENGHo (que en servicios releva gasto, no cantidades).
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del

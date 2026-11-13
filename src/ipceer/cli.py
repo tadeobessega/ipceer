@@ -294,6 +294,7 @@ def cmd_sitio(cfg, args):
     ruta = cfg.ruta("resultados") / "datos.json"
     datos = json.loads(ruta.read_text(encoding="utf-8"))
     _datos_fuentes(cfg, datos)
+    resumen.recortar_series(datos)
     ruta.write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
     destino = sitio.construir(cfg, datos)
     log.info("Sitio: %s", destino)

@@ -109,6 +109,19 @@ def proyeccion_mes(semanal: list[dict], mes: str) -> dict | None:
     }
 
 
+def recortar_series(datos: dict) -> None:
+    """Deja en las series del tablero solo el tramo publicado (desde INICIO_SEMANA / INICIO_MES), para
+    que `sitio` lo aplique también sobre un datos.json armado antes de este cambio."""
+    for cods in (datos.get("series") or {}).values():
+        for d in cods.values():
+            if d.get("semanal"):
+                d["semanal"] = [x for x in d["semanal"] if x["semana"] >= INICIO_SEMANA]
+                d["saltos"] = [x for x in d.get("saltos", []) if str(x.get("desde", [""])[0] if isinstance(x.get("desde"), list) else x.get("desde", "")) >= "2026-10"]
+            if d.get("mensual"):
+                d["mensual"] = [x for x in d["mensual"] if x["mes"] >= INICIO_MES]
+                d["saltos_mensual"] = [x for x in d.get("saltos_mensual", []) if str(x.get("desde", "")) >= INICIO_MES]
+
+
 def _limpio(x):
     if isinstance(x, float):
         return None if math.isnan(x) or math.isinf(x) else round(x, 4)

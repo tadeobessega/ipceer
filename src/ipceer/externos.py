@@ -265,3 +265,59 @@ def canasta_servicios(cfg: Config) -> dict:
             b["var"] = (b["total"] / a["total"] - 1) * 100
     return {"referencia": conf.get("referencia"), "componentes": comps, "meses": filas,
             "completa": bool(activos) and len(activos) == len(comps)}
+
+
+def tarifas_reales(cfg: Config) -> dict:
+    """Tarifas de la canasta de servicios en términos reales (D-43). Para cada componente
+    (config/regulados/servicios.yaml): el precio unitario (boletos) o la factura del hogar tipo (luz
+    y gas), mes a mes, deflactado por el IPC del INDEC de GBA (nivel general). Solo meses con tarifa
+    vigente todo el mes; después del último dato del INDEC queda solo la serie nominal. Por
+    componente: la serie (precio, índice nominal y real con base 100 en su primer mes) y las
+    variaciones del último mes, del año, interanual y desde el primer dato. Nada se completa: un mes
+    sin tarifa corta la serie."""
+    from .indec import directorio
+    from .validacion import leer_indec
+    can = canasta_servicios(cfg)
+    if not can.get("meses"):
+        return {}
+    ind = leer_indec(directorio(cfg)).filter((pl.col("codigo") == "0") & (pl.col("region") == "GBA"))
+    ipc = dict(ind.select("mes", "indice").iter_rows())
+
+    def mes_ant(m, n=1):
+        a, x = int(m[:4]), int(m[5:]) - n
+        while x < 1:
+            a, x = a - 1, x + 12
+        return f"{a}-{x:02d}"
+
+    def var(a, b, k):
+        return round((b[k] / a[k] - 1) * 100, 2) if a and b and a.get(k) and b.get(k) else None
+
+    out = []
+    for c in can["componentes"]:
+        serie = [(f["mes"], f["precios"].get(c["id"])) for f in can["meses"] if f["precios"].get(c["id"]) is not None]
+        base = {"id": c["id"], "nombre": c.get("nombre"),
+                "unidad": "factura mensual del hogar tipo" if c.get("partes") else "precio por viaje"}
+        if len(serie) < 2:
+            out.append({**base, "serie": [], "sin_datos": True})
+            continue
+        m0, p0 = serie[0]
+        filas = []
+        for m, p in serie:
+            real = (p / ipc[m]) / (p0 / ipc[m0]) * 100 if m in ipc and m0 in ipc else None
+            filas.append({"mes": m, "precio": round(p, 2), "nominal": round(p / p0 * 100, 2),
+                          "real": round(real, 2) if real is not None else None})
+        por_mes = {f["mes"]: f for f in filas}
+        ult = filas[-1]
+        con_real = [f for f in filas if f["real"] is not None]
+        ur = con_real[-1] if con_real else None
+        dic = lambda m: f"{int(m[:4]) - 1}-12"
+        out.append({**base, "serie": filas, "desde": m0, "ultimo": ult["mes"], "ultimo_real": ur["mes"] if ur else None,
+                    "var_mes_nominal": var(por_mes.get(mes_ant(ult["mes"])), ult, "nominal"),
+                    "var_mes_real": var(por_mes.get(mes_ant(ur["mes"])), ur, "real") if ur else None,
+                    "var_anio_nominal": var(por_mes.get(dic(ult["mes"])), ult, "nominal"),
+                    "var_anio_real": var(por_mes.get(dic(ur["mes"])), ur, "real") if ur else None,
+                    "var_ia_nominal": var(por_mes.get(mes_ant(ult["mes"], 12)), ult, "nominal"),
+                    "var_ia_real": var(por_mes.get(mes_ant(ur["mes"], 12)), ur, "real") if ur else None,
+                    "var_total_nominal": round(ult["nominal"] - 100, 2),
+                    "var_total_real": round(ur["real"] - 100, 2) if ur else None})
+    return {"componentes": out, "deflactor": "IPC del INDEC, nivel general de GBA", "ipc_ultimo": max(ipc) if ipc else None}

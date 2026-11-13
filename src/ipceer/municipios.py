@@ -28,7 +28,10 @@ def config_municipio(cfg: Config, muni: dict) -> Config:
     datos = copy.deepcopy(cfg.datos)
     datos["rutas"] |= {"panel_diario": str(d / "panel" / "diario"), "panel_semanal": str(d / "panel" / "semanal"),
                        "panel_mensual": str(d / "panel" / "mensual"),
-                       "resultados": str(Path(cfg.ruta("resultados")) / "municipios" / muni["id"])}
+                       "resultados": str(Path(cfg.ruta("resultados")) / "municipios" / muni["id"]),
+                       # las series del INDEC son las mismas: sin esto el municipio buscaba su propia
+                       # carpeta indec (vacía) y caía a la ponderación "propia"
+                       "indec": str(__import__("ipceer.indec", fromlist=["directorio"]).directorio(cfg))}
     datos["municipios"] = []
     return Config(raiz=cfg.raiz, datos=datos)
 

@@ -397,7 +397,8 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
     if ponderacion == "indec":
         niv, meses_indec = niveles_indec(cfg, usados)
         if not meses_indec:
-            log.warning("Sin series del INDEC: se usan los ponderadores con el nivel propio")
+            from .indec import directorio
+            log.warning("Sin series del INDEC en %s: se usan los ponderadores con el nivel propio", directorio(cfg))
             ponderacion = "propia"
     if ponderacion == "indec":
         ult_indec = meses_indec[-1]

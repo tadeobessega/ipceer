@@ -33,6 +33,8 @@ MESES_ES = {"ene": 1, "feb": 2, "mar": 3, "abr": 4, "may": 5, "jun": 6, "jul": 7
 
 
 def directorio(cfg: Config) -> Path:
+    if cfg.datos.get("rutas", {}).get("indec"):
+        return cfg.ruta("indec")
     d = cfg.ruta("panel_diario").parent.parent / "indec"
     d.mkdir(parents=True, exist_ok=True)
     return d

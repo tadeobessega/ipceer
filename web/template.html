@@ -108,9 +108,10 @@ details.info .pop{position:absolute;z-index:20;left:0;top:24px;width:320px;max-w
 td.compl{font-size:12px;color:var(--fg2);min-width:280px;white-space:normal}
 .muted{color:var(--muted)}
 .card .cap{font-size:12.5px;color:var(--muted);margin:0 0 10px}
-.card .src{font-size:12px;color:var(--muted);margin-top:auto;padding-top:10px;display:flex;justify-content:space-between;align-items:baseline;gap:16px}
-.glogo{display:inline-block;flex-shrink:0;width:58px;height:17px;color:#2840a5;--cursor:#d6810c}
-.glogo.glogo-ceer{width:38px;height:9px}
+.card .src{font-size:12px;color:var(--muted);margin-top:auto;padding-top:10px;display:flex;justify-content:flex-start;align-items:baseline;gap:12px}
+/* logo de los gráficos: a la izquierda de la fuente (order:-1, sin cambiar el orden del HTML) y más chico */
+.glogo{display:inline-block;flex-shrink:0;order:-1;width:48px;height:14px;color:#2840a5;--cursor:#d6810c}
+.glogo.glogo-ceer{width:32px;height:7.5px}
 /* los gráficos ocupan todo el alto libre de su tarjeta (la fila se estira a la tarjeta más alta) */
 .chart[data-vacio]::after{content:attr(data-vacio);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--muted);font-size:13px}
 .chart{position:relative;flex:0 0 auto;height:300px}.chart.tall{height:360px}.chart.short{height:220px}

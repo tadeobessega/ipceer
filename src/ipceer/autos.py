@@ -122,3 +122,30 @@ def actualizar(cfg: Config) -> dict:
         w.writerows(filas)
     return {"mes": mes, "valores": len(filas), "versiones": len({(x["marca"], x["modelo"], x["version"]) for x in filas}),
             "marcas": len({x["marca"] for x in filas})}
+
+
+def relativos(cfg: Config) -> "pl.DataFrame":
+    """Variación mensual de 07.1.1 (compra de vehículos) para la variante "todo" de la carrera
+    (D-45): media geométrica de los relativos de las mismas versiones y años entre dos guías
+    consecutivas; solo usados, en pesos (el 0 km viene en dólares y por ahora no entra). Relativos de
+    más de ±50% se descartan como errores de lectura. Misma variación para todas las regiones (la guía
+    es nacional)."""
+    import math
+    import polars as pl
+    from .indice import REGIONES
+    esquema = {"periodo": pl.Utf8, "codigo": pl.Utf8, "region": pl.Utf8, "logrel": pl.Float64, "fuente": pl.Utf8}
+    d = _dir(cfg)
+    guias = sorted(d.glob("cca_autos_*.csv"))
+    filas = []
+    for a, b in zip(guias, guias[1:]):
+        ma, mb = a.stem[-7:], b.stem[-7:]
+        x = pl.read_csv(a).filter(pl.col("moneda") == "miles de $")
+        y = pl.read_csv(b).filter(pl.col("moneda") == "miles de $")
+        k = ["marca", "modelo", "version", "anio"]
+        j = x.join(y, on=k, suffix="_b").filter(pl.col("valor") > 0, pl.col("valor_b") > 0)
+        if j.height < 100:
+            continue
+        lr = (j["valor_b"] / j["valor"]).log()
+        lr = lr.filter(lr.abs() < math.log(1.5))
+        filas += [{"periodo": mb, "codigo": "07.1.1", "region": r, "logrel": float(lr.mean()), "fuente": "autos"} for r in REGIONES]
+    return pl.DataFrame(filas, schema=esquema)

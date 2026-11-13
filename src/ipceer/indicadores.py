@@ -231,6 +231,16 @@ def rotacion(cfg: Config, semanas: list[str]) -> list[dict]:
             for f in filas:
                 if f["semana"] == s1 and f["region"] == NACIONAL and f["codigo"] == "TOTAL":
                     f["difusion"] = dif
+        # movimiento promedio de los precios (D-44): promedio simple, sin ponderar por la canasta,
+        # de la variación de todos los precios apareados (los que no cambiaron cuentan como cero) y
+        # del tamaño absoluto de esa variación. No es inflación: cada precio pesa lo mismo.
+        for f in filas:
+            if f["semana"] != s1 or f["codigo"] != "TOTAL":
+                continue
+            x = par if f["region"] == NACIONAL else par.filter(pl.col("region") == f["region"])
+            if x.height:
+                f["mov_prom"] = (math.exp(x["lr"].mean()) - 1) * 100
+                f["mov_abs"] = float((x["rel"] - 1).abs().mean() * 100)
         log.info("Rotación %s: %d precios apareados", s1, par.height)
     return filas
 

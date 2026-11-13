@@ -108,10 +108,12 @@ def precio_mensual(t: pl.DataFrame) -> pl.DataFrame:
     return pl.DataFrame(filas, infer_schema_length=None) if filas else pl.DataFrame()
 
 
-def indice_regulados(cfg: Config) -> pl.DataFrame | None:
+def indice_regulados(cfg: Config, todos_los_conceptos: bool = False) -> pl.DataFrame | None:
     """Índice mensual por clase y región (formato de indices_mensual.csv). La variación de un mes
-    existe solo si el mes y el anterior tienen precio; si no, ese mes queda sin dato."""
-    t = tarifas(cfg, solo_conceptos_manuales=True)
+    existe solo si el mes y el anterior tienen precio; si no, ese mes queda sin dato.
+    `todos_los_conceptos`: también los conceptos que solo se leyeron automáticamente (variante
+    "todo" de la carrera, D-45); por defecto, solo los que ya estaban en la carga manual (D-38)."""
+    t = tarifas(cfg, solo_conceptos_manuales=not todos_los_conceptos)
     if t.is_empty():
         return None
     pm = precio_mensual(t)

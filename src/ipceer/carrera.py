@@ -53,6 +53,8 @@ VARIANTES: list[tuple[str, str, dict, bool]] = [
     ("sin_frescos", "Sin carnes, pescados, frutas ni verduras", {"excluir": FRESCOS}, False),
     ("web", "Con precios de tiendas en línea (ropa, calzado, medicamentos, frescos por kilo)", {"web": True}, True),
     ("completo", "Con tiendas en línea, tarifas, combustibles, alquileres y prepagas", {"web": True, "extra": True}, True),
+    ("todo", "Todo lo que todavía no está probado: completo más todas las tarifas leídas, alquileres de GBA "
+     "(Ciudad, Norte, Oeste y Sur) y autos (cuando haya dos meses de la guía)", {"web": True, "extra": "todo"}, True),
 ]
 NOMBRES = {v[0]: v[1] for v in VARIANTES} | {
     "base_mas_sesgo": "Publicado más el sesgo medio de 2017-2018 (experimental)",
@@ -79,7 +81,7 @@ def _prev(mes: str) -> str:
     return f"{a - (m == 1)}-{12 if m == 1 else m - 1:02d}"
 
 
-def relativos_externos(cfg: Config) -> pl.DataFrame:
+def relativos_externos(cfg: Config, todo: bool = False) -> pl.DataFrame:
     """Variaciones mensuales de clases que no salen de precios relevados: tarifas por norma
     (config/regulados/tarifas.csv y las leídas de Infoleg), combustibles (Secretaría de Energía),
     alquileres publicados (informe de Zonaprop, solo GBA) y cuotas de prepagas (Superintendencia de
@@ -88,7 +90,7 @@ def relativos_externos(cfg: Config) -> pl.DataFrame:
     partes = []
     try:
         from . import externos
-        reg = externos.indice_regulados(cfg)
+        reg = externos.indice_regulados(cfg, todos_los_conceptos=todo)
         if reg is not None:
             partes.append(reg.filter(pl.col("region").is_in(REGIONES), pl.col("var_pct").is_not_null()).select(
                 "periodo", "codigo", "region", (1 + pl.col("var_pct") / 100).log().alias("logrel"),
@@ -109,14 +111,26 @@ def relativos_externos(cfg: Config) -> pl.DataFrame:
         ruta = cfg.ruta("resultados") / "otras_fuentes.json"
         if ruta.exists():
             alq = json.loads(ruta.read_text(encoding="utf-8")).get("alquileres_zonaprop") or []
-            filas = [{"periodo": a["mes"], "codigo": "04.1.1", "region": "GBA",
-                      "logrel": math.log(1 + a["var_alquiler"] / 100), "fuente": "alquileres"}
-                     for a in alq if isinstance(a, dict) and a.get("var_alquiler") is not None
-                     and a.get("zona", "CABA") == "CABA"]   # GBA Norte, Oeste y Sur se guardan, no entran (D-39)
+            # variante publicada y "completo": solo la Ciudad (D-39). Variante "todo": media geométrica
+            # de las zonas con dato ese mes (Ciudad, GBA Norte, Oeste y Sur, 25% cada una)
+            por_mes = {}
+            for a in alq:
+                if isinstance(a, dict) and a.get("var_alquiler") is not None and (todo or a.get("zona", "CABA") == "CABA"):
+                    por_mes.setdefault(a["mes"], []).append(math.log(1 + a["var_alquiler"] / 100))
+            filas = [{"periodo": m, "codigo": "04.1.1", "region": "GBA", "logrel": sum(v) / len(v), "fuente": "alquileres"}
+                     for m, v in por_mes.items()]
             if filas:
                 partes.append(pl.DataFrame(filas, schema=esquema))
     except Exception as e:
         log.warning("Carrera, alquileres: %s", e)
+    if todo:
+        try:
+            from . import autos
+            a = autos.relativos(cfg)
+            if not a.is_empty():
+                partes.append(a)
+        except Exception as e:
+            log.warning("Carrera, autos: %s", e)
     try:
         from . import prepagas
         pp = prepagas.relativos_externos(cfg)
@@ -132,8 +146,9 @@ def relativos_externos(cfg: Config) -> pl.DataFrame:
 def correr(cfg: Config, opciones: dict, tramo: int | None) -> dict:
     """Una variante sobre un tramo (None = el último). Devuelve la variación mensual nacional."""
     op = dict(opciones)
-    if op.pop("extra", False):
-        op["extra"] = relativos_externos(cfg)
+    ex = op.pop("extra", False)
+    if ex:
+        op["extra"] = relativos_externos(cfg, todo=(ex == "todo"))
     if "excluir" in op:
         op["excluir"] = tuple(op["excluir"])
     res = indice.calcular(cfg, "mensual", solo_tramo=tramo, solo_tramo_actual=tramo is None, **op)

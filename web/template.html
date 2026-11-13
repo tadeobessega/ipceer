@@ -153,8 +153,12 @@ td.n{font-family:var(--mono)}
 .toc{position:sticky;top:120px;font-size:13px;border-top:2px solid var(--fg);padding-top:10px}
 .toc a{display:block;color:var(--fg2);text-decoration:none;padding:4px 0}
 .toc a:hover{color:var(--accent)}
+.toc-tit{font:700 22px/1.2 var(--mono);margin:0 0 12px;padding:0;border:0;color:var(--fg)}
+.tabmet .toc{border-top:0;padding-top:0}
+.tabmet .toc-links{border-top:2px solid var(--fg);padding-top:10px}
+.tabmet > .valcuerpo > [data-panel] > section:first-child{padding-top:0}
 /* índice al comienzo de cada pestaña */
-.indice-tab{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;margin:20px 0 4px;padding:10px 0;border-top:2px solid var(--fg);border-bottom:1px solid var(--line);font-size:13px}
+/* (índice horizontal anterior, sin uso) */ .indice-tab{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;margin:20px 0 4px;padding:10px 0;border-top:2px solid var(--fg);border-bottom:1px solid var(--line);font-size:13px}
 .indice-tab .indice-tit{font-weight:600;color:var(--fg);margin-right:4px}
 .indice-tab a{color:var(--fg2);text-decoration:none}
 .indice-tab a:hover{color:var(--accent)}
@@ -543,7 +547,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
 
   <!-- VALIDACIÓN -->
   <div data-panel="val" hidden>
-    <div class="met valmet">
+    <div class="met valmet tabmet">
       <nav class="toc" id="toc-val"></nav>
       <div class="valcuerpo">
     <section>
@@ -733,6 +737,7 @@ const etiquetasFinales={id:'etiquetasFinales',afterDatasetsDraw(ch,a,opt){
   it.forEach(e=>{c.fillStyle=e.c; c.fillText(e.t,e.x+8,e.y);}); c.restore(); }};
 Chart.register(etiquetasFinales);
 // toda tarjeta con gráfico lleva fuente y logo
+armarIndices();
 document.querySelectorAll('.card').forEach(c=>{ if(c.querySelector('.chart')&&!c.querySelector(':scope > .src')) c.insertAdjacentHTML('beforeend','<div class="src">Fuente: elaboración propia en base a relevamiento web de precios'+(c.closest('[data-panel="val"]')?' e INDEC':'')+'.</div>'); });
 /* logo de los gráficos: el ceer_ con "ip" adelante en naranja (Cascadia Code Bold, misma altura de x) */
 const IP_D='M14.8 110V84.1H55.5V25.9H21.1V0H83.5V84.1H116.1V110ZM68.3 -14.8Q60.3 -14.8 55.3 -19.8Q50.3 -24.8 50.3 -32.8Q50.3 -40.8 55.3 -45.8Q60.3 -50.7 68.3 -50.7Q76.3 -50.7 81.3 -45.8Q86.2 -40.8 86.2 -32.8Q86.2 -24.8 81.3 -19.8Q76.3 -14.8 68.3 -14.8Z M140.2 157.7V0H166.2L168 19.9H170Q172 8.8 178.4 3.4Q184.9 -2.1 197.5 -2.1Q218.1 -2.1 229.5 12.9Q240.9 27.8 240.9 55.1Q240.9 82.6 229.5 97.3Q218.1 112.1 197.7 112.1Q186.2 112.1 179.2 106.6Q172.3 101.1 170.6 90.1H168.3V157.7ZM168.3 55.1Q168.3 71.1 173.1 78.3Q177.9 85.6 189.8 85.6Q200.8 85.6 206.5 77.9Q212.1 70.3 212.1 55.1Q212.1 40.5 206.3 32.4Q200.5 24.4 189.8 24.4Q179.1 24.4 173.7 31.8Q168.3 39.1 168.3 55.1Z';
@@ -1912,24 +1917,29 @@ function renderReales(){
     C.map(c=>{const u=c.serie[c.serie.length-1]; return `<tr><td>${esc(c.nombre)}</td><td class="muted">${esc(c.unidad)}</td><td>${mesLbl(c.desde)}</td><td class="n">$ ${num(u.precio,0)} <span class="muted">(${mesLbl(u.mes)})</span></td><td class="n">${v(c.var_mes_nominal)}</td><td class="n">${v(c.var_mes_real)}</td><td class="n">${v(c.var_anio_nominal)}</td><td class="n">${v(c.var_anio_real)}</td><td class="n">${v(c.var_ia_real)}</td><td class="n">${v(c.var_total_real)}</td></tr>`;}).join('')+'</tbody>';
 }
 
-/* ---------- índice de cada pestaña: enlaces a sus secciones (h2) ---------- */
+/* ---------- índice de cada pestaña: columna lateral como la de Metodología ---------- */
+/* function (no const) porque armarIndices corre antes de esta línea */
+function tabNom(){ return {res:'Resumen',rot:'Rotación',rub:'Rubros',ser:'Series',reg:'Regiones',can:'Canastas',cad:'Cadenas',cons:'Consultoras',hilo:'Hilo'}; }
+/* una vez, al cargar: cada pestaña queda en dos columnas (índice | contenido) */
+function armarIndices(){ const TAB_NOM=tabNom(); Object.keys(TAB_NOM).forEach(tab=>{ const ps=[...document.querySelectorAll(`main [data-panel="${tab}"]`)]; if(!ps.length) return;
+  const w=document.createElement('div'); w.dataset.panel=tab; w.hidden=ps[0].hidden; w.className='met tabmet';
+  w.innerHTML=`<nav class="toc" aria-label="Índice de la pestaña"><h2 class="toc-tit">${TAB_NOM[tab]}</h2><div class="toc-links"></div></nav><div class="valcuerpo"></div>`;
+  ps[0].parentNode.insertBefore(w,ps[0]); const body=w.querySelector('.valcuerpo'); ps.forEach(p=>body.appendChild(p)); }); }
 function tocPestana(tab){
-  if(tab==='val') return;   /* Validación tiene su índice lateral propio */
-  const ps=[...document.querySelectorAll(`[data-panel="${tab}"]`)]; if(!ps.length) return;
+  if(!tabNom()[tab]) return;   /* INDEC y Metodología tienen su índice propio */
+  const w=document.querySelector(`.tabmet[data-panel="${tab}"]`); if(!w) return;
+  const ps=[...w.querySelectorAll(`.valcuerpo > [data-panel="${tab}"]`)];
   let hs=ps.flatMap(p=>[...p.querySelectorAll('section > h2')]);
   /* pestañas de una sola sección: el índice va a cada tarjeta */
-  if(hs.length<2) hs=ps.flatMap(p=>[...p.querySelectorAll('.card > h3')]).filter(h=>h.offsetParent!==null||true);
+  if(hs.length<2) hs=ps.flatMap(p=>[...p.querySelectorAll('.card > h3')]);
   hs.forEach((h,i)=>{ if(!h.id) h.id=`${tab}-sec-${i+1}`; });
-  let nav=ps[0].querySelector(':scope > nav.indice-tab');
-  if(hs.length<2){ if(nav) nav.remove(); return; }
-  if(!nav){ nav=document.createElement('nav'); nav.className='indice-tab'; nav.setAttribute('aria-label','Índice de la pestaña'); const ref=ps[0].querySelector(':scope > section'); ps[0].insertBefore(nav,ref); }
   const txt=h=>{ const sp=h.querySelector('span:not(.seg)'); return (sp?sp.textContent:[...h.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('')||h.textContent).trim(); };
-  nav.innerHTML='<span class="indice-tit">En esta pestaña</span>'+hs.map((h,i)=>`<a href="#${h.id}"><span class="mono">${String(i+1).padStart(2,'0')}</span> ${esc(txt(h))}</a>`).join('');
+  w.querySelector('.toc-links').innerHTML=hs.map((h,i)=>`<a href="#${h.id}"><span class="mono">${String(i+1).padStart(2,'0')}</span> ${esc(txt(h))}</a>`).join('');
 }
 /* ---------- validación: índice de secciones ---------- */
 function tocVal(){
   const hs=[...document.querySelectorAll('[data-panel="val"] .valcuerpo h2[id]')];
-  document.getElementById('toc-val').innerHTML=hs.map((h,i)=>`<a href="#${h.id}"><span class="mono">${String(i+1).padStart(2,'0')}</span> ${esc(h.textContent)}</a>`).join('');
+  document.getElementById('toc-val').innerHTML='<h2 class="toc-tit">INDEC</h2><div class="toc-links">'+hs.map((h,i)=>`<a href="#${h.id}"><span class="mono">${String(i+1).padStart(2,'0')}</span> ${esc(h.textContent)}</a>`).join('')+'</div>';
 }
 /* ---------- variantes de método ---------- */
 const VAR_NOM={base:'Método actual',A:'A · Sin carnes, pescados, frutas ni verduras',B1:'B1 · Base fija (contra dic-2016)',B2:'B2 · Con reemplazos comparables',C:'C · Sin cadenas con precios quietos','A+B2+C':'A + B2 + C'};

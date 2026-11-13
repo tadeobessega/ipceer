@@ -1576,8 +1576,13 @@ function renderDots(E){
   const rg=Math.max(...todos.map(q=>q.y))-Math.min(...todos.map(q=>q.y))||1, paso=rg/40, sep=Math.min(.09,.8/Math.max(1,...per.map(p=>todos.filter(q=>q.p===p).length)));
   /* los valores que se tocan (a menos de un paso) se reparten lado a lado; si en el grupo está la mediana, va en el centro */
   const dat=[], nd=[], med=[]; per.forEach((p,i)=>{ const g=todos.filter(q=>q.p===p).sort((a,b)=>a.y-b.y); let k=0; while(k<g.length){ let j=k; while(j+1<g.length&&g[j+1].y-g[k].y<paso) j++;
-      let grp=g.slice(k,j+1); const im=grp.findIndex(q=>q.tipo==='med'); if(im>=0){ const m=grp.splice(im,1)[0]; const o=grp.sort((a,b)=>(a.tipo==='nos')-(b.tipo==='nos')); o.splice(Math.floor(o.length/2),0,m); grp=o; } else grp.sort((a,b)=>(a.tipo==='nos')-(b.tipo==='nos'));
-      const n=grp.length; grp.forEach((q,t)=>({con:dat,nos:nd,med}[q.tipo]).push({x:i+(t-(n-1)/2)*sep,y:q.y,f:q.f})); k=j+1; } });
+      const grp=g.slice(k,j+1), dest=q=>({con:dat,nos:nd,med}[q.tipo]);
+      const im=grp.findIndex(q=>q.tipo==='med');
+      if(im>=0){ /* la mediana queda en la vertical; los demás, alternando a la derecha y a la izquierda (lo nuestro, a la derecha) */
+        const m=grp.splice(im,1)[0]; dest(m).push({x:i,y:m.y,f:m.f});
+        grp.sort((a,b)=>(b.tipo==='nos')-(a.tipo==='nos')).forEach((q,t)=>dest(q).push({x:i+(t%2?-1:1)*Math.ceil((t+1)/2)*sep,y:q.y,f:q.f})); }
+      else { grp.sort((a,b)=>(a.tipo==='nos')-(b.tipo==='nos')); const n=grp.length; grp.forEach((q,t)=>dest(q).push({x:i+(t-(n-1)/2)*sep,y:q.y,f:q.f})); }
+      k=j+1; } });
   draw('c-dots',{type:'scatter',data:{datasets:[
     {label:'Consultoras',data:dat,backgroundColor:css('--ambar'),pointRadius:6,pointHoverRadius:8,order:3},
     {label:'Mediana',data:med,borderColor:css('--fg'),backgroundColor:css('--fg'),pointStyle:'crossRot',pointRadius:7,pointHoverRadius:9,borderWidth:3,pointBorderWidth:3,order:2},

@@ -153,6 +153,7 @@ def _datos_fuentes(cfg, datos: dict) -> None:
         datos["externos"] = resumen._limpio(externos.externos(cfg))
         datos["errores_consultoras"] = resumen._limpio(externos.errores_consultoras(cfg))
         datos["tarifas_reales"] = resumen._limpio(externos.tarifas_reales(cfg))
+        datos["indec_var"] = resumen._limpio(externos.indec_variaciones(cfg))
     except Exception as e:
         log.warning("Regulados y consultoras: %s", e)
 

@@ -13,6 +13,9 @@ from .indice import NACIONAL
 from .panel import mes_de_semana, rango_semana
 
 DIAS_MES = 365.25 / 12  # 30,44
+# El índice publicado arranca en la última semana de octubre de 2026 (base: la semana 43). Los puntos
+# sueltos anteriores (la copia de abril de 2025 de la Wayback Machine) no van a las series del tablero.
+INICIO_SEMANA, INICIO_MES = "2026-W43", "2026-10"
 
 
 def mensualizar(var_pct: float | None, dias: float) -> float | None:
@@ -125,6 +128,10 @@ def armar_datos(cfg: Config, mensual: pl.DataFrame | None, semanal: pl.DataFrame
         semanal = semanal.filter(pl.col("tramo") == semanal["tramo"].max())
     if mensual is not None and "tramo" in mensual.columns:
         mensual = mensual.filter(pl.col("tramo") == mensual["tramo"].max())
+    if semanal is not None:
+        semanal = semanal.filter(pl.col("periodo") >= INICIO_SEMANA)
+    if mensual is not None:
+        mensual = mensual.filter(pl.col("periodo") >= INICIO_MES)
     regiones = [NACIONAL, *REGIONES]
     if semanal is not None:
         for reg in regiones:

@@ -323,3 +323,33 @@ def tarifas_reales(cfg: Config) -> dict:
                     "var_total_nominal": round(ult["nominal"] - 100, 2),
                     "var_total_real": round(ur["real"] - 100, 2) if ur else None})
     return {"componentes": out, "deflactor": "IPC del INDEC, nivel general de GBA", "ipc_ultimo": max(ipc) if ipc else None}
+
+
+def indec_variaciones(cfg: Config, desde: str = "2026-01") -> dict:
+    """Variación mensual oficial (v_m_IPC) del nivel general y de alimentos, Nacional y GBA, desde
+    `desde`. Es el dato cerrado que se muestra al lado de las consultoras (no se estima nada)."""
+    import io
+    from . import indec
+    ruta = indec.directorio(cfg) / "serie_ipc_divisiones.csv"
+    if not ruta.exists():
+        return {}
+    crudo = ruta.read_bytes()
+    try:
+        texto = crudo.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        texto = crudo.decode("latin-1")
+    df = pl.read_csv(io.StringIO(texto), separator=";", infer_schema=False)
+    out: dict = {}
+    nombres = {"0": "total", "01": "alimentos"}
+    for cod, reg, per, v in df.select("Codigo", "Region", "Periodo", "v_m_IPC").iter_rows():
+        c, r = (cod or "").strip(), (reg or "").strip()
+        if c not in nombres or r not in ("Nacional", "GBA") or not per:
+            continue
+        mes = f"{per[:4]}-{per[4:6]}"
+        if mes < desde:
+            continue
+        try:
+            out.setdefault(nombres[c], {}).setdefault(r, {})[mes] = float(v.replace(",", "."))
+        except (AttributeError, ValueError):
+            continue
+    return out

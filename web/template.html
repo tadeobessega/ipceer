@@ -1571,9 +1571,11 @@ function renderDots(E){
   const rg=Math.max(...[...pts,...nos].map(q=>q.y))-Math.min(...[...pts,...nos].map(q=>q.y))||1, paso=rg/40, sep=Math.min(.09,.8/Math.max(1,...per.map(p=>pts.filter(q=>q.p===p).length)));
   const dat=[]; per.forEach((p,i)=>{ const g=pts.filter(q=>q.p===p).sort((a,b)=>a.y-b.y); let k=0; while(k<g.length){ let j=k; while(j+1<g.length&&g[j+1].y-g[k].y<paso) j++; const n=j-k+1; for(let t=k;t<=j;t++) dat.push({x:i+(t-k-(n-1)/2)*sep,y:g[t].y,f:g[t].f}); k=j+1; } });
   /* lo nuestro redondeado a un decimal, como publican las consultoras */
-  const nd=nos.map(q=>({x:per.indexOf(q.p),y:Math.round(q.y*10)/10,f:q.f+' (redondeado a un decimal)'}));
+  /* si coincide con una consultora, el punto propio se corre a un costado para que se vean los dos */
+  const nd=nos.map(q=>{ const i=per.indexOf(q.p), y=Math.round(q.y*10)/10, choca=dat.some(d=>Math.abs(d.x-i)<sep&&Math.abs(d.y-y)<paso);
+    return {x:choca?i+Math.max(sep,.12):i,y,f:q.f+' (redondeado a un decimal)'}; });
   /* mediana de las consultoras en cada período: una rayita horizontal sobre la vertical */
-  const med=per.map((p,i)=>{ const v=pts.filter(q=>q.p===p).map(q=>q.y).sort((a,b)=>a-b); if(!v.length) return null; const h=Math.floor(v.length/2); return {x:i,y:v.length%2?v[h]:(v[h-1]+v[h])/2,f:`Mediana de ${v.length} medición${v.length>1?'es':''}`}; }).filter(Boolean);
+  const med=per.map((p,i)=>{ const v=pts.filter(q=>q.p===p).map(q=>q.y).sort((a,b)=>a-b); if(!v.length) return null; const h=Math.floor(v.length/2); return {x:i,y:v.length%2?v[h]:(v[h-1]+v[h])/2,f:`Mediana de ${v.length} ${v.length>1?'mediciones':'medición'}`}; }).filter(Boolean);
   draw('c-dots',{type:'scatter',data:{datasets:[
     {label:'Consultoras',data:dat,backgroundColor:css('--ambar'),pointRadius:6,pointHoverRadius:8,order:3},
     {label:'Mediana',data:med,borderColor:css('--fg'),backgroundColor:css('--fg'),pointStyle:'line',pointRadius:16,pointHoverRadius:18,borderWidth:3,pointBorderWidth:3,order:2},

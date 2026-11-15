@@ -56,10 +56,11 @@ indice:
     usar: true
     excluir_divisiones: ["01"]
   # D-53: servicios sin precios relevados que entran al índice publicado (solo en las clases sin
-  # precios propios): tarifas reguladas, alquiler con el ICL del BCRA y cuotas de prepagas
+  # precios propios): tarifas reguladas y cuotas de prepagas, por devengado. El alquiler (ICL o
+  # avisos) entra cuando se compare contra el INDEC.
   servicios:
     usar: true
-    fuentes: [tarifas, alquiler_icl, prepagas]
+    fuentes: [tarifas, prepagas]
   # Precio que se usa: "lista" (precio de góndola sin promociones) o
   # "efectivo" (el menor entre lista y promo 1 unitaria).
   precio: lista

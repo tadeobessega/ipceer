@@ -1,16 +1,19 @@
 """Servicios que entran al índice publicado sin precios relevados (D-53): tarifas reguladas (cuadros y
-normas), alquileres con el ICL del BCRA y cuotas de medicina prepaga (Superintendencia de Servicios
-de Salud).
+normas) y cuotas de medicina prepaga (Superintendencia de Servicios de Salud). El alquiler queda
+afuera hasta comparar el ICL y el relevamiento de avisos contra el INDEC (fuente "alquiler_icl",
+disponible para las pruebas).
 
 Devuelve variaciones por clase y región en el formato `extra` de `indice.calcular` (columnas
 periodo, codigo, region, logrel). Solo se usan en las clases sin precios propios.
 
-Mensual: la variación del mes de cada fuente.
-Semanal:
-  - tarifas y prepagas: el aumento del mes entra entero en la semana que contiene el día 1 (los
-    cuadros y las cuotas rigen desde el primer día del mes); las otras semanas, sin cambio.
-  - alquiler: el ICL es diario, así que la semana sale del promedio de sus días contra el de la
-    semana anterior.
+Criterio del INDEC (Metodología IPC 2016, sección 8: "los cambios tarifarios ... son considerados
+desde que entran en vigencia, adoptándose el criterio de devengado"; y sección 6: el precio del mes
+es el promedio de lo observado a lo largo del mes). Igual acá:
+  - Mensual: la variación del mes de cada fuente (el aumento rige desde el día 1).
+  - Semanal: el precio de cada día es el vigente ese día; el de la semana, el promedio de sus 7 días.
+    Un aumento del día 1 entra en la semana que contiene ese día en la proporción de días que rige
+    (si el 1 cae martes, 6/7 en esa semana y el resto en la siguiente). Las demás semanas del mes no
+    cambian: los servicios suben una vez por mes, y el índice semanal lo muestra así.
 """
 from __future__ import annotations
 
@@ -25,7 +28,7 @@ from .config import REGIONES, Config
 log = logging.getLogger(__name__)
 
 ESQUEMA = {"periodo": pl.Utf8, "codigo": pl.Utf8, "region": pl.Utf8, "logrel": pl.Float64, "fuente": pl.Utf8}
-FUENTES = ("tarifas", "alquiler_icl", "prepagas")
+FUENTES = ("tarifas", "prepagas")  # "alquiler_icl" solo para pruebas (ver arriba)
 
 
 def _vacio() -> pl.DataFrame:
@@ -91,10 +94,32 @@ def alquiler_icl(cfg: Config, frecuencia: str) -> pl.DataFrame:
 
 
 def _a_semanas(m: pl.DataFrame) -> pl.DataFrame:
-    """Saltos mensuales (tarifas, prepagas) a la semana que contiene el día 1 del mes."""
+    """Saltos mensuales (vigentes desde el día 1) a semanas, por devengado: nivel diario escalonado,
+    promedio de los 7 días de cada semana y variación contra la semana anterior."""
     if m.is_empty():
         return m
-    return m.with_columns(pl.col("periodo").map_elements(_semana_del_dia1, return_dtype=pl.Utf8))
+    filas = []
+    for (cod, reg, fu), g in m.group_by("codigo", "region", "fuente"):
+        rel = dict(g.select("periodo", "logrel").iter_rows())
+        meses = sorted(rel)
+        a, mm = map(int, meses[0].split("-"))
+        ini = date(a, mm, 1)
+        ua, um = map(int, meses[-1].split("-"))
+        fin = date(ua + (um == 12), 1 if um == 12 else um + 1, 1) + timedelta(days=40)
+        ini = ini - timedelta(days=ini.weekday())  # desde el lunes de la semana del primer día
+        nivel, acum, d, sem = {}, 0.0, ini, {}
+        while d < fin:
+            if d.day == 1:
+                acum += rel.get(d.strftime("%Y-%m"), 0.0)
+            y, w, _ = d.isocalendar()
+            sem.setdefault(f"{y}-W{w:02d}", []).append(math.exp(acum))
+            d += timedelta(days=1)
+        ks = [k for k in sorted(sem) if len(sem[k]) == 7]
+        for k0, k1 in zip(ks, ks[1:]):
+            lr = math.log((sum(sem[k1]) / 7) / (sum(sem[k0]) / 7))
+            if abs(lr) > 1e-12:
+                filas.append({"periodo": k1, "codigo": cod, "region": reg, "logrel": lr, "fuente": fu})
+    return pl.DataFrame(filas, schema=ESQUEMA) if filas else pl.DataFrame(schema=ESQUEMA)
 
 
 def relativos(cfg: Config, frecuencia: str, fuentes: tuple[str, ...] = FUENTES) -> pl.DataFrame:

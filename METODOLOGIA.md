@@ -530,6 +530,11 @@ el total no se presenta como nivel general.
   nivel general t−1 1,85 (corridas 2,87); rezago + bienes 2,05 (corridas 2,69); + tipo de cambio
   oficial 2,46; + brecha 2,48; regla que en corrida mezcla con bienes 1,89. El tipo de cambio y la
   brecha no mejoran: se queda el nivel general t−1, y lo que más mejora es sumar servicios medidos.
+- **D-51 (15/11/2026). Un hilo por índice.** Se difunden dos índices por separado: alimentos y
+  bebidas de GBA (el que se publica primero, por defecto en la pestaña Hilo) y el nivel general de
+  bienes. Cada uno tiene su hilo (textos y placas: portada con el dato y todas sus semanas, semana a
+  semana, rotación y la misma suba en cada región), en X (1600 × 900) e Instagram (1080 × 1440),
+  azul y claro. Sale el tuit de cadenas. La rotación se calcula también para alimentos en cada región.
 - **Registro de lo publicado.** `resultados/vintages.csv` guarda cada variación la primera vez que se
   publica y cada vez que cambia (también la proyección y el relevado del mes), con la fecha del
   cálculo; en GitHub se guarda en el release.

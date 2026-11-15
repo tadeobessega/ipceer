@@ -638,6 +638,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <h2>Hilo de la semana</h2>
       <p class="sub" id="hilo-sub"></p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px">
+        <span class="seg" id="seg-hilo-ind" role="group" aria-label="Índice del hilo"><button data-v="alimentos">Alimentos GBA</button><button data-v="general">Nivel general</button></span>
         <button class="btn" id="hilo-copiar">Copiar el hilo completo</button>
         <button class="btn" id="hilo-txt">Descargar texto</button>
         <button class="btn" id="hilo-png">Descargar todas las imágenes (X e Instagram, azul y clara)</button>
@@ -1313,18 +1314,27 @@ function encabezado(x,titulo,unidad){ const {W,M}=IMG, ft=IMG.ig?48:54; logoPlac
 const cifra=(v,d=2)=>v==null?'s/d':nf(d).format(v).replace('-','−')+'%';
 const pctPl=(v,d)=>nf(d).format(Math.abs(v)<0.5*10**-d?0:v).replace('-','−');
 
-/* portada: los dos índices que se difunden, nivel general y alimentos de GBA */
-function imgPortada(x,h){ const {W,H,M}=IMG, ig=IMG.ig; fondo(x,'der'); logoPlaca(x); x.textBaseline='alphabetic';
-  const y0=ig?300:250; x.font=FT(400,ig?30:32); x.fillStyle=T.ci; x.fillText('/',M,y0); x.fillStyle=T.t2; x.fillText(' semana '+h.rango+' de '+h.semana.slice(0,4),M+12,y0);
-  x.font=FT(700,ig?70:72,'m'); x.fillStyle=T.txt; x.fillText('Inflación semanal',M,y0+(ig?100:92));
-  const A=h.alimentos||null, bloques=[{t:'Nivel general',s:'bienes, nacional',v:h.var,p:h.proyeccion,am:true},
-    ...(A?[{t:'Alimentos y bebidas',s:'Gran Buenos Aires',v:A.var,p:A.proyeccion,am:false}]:[])];
-  const fC=ig?170:150;
-  bloques.forEach((b,i)=>{ const X=ig?M:M+i*((W-2*M)/2), Y=ig?y0+300+i*430:y0+240;
-    x.font=FT(600,ig?34:32); x.fillStyle=T.txt; x.fillText(b.t,X,Y); x.font=FT(400,ig?28:26); x.fillStyle=T.t2; x.fillText(b.s,X,Y+38);
-    x.font=FT(600,fC,'m'); x.fillStyle=b.am?T.am:T.txt; x.fillText(cifra(b.v,2),X-6,Y+38+fC*.86);
-    if(b.p!=null){ x.font=FT(400,ig?28:26); x.fillStyle=T.t2; x.fillText(`Proyección de ${h.mes_nombre}: ${cifra(b.p,1)}`,X,Y+38+fC*.86+72); } });
-  pieC(x,'ipceer · índice de precios','Fuente: elaboración propia en base a relevamiento web de precios'); }
+/* portada (D-51): a la izquierda el dato (título, cifra subrayada y el índice), a la derecha todas las
+   semanas que hay de ese índice; en Instagram, el dato arriba y el gráfico abajo */
+const serieH=h=>(((D.series[h.region||'Nacional']||{})[h.codigo||'TOTAL']||{}).semanal||[]).filter(s=>s.var!=null&&s.semana<=h.semana);
+const nombreCorto=h=>h.codigo==='01'?['Alimentos',h.region==='Nacional'?'nacional':h.region]:['Nivel general','de bienes'];
+function imgPortada(x,h){ const {W,H,M}=IMG, ig=IMG.ig; fondo(x,'izq'); logoPlaca(x); x.textBaseline='alphabetic';
+  /* texto */
+  const ft=ig?84:76; x.font=FT(700,ft,'m'); x.fillStyle=T.txt; const y1=ig?250:250; x.fillText('Inflación',M,y1); x.fillText('semanal',M,y1+ft+6);
+  const fC=ig?190:170, yC=y1+ft+6+(ig?40:28)+Math.round(fC*.78); x.font=FT(600,fC,'m'); x.fillStyle=T.am; const txt=cifra(h.var,h.var!=null&&Math.abs(h.var)<1?2:1); x.fillText(txt,M-6,yC);
+  const wC=x.measureText(txt).width, yS=yC+Math.round(fC*.24); x.fillStyle=T.ci; x.fillRect(M,yS,wC-6,8);
+  const [n1,n2]=nombreCorto(h); x.font=FT(400,ig?44:40,'m'); x.fillStyle=T.txt; x.fillText(n1,M,yS+66); x.fillText(n2,M,yS+66+(ig?52:48));
+  x.font=FT(400,ig?26:24); x.fillStyle=T.t2; x.fillText('/ '+h.rango+' de '+h.semana.slice(0,4),M,yS+66+(ig?52:48)+(ig?56:52));
+  /* gráfico: todas las semanas */
+  const S=serieH(h); if(S.length){ const g=ig?{X0:M+60,X1:W-M,Y0:yC+330,Y1:H-150}:{X0:Math.round(W*0.47)+60,X1:W-M,Y0:220,Y1:H-150};
+    const vals=S.map(s=>s.var); let lo=Math.min(0,...vals), hi=Math.max(...vals,0.1); const ps=pasoLindo(hi-lo); lo=Math.floor(lo/ps)*ps; hi=Math.ceil(hi/ps)*ps;
+    [lo,hi]=rangoConEtiquetas(lo,hi,ps,Math.min(0,...vals),Math.max(0,...vals),g.Y0,g.Y1,40);
+    const ran=Math.min(ig?120:110,(g.X1-g.X0)/S.length), cw=ran*S.length, X0=g.X0+((g.X1-g.X0)-cw)/2, X1=X0+cw, yv=v=>g.Y1-(v-lo)/(hi-lo)*(g.Y1-g.Y0);
+    ejesV(x,X0,g.Y0,X1,g.Y1,lo,hi,ps,v=>pctPl(v,1));
+    S.forEach((s,i)=>{ const xc=X0+ran*i+ran/2, bw=ran*.62, y=yv(s.var), y0=yv(0), ult=s.semana===h.semana; x.fillStyle=ult?T.am:T.ser; x.fillRect(xc-bw/2,Math.min(y,y0),bw,Math.abs(y0-y));
+      x.font=FT(600,20,'m'); x.textAlign='center'; x.fillStyle=ult?T.am:T.txt; x.fillText(pctPl(s.var,2),xc,s.var>=0?y-10:y+26);
+      x.font=FT(400,18,'m'); x.fillStyle=T.t2; x.fillText(semCorta(s.semana),xc,g.Y1+30); x.textAlign='left'; }); }
+  pieC(x,'ipceer · '+(h.titulo||'índice de precios'),'Fuente: elaboración propia en base a relevamiento web de precios'); }
 
 function ejesV(x,X0,Y0,X1,Y1,lo,hi,paso,fmt){ x.font=FT(400,IMG.ig?20:22,'m'); x.textAlign='right'; x.textBaseline='middle';
   for(let v=Math.ceil(lo/paso-1e-9)*paso; v<=hi+1e-9; v+=paso){ const y=Y1-(v-lo)/(hi-lo)*(Y1-Y0); x.strokeStyle=Math.abs(v)<1e-9?T.zero:T.grid; x.lineWidth=Math.abs(v)<1e-9?2:1; x.beginPath(); x.moveTo(X0,y); x.lineTo(X1,y); x.stroke(); x.fillStyle=T.t2; x.fillText(fmt(v),X0-14,y); }
@@ -1353,11 +1363,10 @@ function imgSerieSemanal(x,h,reg,cod,titulo,unidad){ const {M}=IMG; fondo(x,'esq
     const ul=[...pts].reverse().find(p=>p); if(ul){ x.font=FT(600,22); x.fillStyle=T.txt; x.fillText('Promedio',ul[0]+18,ul[1]-2); x.fillText('4 semanas',ul[0]+18,ul[1]+24);
       const fl=flecha4(h,reg,cod); if(fl){ const w=x.measureText('4 semanas').width; x.font=FT(700,26,'m'); x.fillStyle=T.ci; x.fillText(fl.sube==null?'=':fl.sube?'▲':'▼',ul[0]+18+w+10,ul[1]+24); } } }
   pieC(x,'ipceer · semana '+h.rango,'Fuente: elaboración propia en base a relevamiento web de precios'); }
-function imgSemanal(x,h){ imgSerieSemanal(x,h,'Nacional','TOTAL','Nivel general, semana a semana','Variación semanal de los precios de bienes, nacional, %'); }
-function imgAlimentos(x,h){ imgSerieSemanal(x,h,'GBA','01','Alimentos y bebidas en GBA','Variación semanal de los precios de alimentos y bebidas no alcohólicas, %'); }
+function imgSemanal(x,h){ const al=h.codigo==='01'; imgSerieSemanal(x,h,h.region||'Nacional',h.codigo||'TOTAL',al?'Alimentos y bebidas, semana a semana':'Nivel general, semana a semana',al?`Variación semanal de los precios de alimentos y bebidas, ${h.region==='Nacional'?'nacional':h.region}, %`:'Variación semanal de los precios de bienes, nacional, %'); }
 
-function imgRotacion(x,h){ fondo(x,'esq'); const yTop=encabezado(x,'Rotación de precios','Parte de los precios que subió y que bajó cada semana, %');
-  const R=(IND().rotacion||[]).filter(r=>r.region==='Nacional'&&r.codigo==='TOTAL'&&r.semana<=h.semana).sort((a,b)=>a.semana<b.semana?-1:1).slice(IMG.ig?-8:-12);
+function imgRotacion(x,h){ fondo(x,'esq'); const yTop=encabezado(x,'Rotación de precios',`Parte de los precios que subió y que bajó cada semana${h.codigo==='01'?', alimentos y bebidas, '+(h.region==='Nacional'?'nacional':h.region):''}, %`);
+  const R=(IND().rotacion||[]).filter(r=>r.region===(h.region||'Nacional')&&r.codigo===(h.codigo||'TOTAL')&&r.semana<=h.semana).sort((a,b)=>a.semana<b.semana?-1:1).slice(IMG.ig?-8:-12);
   const {X0,X1,ran,Y0,Y1}=areaBarras(R.length,yTop,150);
   let hi=Math.max(...R.map(r=>r.sube),1), lo=-Math.max(...R.map(r=>r.baja),1); const ps=pasoLindo(hi-lo); hi=Math.ceil(hi/ps)*ps; lo=Math.floor(lo/ps)*ps;
   [lo,hi]=rangoConEtiquetas(lo,hi,ps,-Math.max(...R.map(r=>r.baja)),Math.max(...R.map(r=>r.sube)),Y0,Y1,40);
@@ -1382,9 +1391,11 @@ function barrasH(x,items,fmt,titulo,unidad,h,fuente){ const {W,H,M}=IMG; fondo(x
     x.textBaseline='middle'; x.font=FT(500,26); x.fillStyle=T.txt; x.textAlign='right'; x.fillText(it.l,X0-18,y+bh/2);
     x.textAlign='left'; x.font=FT(600,24,'m'); x.fillStyle=it.dest?T.am:T.txt; x.fillText(fmt(it.v),Math.max(b,xv(0))+14,y+bh/2); x.textBaseline='alphabetic'; });
   pieC(x,'ipceer · semana '+h.rango,fuente||'Fuente: elaboración propia en base a relevamiento web de precios'); }
-function imgRegiones(x,h){ const R=(IND().regiones||[]).filter(r=>r.semana===h.semana).sort((a,b)=>b.nivel-a.nivel);
-  barrasH(x,R.map((r,i)=>({l:r.region,v:r.nivel-100,dest:i===0})),v=>(v>0?'+':'')+nf(1).format(v).replace('-','−')+'%','Precios por región','Diferencia con el promedio del país, mismo producto y cadena, %',h); }
-const DIBUJOS={portada:imgPortada,semanal:imgSemanal,alimentos:imgAlimentos,rotacion:imgRotacion,regiones:imgRegiones};
+/* inflación semanal del mismo rubro en cada región; se destaca la del índice (o la más alta) */
+function imgRegiones(x,h){ const cod=h.codigo||'TOTAL', R=D.regiones.filter(r=>r!=='Nacional').map(r=>({r,v:((((D.series[r]||{})[cod]||{}).semanal||[]).find(s=>s.semana===h.semana)||{}).var})).filter(o=>o.v!=null).sort((a,b)=>b.v-a.v);
+  const dest=R.some(o=>o.r===h.region)?h.region:(R[0]||{}).r;
+  barrasH(x,R.map(o=>({l:o.r,v:o.v,dest:o.r===dest})),v=>nf(2).format(v).replace('-','−')+'%','Inflación semanal por región',`${cod==='01'?'Alimentos y bebidas':'Bienes'}, semana ${h.rango}, %`,h); }
+const DIBUJOS={portada:imgPortada,semanal:imgSemanal,rotacion:imgRotacion,regiones:imgRegiones};
 
 
 function copiar(t){ if(navigator.clipboard&&window.isSecureContext) return navigator.clipboard.writeText(t).catch(()=>copiar2(t)); copiar2(t); }
@@ -1401,10 +1412,14 @@ function fuentes(){ return _fuentes||(_fuentes=Promise.all(["700 54px 'Cascadia 
 const hst={tema:'azul'};
 /* dibuja una placa en un canvas, en el formato (x, ig) y el tema pedidos */
 function placa(c,img,h,tema,f){ formato(f); c.width=IMG.W; c.height=IMG.H; const prev=T; T=TEMAS[tema]; try{ DIBUJOS[img](c.getContext('2d'),h); }catch(e){ console.error(e); } finally{ T=prev; formato('x'); } }
+hst.ind=null;
 async function renderHilo(){
-  const h=D.hilo, L=document.getElementById('hilo-lista'), G=document.getElementById('hilo-ig');
+  const H0=D.hilo||{}, IX=H0.indices||null; if(!hst.ind) hst.ind=(H0.defecto)||'general';
+  const si=document.getElementById('seg-hilo-ind');
+  if(si){ si.hidden=!IX; si.querySelectorAll('button').forEach(b=>{ b.setAttribute('aria-pressed',b.dataset.v===hst.ind); b.disabled=!(IX&&IX[b.dataset.v]); b.onclick=()=>{ hst.ind=b.dataset.v; renderHilo(); }; }); }
+  const h=IX?(IX[hst.ind]||H0):H0, L=document.getElementById('hilo-lista'), G=document.getElementById('hilo-ig');
   if(!h||!h.tuits){ document.getElementById('hilo-sub').textContent='Todavía no hay una semana completa para armar el hilo.'; L.innerHTML=''; G.innerHTML=''; return; }
-  const tot=h.tuits.length, nombre=k=>`ipceer-${h.semana}-${String(k).padStart(2,'0')}`, conImg=h.tuits.filter(t=>t.imagen);
+  const tot=h.tuits.length, nombre=k=>`ipceer-${h.clave||'general'}-${h.semana}-${String(k).padStart(2,'0')}`, conImg=h.tuits.filter(t=>t.imagen);
   const sufijo=(tema,f)=>(f==='ig'?'-instagram':'')+(tema==='blanco'?'-clara':'');
   document.getElementById('hilo-sub').innerHTML=`Hilo armado con el dato de la semana ${esc(h.rango)} (<span class="mono">${h.semana}</span>). Se genera solo con cada cálculo. Cada placa tiene una versión azul y una clara para X (<span class="mono">1600 × 900</span>) y abajo está el carrusel de Instagram (<span class="mono">1080 × 1440</span>). El límite de X es de <span class="mono">280</span> caracteres por tuit (los enlaces cuentan <span class="mono">23</span>).`;
   L.innerHTML=h.tuits.map(t=>`<div class="tuit"><div><div class="n">${t.n}/${tot}</div><p class="tx">${esc(t.texto)}</p>

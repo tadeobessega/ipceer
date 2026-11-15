@@ -74,8 +74,24 @@ def _semana_objetivo(sem: list[dict]) -> int | None:
     return con_var[-1] if con_var else None
 
 
-def armar(cfg: Config, datos: dict, semanal: pl.DataFrame | None, ind: dict) -> dict:
-    serie = (datos.get("series", {}).get(NACIONAL, {}).get("TOTAL") or {}).get("semanal") or []
+INDICES = {"alimentos": ("GBA", "01", "alimentos y bebidas en GBA", "Alimentos y bebidas, GBA"),
+           "general": (NACIONAL, "TOTAL", "bienes", "Nivel general de bienes")}
+
+
+def armar_todos(cfg: Config, datos: dict, semanal: pl.DataFrame | None, ind: dict) -> dict:
+    """Un hilo por cada índice que se difunde (D-51): alimentos y bebidas de GBA (el que se publica
+    primero) y el nivel general de bienes. Las placas y los textos de cada uno van por separado."""
+    hs = {k: armar(cfg, datos, semanal, ind, clave=k) for k in INDICES}
+    hs = {k: v for k, v in hs.items() if v}
+    if not hs:
+        return {}
+    defecto = "alimentos" if "alimentos" in hs else next(iter(hs))
+    return {**hs[defecto], "indices": hs, "defecto": defecto}
+
+
+def armar(cfg: Config, datos: dict, semanal: pl.DataFrame | None, ind: dict, clave: str = "general") -> dict:
+    reg_i, cod_i, nombre_i, titulo_i = INDICES[clave]
+    serie = (datos.get("series", {}).get(reg_i, {}).get(cod_i) or {}).get("semanal") or []
     i = _semana_objetivo(serie)
     if i is None:
         return {}
@@ -88,16 +104,6 @@ def armar(cfg: Config, datos: dict, semanal: pl.DataFrame | None, ind: dict) -> 
     p0 = proy_prev["proyeccion"] if proy_prev else None
     hc = cfg.datos.get("hilo") or {}
     tuits: list[dict] = []
-    # el segundo índice que se difunde: alimentos y bebidas de GBA, la misma semana
-    sa = (datos.get("series", {}).get("GBA", {}).get("01") or {}).get("semanal") or []
-    ia = next((k for k, x in enumerate(sa) if x["semana"] == semana and x.get("var") is not None), None)
-    alim = None
-    if ia is not None:
-        xa = sa[ia]
-        pa = proyeccion_mes(sa[: ia + 1], mes)
-        alim = {"var": xa["var"], "prom4": xa.get("prom4"), "previa": sa[ia - 1].get("var") if ia > 0 else None,
-                "proyeccion": pa["proyeccion"] if pa else None}
-
     # 1. el dato
     if p1 is not None and p0 is not None and abs(round(p1, 1) - round(p0, 1)) >= 0.1:
         verbo = "elevando" if p1 > p0 else "reduciendo"
@@ -108,10 +114,8 @@ def armar(cfg: Config, datos: dict, semanal: pl.DataFrame | None, ind: dict) -> 
         cola = f". La proyección para {mes_nombre} es de {pct(p1)}."
     else:
         cola = "."
-    t1 = (f"El ipceer midió una inflación semanal de bienes del {pct(s['var'], 2)} en la {ordn} semana de "
+    t1 = (f"El ipceer midió una inflación semanal de {nombre_i} del {pct(s['var'], 2)} en la {ordn} semana de "
           f"{mes_nombre} ({rango_texto(semana)}){cola}")
-    if alim:
-        t1 += f" En alimentos y bebidas de GBA fue {pct(alim['var'], 2)}."
     tuits.append({"texto": t1, "imagen": "portada"})
 
     # 2. datos clave
@@ -130,8 +134,9 @@ def armar(cfg: Config, datos: dict, semanal: pl.DataFrame | None, ind: dict) -> 
         else:
             claves.append(f"La media de 4 semanas es {pct(p4, 2)} ({pct(s['prom4_mensualizada'])} mensualizada).")
     if semanal is not None:
-        cl = semanal.filter(pl.col("region") == NACIONAL, pl.col("nivel") == "clase", pl.col("periodo") == semana,
-                            pl.col("var_pct").is_not_null(), pl.col("n_productos") >= 20).sort("var_pct")
+        cl = semanal.filter(pl.col("region") == reg_i, pl.col("nivel") == "clase", pl.col("periodo") == semana,
+                            pl.col("var_pct").is_not_null(), pl.col("n_productos") >= 20,
+                            pl.col("codigo").str.starts_with(cod_i) if cod_i != "TOTAL" else pl.lit(True)).sort("var_pct")
         if cl.height >= 2:
             sube, baja = cl.row(-1, named=True), cl.row(0, named=True)
             claves.append(f"Lo que más subió: {sube['nombre'].lower()} ({pct(sube['var_pct'], 1, True)}).")
@@ -140,25 +145,13 @@ def armar(cfg: Config, datos: dict, semanal: pl.DataFrame | None, ind: dict) -> 
     if claves:
         tuits.append({"texto": "Datos clave:\n\n" + "\n".join("• " + c for c in claves), "imagen": "semanal"})
 
-    # 2b. alimentos y bebidas de GBA
-    if alim:
-        t = f"Alimentos y bebidas en GBA: {pct(alim['var'], 2)} en la semana"
-        if alim["previa"] is not None:
-            t += f" ({'menos' if alim['var'] < alim['previa'] else 'más' if alim['var'] > alim['previa'] else 'igual'} que el {pct(alim['previa'], 2)} de la semana previa)"
-        t += "."
-        if alim["prom4"] is not None:
-            t += f" La media de 4 semanas es {pct(alim['prom4'], 2)}."
-        if alim["proyeccion"] is not None:
-            t += f" La proyección para {mes_nombre} es de {pct(alim['proyeccion'])}."
-        tuits.append({"texto": t, "imagen": "alimentos"})
-
     # 3. rotación de precios
-    rot = [r for r in ind.get("rotacion", []) if r["semana"] == semana and r["region"] == NACIONAL
-           and r["codigo"] == "TOTAL"]
+    rot = [r for r in ind.get("rotacion", []) if r["semana"] == semana and r["region"] == reg_i
+           and r["codigo"] == cod_i]
     if rot:
         r = rot[0]
-        prev = [x for x in ind["rotacion"] if x["semana"] == r["semana_previa"] and x["region"] == NACIONAL
-                and x["codigo"] == "TOTAL"]
+        prev = [x for x in ind["rotacion"] if x["semana"] == r["semana_previa"] and x["region"] == reg_i
+                and x["codigo"] == cod_i]
         comp = ""
         if prev:
             dif = r["cambia"] - prev[0]["cambia"]
@@ -172,26 +165,25 @@ def armar(cfg: Config, datos: dict, semanal: pl.DataFrame | None, ind: dict) -> 
             t += f" Subieron rubros que pesan el {pct(r['difusion'], 0)} de la canasta."
         tuits.append({"texto": t, "imagen": "rotacion"})
 
-    # 5. regiones
-    regs = [r for r in ind.get("regiones", []) if r["semana"] == semana]
-    if len(regs) >= 2:
-        regs.sort(key=lambda r: r["nivel"])
-        t = (f"Por región, con el mismo producto de la misma cadena, la más cara es {regs[-1]['region']} "
-             f"({pct(regs[-1]['nivel'] - 100, 1, True)} sobre el promedio del país) y la más barata "
-             f"{regs[0]['region']} ({pct(regs[0]['nivel'] - 100, 1, True)}).")
-        series = datos.get("series", {})
-        infl = []
-        for reg, cods in series.items():
-            if reg == NACIONAL:
-                continue
-            ss = (cods.get("TOTAL") or {}).get("semanal") or []
-            v = next((x["var"] for x in ss if x["semana"] == semana), None)
+    # 5. regiones: la suba semanal del mismo rubro en cada región
+    infl = []
+    for reg, cods in (datos.get("series") or {}).items():
+        if reg == NACIONAL:
+            continue
+        ss = (cods.get(cod_i) or {}).get("semanal") or []
+        v = next((x["var"] for x in ss if x["semana"] == semana), None)
+        if v is not None:
+            infl.append((v, reg))
+    if len(infl) >= 2:
+        infl.sort()
+        que = "de alimentos y bebidas" if cod_i == "01" else "de bienes"
+        t = (f"Por región, la suba semanal {que} más alta fue en {infl[-1][1]} ({pct(infl[-1][0], 2)}) y la más "
+             f"baja en {infl[0][1]} ({pct(infl[0][0], 2)}).")
+        if cod_i == "01" and reg_i != NACIONAL:
+            v = next((a for a, b in infl if b == reg_i), None)
             if v is not None:
-                infl.append((v, reg))
-        if len(infl) >= 2:
-            infl.sort()
-            t += (f" La suba semanal más alta fue en {infl[-1][1]} ({pct(infl[-1][0], 2)}) y la más baja en "
-                  f"{infl[0][1]} ({pct(infl[0][0], 2)}).")
+                pos = sorted(infl, reverse=True).index((v, reg_i)) + 1
+                t += f" {reg_i} quedó {pos}° de {len(infl)}."
         tuits.append({"texto": t, "imagen": "regiones"})
 
     # 6. cierre
@@ -207,7 +199,7 @@ def armar(cfg: Config, datos: dict, semanal: pl.DataFrame | None, ind: dict) -> 
         "semana": semana, "mes": mes, "rango": rango_texto(semana), "ordinal": ordn, "mes_nombre": mes_nombre,
         "var": s["var"], "var_mensualizada": s["var_mensualizada"], "prom4": s.get("prom4"),
         "proyeccion": p1, "proyeccion_previa": p0, "relevado": proy["relevado"] if proy else None,
-        "alimentos": alim, "tuits": tuits,
+        "clave": clave, "region": reg_i, "codigo": cod_i, "nombre": nombre_i, "titulo": titulo_i, "tuits": tuits,
     }
 
 

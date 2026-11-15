@@ -291,7 +291,7 @@ def cmd_calcular(cfg, args):
     try:
         if sem_ind is not None and "tramo" in sem_ind.columns:
             sem_ind = sem_ind.filter(pl.col("tramo") == sem_ind["tramo"].max())
-        h = hilo.armar(cfg, datos, sem_ind, datos.get("indicadores", {}))
+        h = hilo.armar_todos(cfg, datos, sem_ind, datos.get("indicadores", {}))
         hilo.guardar(h, cfg)
         datos["hilo"] = resumen._limpio(h)
     except Exception as e:

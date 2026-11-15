@@ -218,6 +218,11 @@ def rotacion(cfg: Config, semanas: list[str]) -> list[dict]:
             r = resumir(df, w)
             if r:
                 filas.append(base | {"region": reg, "codigo": "TOTAL"} | r)
+            # alimentos y bebidas por región: el índice de alimentos de GBA es uno de los que se difunden
+            if reg != NACIONAL:
+                r = resumir(df.filter(pl.col("codigo").str.starts_with("01")), w)
+                if r:
+                    filas.append(base | {"region": reg, "codigo": "01"} | r)
             if reg == NACIONAL:
                 for div in DIVISIONES:
                     r = resumir(df.filter(pl.col("codigo").str.starts_with(div)), w)

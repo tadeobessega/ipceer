@@ -619,7 +619,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <h2 id="c-sec-med">Mediciones de las consultoras y las nuestras</h2>
       <p class="sub">Lo que publican otras mediciones de alta frecuencia, puesto al lado de nuestro dato equivalente: mismo rubro, misma semana o mes, misma medida (semanal, promedio de 4 semanas o mes). Las consultoras relevan canastas, fuentes y métodos distintos, así que importa más la dirección que el decimal. Cada dato externo lleva su enlace; se cargan en <span class="mono">config/externos.csv</span>.</p>
       <div class="grid">
-        <div class="card s12"><h3>Consultoras e ipceer por índice comparable</h3><p class="cap">Último período con dato de cada índice que miden las consultoras y el ipceer. En la semanal, el ipceer tal como se publicó por primera vez.</p><div class="legend"><span><i style="background:var(--ambar);border-radius:50%"></i>Consultora</span><span><i style="background:#f7ac4d80;border-top:2px solid var(--ambar)"></i>Mediana de las consultoras</span><span><i style="background:var(--accent)"></i>ipceer</span></div><div class="chart"><canvas id="c-ext"></canvas></div><div class="src">Fuente: elaboración propia en base a relevamiento web de precios y a lo publicado por cada consultora (enlaces en la tabla).</div></div>
+        <div class="card s12"><h3>Consultoras e ipceer por índice comparable</h3><p class="cap">Último período con dato de cada índice que miden las consultoras y el ipceer. El ipceer va redondeado a un decimal, como publican las consultoras; en la semanal, tal como se publicó por primera vez.</p><div class="legend"><span><i style="background:var(--ambar);border-radius:50%"></i>Consultora</span><span><i style="background:#f7ac4d80;border-top:2px solid var(--ambar)"></i>Mediana de las consultoras</span><span><i style="background:var(--accent)"></i>ipceer</span></div><div class="chart"><canvas id="c-ext"></canvas></div><div class="src">Fuente: elaboración propia en base a relevamiento web de precios y a lo publicado por cada consultora (enlaces en la tabla).</div></div>
         <div class="card s12" id="dots-card"><h3 class="h-seg"><span id="dots-tit">Dot plot de consultoras</span> <span class="seg" id="seg-dots"><button data-v="s" aria-pressed="true">Semanal</button><button data-v="m" aria-pressed="false">Mensual</button></span> <span class="seg" id="seg-dots-n"><button data-v="1" aria-pressed="true">Con ipceer</button><button data-v="0" aria-pressed="false">Sin ipceer</button></span> <select id="dots-mes" aria-label="Mes"></select> <button type="button" class="btnpng" id="dots-x" title="Descargar una imagen de 1600 × 900 para publicar en X">Imagen para X</button></h3><p class="cap" id="dots-cap"></p><div class="dots-stat" id="dots-stat"></div><div class="legend" id="dots-leg"></div><div class="chart"><canvas id="c-dots"></canvas></div><div class="src">Fuente: elaboración propia en base a relevamiento web de precios, INDEC y lo publicado por cada consultora (enlaces en la tabla).</div></div>
         <div class="card s12"><h3>Detalle</h3><div class="tablewrap"><table id="t-ext"></table></div></div>
       </div>
@@ -1619,7 +1619,7 @@ function renderExt(){
     draw('c-ext',{type:'bar',data:{labels:grupos.map(g=>g.lab),datasets:[
       {type:'line',label:'Consultora',data:grupos.flatMap((g,i)=>{ const c={}; return g.u.map(f=>{ const k=Math.round(f.x.valor*100), n=c[k]=(c[k]||0)+1, tot=g.u.filter(h=>Math.round(h.x.valor*100)===k).length; return {x:i-0.2+(n-1-(tot-1)/2)*0.05,y:f.x.valor,f:f.x.fuente}; }); }),showLine:false,pointRadius:5,pointHoverRadius:7,pointBackgroundColor:css('--ambar'),pointBorderColor:'#fff',pointBorderWidth:1,xAxisID:'xp',order:0},
       {label:'Mediana de las consultoras',data:grupos.map(g=>g.md),backgroundColor:'#f7ac4d80',borderColor:css('--ambar'),borderWidth:{top:2},barPercentage:.75,order:1},
-      {label:'ipceer',data:grupos.map(g=>g.nos),backgroundColor:css('--accent'),barPercentage:.75,order:1}]},
+      {label:'ipceer (redondeado a un decimal)',data:grupos.map(g=>Math.round(g.nos*10+1e-9)/10),backgroundColor:css('--accent'),barPercentage:.75,order:1}]},
       options:baseOpts({scales:{x:{type:'category',ticks:{autoSkip:false}},xp:{type:'linear',display:false,min:-0.5,max:grupos.length-0.5,offset:false}},plugins:{legend:{display:false},tooltip:{backgroundColor:'#111',cornerRadius:0,bodyFont:{family:css('--mono')},callbacks:{label:c=>' '+(c.raw&&c.raw.f?c.raw.f:c.dataset.label)+': '+pct(c.parsed.y,2)}}}})});
   } else sinDatos('c-ext','Todavía no hay mediciones externas con un dato nuestro equivalente.');
   renderDots(E);
@@ -1665,8 +1665,9 @@ function puntosDots(E){
   }
   if(!stDots.n) nos=[];
   /* la mediana de las consultoras de cada período, sin redondear (entre dos valores queda en el medio, ej. 0,45%) */
-  const meds=per.map(p=>{ const v=pts.filter(q=>q.p===p).map(q=>q.y).sort((a,b)=>a-b); if(!v.length) return null; const h=Math.floor(v.length/2); const md=v.length%2?v[h]:(v[h-1]+v[h])/2; return {p,y:md,f:`Mediana de ${v.length} ${v.length>1?'mediciones':'medición'}`,tipo:'med'}; }).filter(Boolean);
   const r1=q=>Math.round(q.y*10+1e-9)/10;
+  /* con el ipceer a la vista, entra en la mediana (redondeado a un decimal, como los demás); sin él, no */
+  const meds=per.map(p=>{ const v=[...pts.filter(q=>q.p===p).map(q=>q.y),...nos.filter(q=>q.p===p).map(r1)].sort((a,b)=>a-b); if(!v.length) return null; const h=Math.floor(v.length/2); const md=v.length%2?v[h]:(v[h-1]+v[h])/2; const conN=nos.some(q=>q.p===p); return {p,y:md,f:`Mediana de ${v.length} ${v.length>1?'mediciones':'medición'}${conN?' (con el ipceer)':''}`,tipo:'med'}; }).filter(Boolean);
   const todos=[...pts.map(q=>({...q,tipo:'con'})),...nos.map(q=>({p:q.p,y:r1(q),f:q.f+' (redondeado a un decimal)',tipo:'nos'})),...ind.map(q=>({...q,y:r1(q),tipo:'ind'})),...meds];
   return {rub,regN,per,fmtP,todos,hayNos:nos.length>0,hayInd:ind.length>0};
 }
@@ -1710,7 +1711,7 @@ function renderDots(E){
   opcionesMesDots(E);
   const P=puntosDots(E), {rub,regN,per,fmtP,todos}=P;
   document.getElementById('dots-cap').textContent=stDots.f==='s'?`Variación semanal publicada por cada consultora (${rub==='total'?'nivel general':'alimentos y bebidas'})${stDots.n?' y la del ipceer para la misma semana, tal como se publicó por primera vez':''}${regN==='GBA'&&stDots.n?' (alimentos de Gran Buenos Aires, donde relevan las consultoras)':''}, redondeada a un decimal como publican ellas.`:`Variación mensual estimada por cada consultora (${rub==='total'?'nivel general':'alimentos y bebidas'}) y, en los meses cerrados, el dato del INDEC. Las que publican por semana se encadenan dentro del mes.`;
-  document.getElementById('dots-leg').innerHTML='<span><i style="background:var(--ambar);border-radius:50%"></i>Consultora</span><span><b style="color:var(--fg);font-size:17px;line-height:1;margin-right:6px">+</b>Mediana de las consultoras</span>'+(P.hayNos?'<span><i style="background:var(--accent);transform:rotate(45deg)"></i>ipceer</span>':'')+(P.hayInd?'<span><i style="background:#57d4d4;border:1.5px solid var(--cian);transform:rotate(45deg)"></i>INDEC</span>':'');
+  document.getElementById('dots-leg').innerHTML='<span><i style="background:var(--ambar);border-radius:50%"></i>Consultora</span><span><b style="color:var(--fg);font-size:17px;line-height:1;margin-right:6px">+</b>Mediana'+(P.hayNos?' (consultoras e ipceer)':' de las consultoras')+'</span>'+(P.hayNos?'<span><i style="background:var(--accent);transform:rotate(45deg)"></i>ipceer</span>':'')+(P.hayInd?'<span><i style="background:#57d4d4;border:1.5px solid var(--cian);transform:rotate(45deg)"></i>INDEC</span>':'');
   statDots();
   if(!per.length){ sinDatos('c-dots','Todavía no hay mediciones para esta combinación.'); return; }
   const anchoG=Math.max(300,(document.getElementById('c-dots').parentElement||{}).clientWidth||1100)-60;
@@ -1738,7 +1739,7 @@ async function imgDots(){
   const circ=(cx,cy,r,col)=>{ x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.fillStyle=col; x.fill(); };
   const romb=(cx,cy,r,col,bor)=>{ x.beginPath(); x.moveTo(cx,cy-r); x.lineTo(cx+r,cy); x.lineTo(cx,cy+r); x.lineTo(cx-r,cy); x.closePath(); x.fillStyle=col; x.fill(); if(bor){ x.lineWidth=2; x.strokeStyle=bor; x.stroke(); } };
   const cruz=(cx,cy,r)=>{ x.strokeStyle=T.txt; x.lineWidth=4; x.beginPath(); x.moveTo(cx-r,cy); x.lineTo(cx+r,cy); x.moveTo(cx,cy-r); x.lineTo(cx,cy+r); x.stroke(); };
-  item((a,b)=>circ(a,b,10,T.ser),'Consultora'); item((a,b)=>cruz(a,b,10),'Mediana de las consultoras');
+  item((a,b)=>circ(a,b,10,T.ser),'Consultora'); item((a,b)=>cruz(a,b,10),P.hayNos?'Mediana (consultoras e ipceer)':'Mediana de las consultoras');
   if(P.hayInd) item((a,b)=>romb(a,b,13,CI),'INDEC'); if(P.hayNos) item((a,b)=>romb(a,b,13,T.am),'ipceer');
   x.textBaseline='alphabetic';
   /* ejes */
@@ -1842,7 +1843,7 @@ const NOTAS={
   'c-mun2':'Variación mensual del municipio y de su región.',
   'c-cob':'Pesos de la canasta del IPC del INDEC (base dic-2016) por estado en el ipceer. Rayado: servicios.',
   'c-ext':'Por índice comparable (mismo rubro, región y medida), el último período: cada consultora, su mediana y el ipceer. Semanal: dato original del ipceer.',
-  'c-dots':()=>'Cada punto es una consultora; la cruz es su mediana. Valores redondeados a un decimal, como publican.'+(stDots.f==='m'?' Las que publican por semana se encadenan dentro del mes.':'')};
+  'c-dots':()=>'Cada punto es una consultora; la cruz es la mediana'+(stDots.n?', que incluye al ipceer':'')+'. Valores redondeados a un decimal, como publican.'+(stDots.f==='m'?' Las que publican por semana se encadenan dentro del mes.':'')};
 const UNID={'c-sem':'Variación semanal, %','c-men':'Variación mensual, %','c-rot1':'% de los precios relevados','c-rot4':'Variación semanal, %','c-rot2':'Variación semanal, %','c-rot3':'% de la canasta y de los precios relevados','c-regu':'Variación mensual, %','c-real':'Índice real, base 100 en el primer mes con dato','c-pp':'Variación mensual, %','c-af':'Pesos por mes','c-cs':'Pesos por mes','c-mag':'Pesos por kilo vivo','c-comb1':'Variación mensual, %','c-comb2':'Desvío estándar, %','c-comb3':'%','c-dia':'Índice','c-niv':'Índice, base octubre de 2026 = 100','c-emp':'Índice','c-reg':'Variación mensualizada, %','c-nreg':'Diferencia con el promedio del país, %','c-nreg2':'Índice, promedio del país = 100','c-can1':'Pesos por adulto equivalente','c-can2':'Variación mensual, %','c-can3':'Pesos por adulto equivalente','c-cad1':'Índice, mediana de las cadenas = 100','c-cad2':'Índice, promedio de las cadenas = 100','c-cad3':'%','c-cad4':'Variación semanal, %','c-car':'Variación mensual, %','c-v1':'Índice','c-v2':'Variación mensual, %','c-v3':'Puntos porcentuales','c-v4':'%','c-v5':'Puntos porcentuales','c-var':'Variación mensual, %','c-mun1':'Variación mensualizada, %','c-mun2':'Variación mensual, %','c-ext':'Variación, %','c-cob':'% del consumo de los hogares','c-dots':()=>`Variación ${stDots.f==='s'?'semanal':'mensual'}, %`};
 /* pestañas cuyos gráficos dependen de la región y la serie elegidas arriba */
 const CON_FILTRO_GLOBAL=new Set(['res','rot','ser']);

@@ -543,7 +543,8 @@ el total no se presenta como nivel general.
   registro, en `config/vintages_semilla.csv`), porque es lo que se conocía cuando publicaron las
   consultoras. El dot plot sigue al índice elegido en la página (nivel general o alimentos GBA) y
   arranca en la vista semanal. El gráfico de barras agrupa por índice comparable (rubro, región y
-  medida) y muestra, del último período, cada consultora, su mediana y el ipceer.
+  medida) y muestra, del último período, cada consultora, su mediana y el ipceer redondeado a un
+  decimal. En el dot plot, cuando se muestra el ipceer, su dato redondeado entra en la mediana.
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del

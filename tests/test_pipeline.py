@@ -18,10 +18,19 @@ from ipceer.regiones import asignar_regiones  # noqa: E402
 REPO = Path(__file__).resolve().parents[1]
 
 
+def _sin_recorte(raiz):
+    """Los datos sintéticos son de otras fechas: sin el recorte del tramo publicado del tablero."""
+    c = raiz / "config" / "config.yaml"
+    c.write_text("".join(l for l in c.read_text(encoding="utf-8").splitlines(True)
+                         if "publicado_desde_" not in l), encoding="utf-8")
+
+
+
 @pytest.fixture(scope="module")
 def cfg(tmp_path_factory):
     raiz = tmp_path_factory.mktemp("repo")
     shutil.copytree(REPO / "config", raiz / "config")
+    _sin_recorte(raiz)
     shutil.copytree(REPO / "web", raiz / "web")
     ponderadores_ficticios(raiz / "config" / "ponderadores_clase.csv")
     c = cargar_config(raiz)
@@ -136,6 +145,7 @@ def test_salto_wayback(tmp_path):
     """Una semana suelta de abril de 2025 (como la de la Wayback Machine) y semanas de 2026."""
     raiz = tmp_path / "repo"
     shutil.copytree(REPO / "config", raiz / "config")
+    _sin_recorte(raiz)
     shutil.copytree(REPO / "web", raiz / "web")
     ponderadores_ficticios(raiz / "config" / "ponderadores_clase.csv")
     c = cargar_config(raiz)
@@ -163,6 +173,7 @@ def test_historico_zenodo(tmp_path, monkeypatch):
     from ipceer import historico
     raiz = tmp_path / "repo"
     shutil.copytree(REPO / "config", raiz / "config")
+    _sin_recorte(raiz)
     c = cargar_config(raiz)
     src = tmp_path / "src"
     src.mkdir()

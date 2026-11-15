@@ -18,6 +18,13 @@ DIAS_MES = 365.25 / 12  # 30,44
 INICIO_SEMANA, INICIO_MES = "2026-W43", "2026-10"
 
 
+def _inicio(cfg) -> tuple[str, str]:
+    """Primer período publicado: config.yaml (indice.publicado_desde_semana / _mes). Sin esa clave
+    (por ejemplo en los tests, con datos sintéticos de otras fechas) no se recorta nada."""
+    ic = (cfg["indice"] if cfg is not None else {}) or {}
+    return ic.get("publicado_desde_semana", ""), ic.get("publicado_desde_mes", "")
+
+
 def mensualizar(var_pct: float | None, dias: float) -> float | None:
     """Lleva una variación de `dias` días a 30,44 días por interés compuesto."""
     if var_pct is None or (isinstance(var_pct, float) and math.isnan(var_pct)):
@@ -109,9 +116,12 @@ def proyeccion_mes(semanal: list[dict], mes: str) -> dict | None:
     }
 
 
-def recortar_series(datos: dict) -> None:
+def recortar_series(datos: dict, cfg=None) -> None:
     """Deja en las series del tablero solo el tramo publicado (desde INICIO_SEMANA / INICIO_MES), con
     base 100 en su primer período, y lo aplica también sobre un datos.json armado antes de este cambio."""
+    INICIO_SEMANA, INICIO_MES = _inicio(cfg)
+    if not INICIO_SEMANA and not INICIO_MES:
+        return
     for cods in (datos.get("series") or {}).values():
         for d in cods.values():
             if d.get("semanal"):
@@ -149,10 +159,11 @@ def armar_datos(cfg: Config, mensual: pl.DataFrame | None, semanal: pl.DataFrame
         semanal = semanal.filter(pl.col("tramo") == semanal["tramo"].max())
     if mensual is not None and "tramo" in mensual.columns:
         mensual = mensual.filter(pl.col("tramo") == mensual["tramo"].max())
-    if semanal is not None:
-        semanal = semanal.filter(pl.col("periodo") >= INICIO_SEMANA)
-    if mensual is not None:
-        mensual = mensual.filter(pl.col("periodo") >= INICIO_MES)
+    ini_s, ini_m = _inicio(cfg)
+    if semanal is not None and ini_s:
+        semanal = semanal.filter(pl.col("periodo") >= ini_s)
+    if mensual is not None and ini_m:
+        mensual = mensual.filter(pl.col("periodo") >= ini_m)
     regiones = [NACIONAL, *REGIONES]
     if semanal is not None:
         for reg in regiones:

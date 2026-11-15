@@ -43,6 +43,9 @@ limpieza:
   relativo_max: 3.0
 
 indice:
+  # primer período que se publica en el tablero (lo anterior queda en los datos pero no se muestra)
+  publicado_desde_semana: "2026-W43"
+  publicado_desde_mes: "2026-10"
   # Precio que se usa: "lista" (precio de góndola sin promociones) o
   # "efectivo" (el menor entre lista y promo 1 unitaria).
   precio: lista

@@ -330,6 +330,48 @@ def cmd_diario(cfg, args):
             cmd_sitio(cfg, args)
 
 
+
+# partes del tablero que GitHub no puede recalcular (necesitan la historia completa de la PC):
+# se toman del último datos.json de la PC
+DE_LA_PC = ("validacion", "carrera", "carrera_historico", "variantes", "pronosticos", "combustibles")
+
+
+def cmd_github(cfg, args):
+    """Tablero calculado en GitHub, sin la PC (decisión D-49).
+
+    GitHub tiene los días procesados desde el 1/11/2026 (proc_*.tar del release) y, en la rama
+    datos-base, los paneles de los períodos cerrados antes que no puede rehacer. Con eso calcula el
+    tramo publicado igual que la PC; lo que necesita la historia completa (validación 2016-2018,
+    carrera de métodos, combustibles) sale del último datos.json de la PC (`--base`)."""
+    from pathlib import Path
+    try:
+        indec.descargar(cfg)
+    except Exception as e:
+        log.warning("INDEC: %s", e)
+    from . import descarga
+    log.info("Días procesados traídos de GitHub: %d", len(descarga.procesados_desde_github(cfg)))
+    try:
+        from . import web
+        web.actualizar(cfg, bajar_ahora=False)
+    except Exception as e:
+        log.warning("Precios web: %s", e)
+    cmd_consolidar(cfg, args)
+    cmd_calcular(cfg, args)
+    ruta = cfg.ruta("resultados") / "datos.json"
+    datos = json.loads(ruta.read_text(encoding="utf-8"))
+    base = {}
+    if args.base and Path(args.base).exists():
+        base = json.loads(Path(args.base).read_text(encoding="utf-8"))
+    for k in DE_LA_PC:
+        if k in base:
+            datos[k] = base[k]
+    for k, v in base.items():
+        if k not in datos or datos[k] in (None, {}, []):
+            datos[k] = v
+    datos["origen"] = {"calculado_en": "github", "base_pc": base.get("generado")}
+    ruta.write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
+    cmd_sitio(cfg, args)
+
 def cmd_cadenas(cfg, args):
     log.info("Cadenas con nombre: %d", lectura.catalogo_cadenas(cfg))
 
@@ -426,6 +468,9 @@ def main(argv=None):
     sub.add_parser("combustibles", help="baja y procesa los precios de combustibles de Energía").set_defaults(
         fn=lambda cfg, args: combustibles.actualizar(cfg))
     sub.add_parser("cadenas", help="nombres de las cadenas desde los últimos zips").set_defaults(fn=cmd_cadenas)
+    g = sub.add_parser("github", help="calcula el tablero en GitHub, sin la PC (D-49)")
+    g.add_argument("--base", default="", help="último datos.json de la PC (partes que GitHub no recalcula)")
+    g.set_defaults(fn=cmd_github)
     sub.add_parser("estado", help="resumen de datos y resultados").set_defaults(fn=cmd_estado)
     w = sub.add_parser("web", help="precios minoristas de tiendas en línea (catálogos públicos)")
     w.add_argument("--solo-bajar", action="store_true", help="baja y guarda con prefijo gh_ (GitHub Actions)")

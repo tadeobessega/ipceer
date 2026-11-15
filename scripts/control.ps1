@@ -48,5 +48,10 @@ if ($Subir -and (Get-Command gh -ErrorAction SilentlyContinue)) {
       Copy-Item "$Repo\sitio\index.html" "$env:TEMP\tablero.html" -Force
       gh release upload sepa-archivo "$env:TEMP\tablero.html" --clobber -R tadeobessega/ipceer 2>&1 | Write-Output
     }
+    # datos del último cálculo: GitHub los usa para las partes que no puede recalcular (D-49)
+    if (Test-Path "$Repo\resultados\datos.json") {
+      Copy-Item "$Repo\resultados\datos.json" "$env:TEMP\datos_pc.json" -Force
+      gh release upload sepa-archivo "$env:TEMP\datos_pc.json" --clobber -R tadeobessega/ipceer 2>&1 | Write-Output
+    }
   } else { Write-Output "gh no está conectado: el estado no se sube a GitHub (correr 'gh auth login')." }
 }

@@ -107,5 +107,11 @@ def actualizar_paneles(cfg: Config, frecuencia: str, todos: bool = False) -> lis
             previo = pl.read_parquet(destino, columns=["dias_con_datos"])["dias_con_datos"][0]
             if previo == con_datos:
                 continue
+            # nunca se rehace un período con menos días de los que ya tenía: pasa donde no están
+            # todos los días del panel diario (por ejemplo, el cálculo en GitHub, que solo tiene los
+            # días recientes y trae los períodos cerrados ya consolidados)
+            if previo > con_datos:
+                log.info("%s %s: el panel tiene %d días y hoy hay %d; se deja como está", frecuencia, p, previo, con_datos)
+                continue
         hechos.append(consolidar(p, frecuencia, cfg, clasificador))
     return hechos

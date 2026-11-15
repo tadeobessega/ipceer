@@ -265,3 +265,20 @@ def test_regulados_no_completa_meses(tmp_path):
     sep = nac.filter(pl.col("periodo") == "2026-09").row(0, named=True)
     assert sep["var_pct"] is None
     assert "2026-08" not in nac["periodo"].to_list()
+
+
+def test_web_excluir_divisiones(tmp_path):
+    """D-52: los precios web se suman al panel salvo las divisiones excluidas (alimentos)."""
+    import polars as pl
+    from ipceer import indice
+    base = {c: ["x"] for c in indice.CLAVE}
+    def panel(clase):
+        return pl.DataFrame({**base, "clase": [clase], "precio_lista": [10.0], "n_dias": [7], "dias_con_datos": [7], "n_sucursales": [1.0]})
+    (tmp_path / "semanal").mkdir(); (tmp_path / "web_semanal").mkdir()
+    panel("03.1.2").write_parquet(tmp_path / "semanal" / "2026-W47.parquet")
+    pl.concat([panel("03.1.2"), panel("01.1.1")]).write_parquet(tmp_path / "web_semanal" / "2026-W47.parquet")
+    mapa = {"03.1.2": "03.1.2", "01.1.1": "01.1.1"}
+    r = tmp_path / "semanal" / "2026-W47.parquet"
+    assert indice._cargar(r, "precio_lista", mapa, web=True)["clase"].to_list().count("01.1.1") == 1
+    d = indice._cargar(r, "precio_lista", mapa, web=True, web_excluir=("01",))
+    assert "01.1.1" not in d["clase"].to_list() and d["clase"].to_list().count("03.1.2") == 2

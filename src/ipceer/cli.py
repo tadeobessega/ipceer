@@ -175,7 +175,8 @@ def cmd_calcular(cfg, args):
     res = {}
     for f in ("semanal", "mensual"):
         try:
-            r = indice.calcular(cfg, f)
+            iw = (cfg["indice"] or {}).get("web") or {}  # D-52: tiendas en línea en el índice publicado
+            r = indice.calcular(cfg, f, web=bool(iw.get("usar")), web_excluir=tuple(iw.get("excluir_divisiones") or ()))
         except (ValueError, FileNotFoundError) as e:
             log.warning("Índice %s: %s", f, e)
             continue

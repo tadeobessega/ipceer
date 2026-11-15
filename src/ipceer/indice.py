@@ -82,7 +82,7 @@ def _ruta_web(ruta: Path) -> Path:
 
 
 def _cargar(ruta: Path, col_precio: str, mapa: dict[str, str | None], web: bool = False,
-            estratos: Path | None = None) -> pl.DataFrame:
+            estratos: Path | None = None, web_excluir: tuple[str, ...] = ()) -> pl.DataFrame:
     """Panel de un período. `estratos`: directorio de config; si se da, agrega la variedad de cada
     artículo (config/variedades.yaml) para la estratificación."""
     cols = [*CLAVE, "clase", col_precio, "n_dias", "dias_con_datos", "n_sucursales"]
@@ -96,6 +96,8 @@ def _cargar(ruta: Path, col_precio: str, mapa: dict[str, str | None], web: bool 
     df = leer(ruta).filter(pl.col("clase") != SIN_CLASIFICAR)
     if web and _ruta_web(ruta).exists():
         w = leer(_ruta_web(ruta)).filter(pl.col("clase").is_not_null())
+        for pre in web_excluir:  # divisiones que siguen solo con SEPA (ej. alimentos)
+            w = w.filter(~pl.col("clase").str.starts_with(pre))
         df = pl.concat([df, w.select(df.columns)], how="vertical_relaxed")
     df = df.select(
         *CLAVE, "clase", pl.col(col_precio).alias("precio"), "n_dias", "dias_con_datos", "descripcion",
@@ -245,12 +247,14 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
              extra: pl.DataFrame | None = None, solo_tramo_actual: bool = False, solo_tramo: int | None = None,
              excluir: tuple[str, ...] = (), precio: str | None = None, agregador: str = "media",
              peso: str | None = None, estratificar: bool | None = None, populares: int | None = None,
-             directo: bool | None = None) -> dict[str, pl.DataFrame]:
+             directo: bool | None = None, web_excluir: tuple[str, ...] = ()) -> dict[str, pl.DataFrame]:
     """Las opciones que siguen existen para la carrera de métodos (carrera.py): el índice publicado
     usa los valores por defecto.
     `excluir`: clases que se dejan afuera. `precio`: "lista" o "efectivo" (con promociones).
     `agregador` y `peso`: ver `relativos`. `solo_tramo`: calcula solo ese tramo de la serie.
     `web`: suma los precios de las tiendas en línea (paneles web_mensual / web_semanal).
+    `web_excluir`: prefijos de clase de la web que no se suman (el índice publicado deja alimentos
+    solo con SEPA, D-52).
     `extra`: variaciones de clases que no salen de precios relevados sino de fuentes públicas
     (tarifas por norma, combustibles de Energía, alquileres): columnas periodo, codigo, region,
     logrel. Solo se usan en las clases y períodos sin dato propio.
@@ -298,7 +302,8 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
     for r in rutas:
         clases |= set(pl.read_parquet(r, columns=["clase"])["clase"].unique().to_list())
         if web and _ruta_web(r).exists():
-            clases |= set(pl.read_parquet(_ruta_web(r), columns=["clase"])["clase"].drop_nulls().unique().to_list())
+            clases |= {c for c in pl.read_parquet(_ruta_web(r), columns=["clase"])["clase"].drop_nulls().unique().to_list()
+                       if not any(c.startswith(pre) for pre in web_excluir)}
     clases.discard(SIN_CLASIFICAR)
     clases -= set(excluir)
     if extra is not None and not extra.is_empty():
@@ -322,9 +327,9 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
     bases = _bases_directas(periodos, tramo, frecuencia) if directo else {}
     paneles_base: dict[str, tuple[pl.DataFrame, tuple[int, int]]] = {}
     ruta_de = dict(zip(periodos, rutas))
-    previo, info_p = _cargar(rutas[0], col_precio, mapa, web, dir_estr), _info(rutas[0])
+    previo, info_p = _cargar(rutas[0], col_precio, mapa, web, dir_estr, web_excluir), _info(rutas[0])
     for ruta, per, per_prev in zip(rutas[1:], periodos[1:], periodos[:-1]):
-        actual, info_a = _cargar(ruta, col_precio, mapa, web, dir_estr), _info(ruta)
+        actual, info_a = _cargar(ruta, col_precio, mapa, web, dir_estr, web_excluir), _info(ruta)
         if tramo[per] != tramo[per_prev]:  # comienza un tramo nuevo: no se compara con el anterior
             filas.append(grilla.with_columns(
                 pl.lit(per).alias("periodo"), pl.lit(0.0).alias("logrel"), pl.lit("inicio_tramo").alias("origen"),
@@ -338,7 +343,7 @@ def calcular(cfg: Config, frecuencia: str = "mensual", ponderacion: str | None =
             # variación = (base -> actual) - (base -> anterior), con los mismos filtros
             if b not in paneles_base:
                 paneles_base.clear()
-                paneles_base[b] = (_cargar(ruta_de[b], col_precio, mapa, web, dir_estr), _info(ruta_de[b]))
+                paneles_base[b] = (_cargar(ruta_de[b], col_precio, mapa, web, dir_estr, web_excluir), _info(ruta_de[b]))
             pb, info_b = paneles_base[b]
             mb = _min_dias(info_b[0], min_dias)
             r1, n1 = relativos(pb, actual, mb, _min_dias(info_a[0], min_dias), cfg, **kw)

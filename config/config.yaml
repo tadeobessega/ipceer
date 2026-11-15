@@ -50,6 +50,11 @@ indice:
   # (las tiendas en línea, con ropa y farmacias, empezaron el 11/11/2026: semana 46 de base)
   nivel_general_desde_semana: "2026-W47"
   nivel_general_desde_mes: "2026-12"
+  # D-52: el índice publicado suma los precios de las tiendas en línea (ropa, calzado, hogar,
+  # farmacias, etc.); alimentos (división 01) sigue solo con SEPA
+  web:
+    usar: true
+    excluir_divisiones: ["01"]
   # Precio que se usa: "lista" (precio de góndola sin promociones) o
   # "efectivo" (el menor entre lista y promo 1 unitaria).
   precio: lista

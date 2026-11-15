@@ -551,6 +551,13 @@ el total no se presenta como nivel general.
   es su base y la 47 (16 al 22/11) la primera variación; en el mensual, desde diciembre. Las semanas
   anteriores quedan en `vintages.csv` y en la validación. Configurable en
   `indice.nivel_general_desde_semana` y `_mes`. Mientras tanto la página arranca en alimentos de GBA.
+- **D-52 (15/11/2026). Las tiendas en línea entran al índice publicado.** Decisión de Tadeo. Los
+  precios de los catálogos web (ropa, calzado, hogar, farmacias y el resto de `config/web/`) se suman
+  a los de SEPA en el índice publicado (`indice.web.usar`). Alimentos y bebidas (división 01) sigue
+  solo con SEPA (`indice.web.excluir_divisiones`), para no mover la serie que se compara con las
+  consultoras. Como el relevamiento web empezó el 11/11/2026, la semana 46 es la base: la primera
+  variación con esos precios es la semana 47 y la primera mensual, diciembre, que se valida contra
+  el INDEC en enero. Hasta ahí el nivel general no se muestra en el tablero.
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del

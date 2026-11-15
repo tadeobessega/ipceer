@@ -282,3 +282,17 @@ def test_web_excluir_divisiones(tmp_path):
     assert indice._cargar(r, "precio_lista", mapa, web=True)["clase"].to_list().count("01.1.1") == 1
     d = indice._cargar(r, "precio_lista", mapa, web=True, web_excluir=("01",))
     assert "01.1.1" not in d["clase"].to_list() and d["clase"].to_list().count("03.1.2") == 2
+
+
+def test_servicios_devengado_semanal():
+    """D-53: un aumento del 10% vigente desde el martes 1/12/2026 entra 6/7 en la semana 49 y el
+    resto en la 50; la variación de las dos semanas compone el 10%."""
+    import math
+    import polars as pl
+    from ipceer import servicios
+    m = pl.DataFrame({"periodo": ["2026-11", "2026-12"], "codigo": ["04.5.1"] * 2, "region": ["GBA"] * 2,
+                      "logrel": [0.0, math.log(1.1)], "fuente": ["tarifas"] * 2})
+    w = {p: lr for p, lr in servicios._a_semanas(m).select("periodo", "logrel").iter_rows()}
+    assert set(w) == {"2026-W49", "2026-W50"}
+    assert abs(math.exp(w["2026-W49"]) - (1 + 0.1 * 6 / 7)) < 1e-9
+    assert abs(math.exp(sum(w.values())) - 1.1) < 1e-9

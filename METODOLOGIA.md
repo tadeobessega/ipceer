@@ -558,6 +558,25 @@ el total no se presenta como nivel general.
   consultoras. Como el relevamiento web empezó el 11/11/2026, la semana 46 es la base: la primera
   variación con esos precios es la semana 47 y la primera mensual, diciembre, que se valida contra
   el INDEC en enero. Hasta ahí el nivel general no se muestra en el tablero.
+- **D-53 (15/11/2026). Tarifas y prepagas en el índice publicado, por devengado.** Decisión de Tadeo.
+  Las tarifas reguladas (cuadros y normas) y las cuotas de prepagas entran al nivel general en las
+  clases sin precios propios (`indice.servicios`, `ipceer/servicios.py`). Criterio del INDEC
+  (Metodología IPC 2016): el precio del mes es el promedio de lo relevado a lo largo del mes (20
+  paneles; tarifas y empresas, todo el mes) y "los cambios tarifarios ... son considerados desde que
+  entran en vigencia, adoptándose el criterio de devengado". En el mensual, el aumento del mes. En
+  el semanal, el precio de cada día es el vigente y el de la semana el promedio de sus 7 días: un
+  aumento del día 1 entra en la semana que lo contiene en la proporción de días que rige y el resto
+  en la siguiente; las demás semanas del mes no cambian. Consecuencia: el nivel general semanal
+  tiene un salto en la primera semana de cada mes; el promedio de 4 semanas y el mensual lo
+  suavizan. **Alquiler: todavía no.** El INDEC lo releva como un precio más del mes (no detalla un
+  tratamiento propio); con el criterio de devengado, el ajuste de cada contrato también caería en
+  la semana en que vence, y el ICL (que es diario y suave) no representa eso. Se decide después de
+  comparar ICL y avisos (Zonaprop) contra el 04.1.1 del INDEC.
+- **D-54 (15/11/2026). Alternativa sin publicar: alimentos con los precios web.** Cada cálculo arma
+  también alimentos y bebidas (división 01) sumando los frescos por kilo y demás alimentos de las
+  tiendas en línea, al lado del oficial y del INDEC (`resultados/alimentos_web.json`). El índice
+  publicado no cambia. Primera variación semanal comparable: semana 47; primer mes contra el INDEC:
+  diciembre.
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del

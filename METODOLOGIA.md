@@ -511,6 +511,28 @@ el total no se presenta como nivel general.
 - **Cobertura de la canasta.** `config/cobertura.yaml` marca cada clase como relevada e incluida,
   relevada sin incluir, estimada o sin relevar, y como bien o servicio; el gráfico de torta de la
   Metodología lo muestra con los pesos nacionales del INDEC.
+- **D-49 (15/11/2026). El tablero se calcula también en GitHub, sin la PC.** El flujo `tablero.yml`
+  corre después de procesar SEPA (y a las 8:17 y 14:17): trae los días ya procesados en GitHub
+  (`proc_*.tar`, desde el 1/11/2026), los paneles de los períodos cerrados que GitHub no puede
+  rehacer (rama `datos-base`: 2025-W17, 2025-W18, 2025-04, 2026-W43 a W45 y 2026-10), las otras
+  fuentes y los precios web del release, y calcula con el mismo código (`ipceer github`). Lo que
+  necesita toda la historia (validación 2016-2018, carrera de métodos, combustibles) sale del
+  último `datos.json` de la PC, que la PC sube al release en cada corrida. Deja `tablero_github.html`
+  y `datos_github.json`, y reemplaza el `tablero.html` que sirve Cloudflare solo si la PC está
+  atrasada. Control del 15/11/2026: mismas variaciones que la PC hasta el cuarto decimal (W44 a
+  W46, noviembre, todas las regiones). Un panel ya consolidado nunca se rehace con menos días.
+- **D-50 (15/11/2026). Servicios en corridas cambiarias.** `scripts/servicios_corridas.py`, IPC de
+  GBA. Corrida: el oficial sube más de 5 puntos sobre la inflación del mes anterior o el blue más de
+  10 (2017-07, 2018-05/06, 2018-08/09, 2019-08, 2020-04/05, 2020-10, 2022-07, 2023-08, 2023-10,
+  2023-12, 2024-06, 2025-07). Patrón: en meses normales los servicios suben 0,53 pp más que los
+  bienes; en las corridas, 1,82 pp menos, y el mes siguiente siguen 1,49 pp abajo: no se pegan a los
+  bienes, se atrasan. Modelos fuera de muestra (2020-02 a 2026-10, ventana de 36 meses), RMSE en pp:
+  nivel general t−1 1,85 (corridas 2,87); rezago + bienes 2,05 (corridas 2,69); + tipo de cambio
+  oficial 2,46; + brecha 2,48; regla que en corrida mezcla con bienes 1,89. El tipo de cambio y la
+  brecha no mejoran: se queda el nivel general t−1, y lo que más mejora es sumar servicios medidos.
+- **Registro de lo publicado.** `resultados/vintages.csv` guarda cada variación la primera vez que se
+  publica y cada vez que cambia (también la proyección y el relevado del mes), con la fecha del
+  cálculo; en GitHub se guarda en el release.
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del

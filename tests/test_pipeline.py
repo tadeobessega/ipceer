@@ -227,7 +227,7 @@ def test_indicadores_y_hilo(cfg):
     h = hilo.armar(cfg, datos, sem["indices"], datos["indicadores"])
     assert h["tuits"][0]["texto"].startswith("El ipceer midió una inflación semanal de bienes del ")
     assert "—" not in "".join(t["texto"] for t in h["tuits"])
-    assert any(t["imagen"] == "cadenas" for t in h["tuits"])
+    assert not any(t["imagen"] == "cadenas" for t in h["tuits"])
 
 
 def test_combustibles(cfg):

@@ -538,6 +538,12 @@ el total no se presenta como nivel general.
 - **Registro de lo publicado.** `resultados/vintages.csv` guarda cada variación la primera vez que se
   publica y cada vez que cambia (también la proyección y el relevado del mes), con la fecha del
   cálculo; en GitHub se guarda en el release.
+- **Comparación con consultoras (15/11/2026).** En la vista semanal se usa el dato original del
+  ipceer de cada semana (el primero con la semana completa, de `vintages.csv`; lo publicado antes del
+  registro, en `config/vintages_semilla.csv`), porque es lo que se conocía cuando publicaron las
+  consultoras. El dot plot sigue al índice elegido en la página (nivel general o alimentos GBA) y
+  arranca en la vista semanal. El gráfico de barras agrupa por índice comparable (rubro, región y
+  medida) y muestra, del último período, cada consultora, su mediana y el ipceer.
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del

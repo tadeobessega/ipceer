@@ -106,6 +106,10 @@ def _datos_fuentes(cfg, datos: dict) -> None:
     """Partes del tablero que salen de otras fuentes y regulados (baratas de recalcular): las arma
     `calcular` y las refresca `sitio`, así una corrida de otras fuentes se ve sin recalcular el índice."""
     try:
+        datos["originales"] = resumen.originales(cfg)
+    except Exception as e:
+        log.warning("Originales: %s", e)
+    try:
         ro = cfg.ruta("resultados") / "otras_fuentes.json"
         if ro.exists():
             datos["otras"] = json.loads(ro.read_text(encoding="utf-8"))

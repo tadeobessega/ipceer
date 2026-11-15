@@ -297,3 +297,25 @@ def registrar_vintages(cfg, datos: dict) -> int:
                 w.writerow(campos)
             w.writerows(nuevas)
     return len(nuevas)
+
+
+def originales(cfg, codigos=("TOTAL", "01")) -> dict:
+    """Dato semanal original de cada índice: el primero registrado con la semana completa
+    (config/vintages_semilla.csv para lo publicado antes de que existiera el registro, y después
+    resultados/vintages.csv). Es lo que se conocía cuando publicaban las consultoras."""
+    import csv
+    filas = []
+    for ruta in (cfg.raiz / "config" / "vintages_semilla.csv", cfg.ruta("resultados") / "vintages.csv"):
+        if ruta.exists():
+            filas += list(csv.DictReader(open(ruta, encoding="utf-8")))
+    out: dict = {}
+    for r in filas:
+        if r.get("frecuencia") != "semanal" or r.get("codigo") not in codigos or r.get("parcial") == "True":
+            continue
+        d = out.setdefault(r["region"], {}).setdefault(r["codigo"], {})
+        if r["periodo"] not in d:
+            try:
+                d[r["periodo"]] = round(float(r["var"]), 4)
+            except (TypeError, ValueError):
+                pass
+    return out

@@ -52,13 +52,19 @@ jobs:
               print("datos de la PC del release:", b.get("generado"))
           PY
           fi
-          if gh release download "$TAG" -p otras.tar.gz -O otras.tar.gz 2>/dev/null; then tar -xzf otras.tar.gz -C data; fi
-          gh release download "$TAG" -p otras_fuentes_github.json -O resultados/otras_fuentes.json 2>/dev/null || true
+          # lo que está en el release se baja sí o sí (con reintentos por el límite de la API): sin otras
+          # fuentes el índice saldría sin prepagas, y sin vintages.csv se perdería el registro de originales
+          activos=""
+          for i in 1 2 3 4 5 6; do activos=$(gh release view "$TAG" --json assets -q '.assets[].name') && [ -n "$activos" ] && break; sleep $((i*20)); done
+          [ -n "$activos" ] || { echo "::error::no se pudo leer el release"; exit 1; }
+          bajar() { for i in 1 2 3 4 5 6; do gh release download "$TAG" -p "$1" -O "$2" --clobber && return 0; echo "reintento $i: $1"; sleep $((i*20)); done; echo "::error::no se pudo bajar $1"; exit 1; }
+          if grep -qx otras.tar.gz <<<"$activos"; then bajar otras.tar.gz otras.tar.gz; tar -xzf otras.tar.gz -C data; fi
+          if grep -qx otras_fuentes_github.json <<<"$activos"; then bajar otras_fuentes_github.json resultados/otras_fuentes.json; fi
           # registro de lo publicado (primeros valores y revisiones)
-          gh release download "$TAG" -p vintages.csv -O resultados/vintages.csv 2>/dev/null || true
+          if grep -qx vintages.csv <<<"$activos"; then bajar vintages.csv resultados/vintages.csv; fi
           mkdir -p data/web
-          for n in $(gh release view "$TAG" --json assets -q '.assets[].name' | grep -E '^web_20[0-9-]+\.parquet$'); do
-            gh release download "$TAG" -p "$n" -O "data/web/gh_${n#web_}"
+          for n in $(grep -E '^web_20[0-9-]+\.parquet$' <<<"$activos"); do
+            bajar "$n" "data/web/gh_${n#web_}"
           done
           ls data/panel/semanal data/panel/mensual
       - name: Calcular y armar el tablero

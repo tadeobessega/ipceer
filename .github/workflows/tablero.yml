@@ -59,6 +59,9 @@ jobs:
           [ -n "$activos" ] || { echo "::error::no se pudo leer el release"; exit 1; }
           bajar() { for i in 1 2 3 4 5 6; do gh release download "$TAG" -p "$1" -O "$2" --clobber && return 0; echo "reintento $i: $1"; sleep $((i*20)); done; echo "::error::no se pudo bajar $1"; exit 1; }
           if grep -qx otras.tar.gz <<<"$activos"; then bajar otras.tar.gz otras.tar.gz; tar -xzf otras.tar.gz -C data; fi
+          # lo que bajó la PC y GitHub no tiene (ej. meses viejos de prepagas), de la rama datos-base
+          if [ -d base/otras ]; then mkdir -p data/otras; cp -rn base/otras/. data/otras/; fi
+          ls data/otras/prepagas 2>/dev/null | tr '\n' ' '; echo
           if grep -qx otras_fuentes_github.json <<<"$activos"; then bajar otras_fuentes_github.json resultados/otras_fuentes.json; fi
           # registro de lo publicado (primeros valores y revisiones)
           if grep -qx vintages.csv <<<"$activos"; then bajar vintages.csv resultados/vintages.csv; fi

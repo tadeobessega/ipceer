@@ -27,10 +27,24 @@ jobs:
       - run: pip install -e ".[ponderadores]"
       - name: OCR para los cuadros tarifarios escaneados de la Ciudad (D-40)
         run: sudo apt-get install -y -qq tesseract-ocr poppler-utils >/dev/null
+      - uses: actions/checkout@v4
+        with:
+          ref: datos-base
+          path: base
       - name: Recuperar lo ya bajado
         run: |
           mkdir -p data
-          if gh release download "$TAG" -p otras.tar.gz -O otras.tar.gz 2>/dev/null; then tar -xzf otras.tar.gz -C data; fi
+          # sin el archivo anterior se subiría uno sin historia: si está en el release, se baja sí o sí
+          activos=""
+          for i in 1 2 3 4 5 6; do activos=$(gh release view "$TAG" --json assets -q '.assets[].name') && [ -n "$activos" ] && break; sleep $((i*20)); done
+          [ -n "$activos" ] || { echo "::error::no se pudo leer el release"; exit 1; }
+          if grep -qx otras.tar.gz <<<"$activos"; then
+            ok=""; for i in 1 2 3 4 5 6; do gh release download "$TAG" -p otras.tar.gz -O otras.tar.gz --clobber && ok=1 && break; sleep $((i*20)); done
+            [ -n "$ok" ] || { echo "::error::no se pudo bajar otras.tar.gz"; exit 1; }
+            tar -xzf otras.tar.gz -C data
+          fi
+          # lo que bajó la PC y GitHub no tiene (ej. meses viejos de prepagas)
+          if [ -d base/otras ]; then mkdir -p data/otras; cp -rn base/otras/. data/otras/; fi
           ls data/otras 2>/dev/null || true
       - name: Bajar
         # tope propio: si una fuente se cuelga, se guarda igual lo bajado hasta ahí (paso siguiente)

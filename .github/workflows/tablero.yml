@@ -87,4 +87,4 @@ jobs:
             gh release upload "$TAG" tablero.html --clobber
             echo "tablero.html reemplazado por el de GitHub"
           fi
-          python -c "import json;d=json.load(open('datos_github.json',encoding='utf-8'));s=d['series']['Nacional']['TOTAL']['semanal'];print('Última semana:',s[-1])"
+          python -c "import json;d=json.load(open('datos_github.json',encoding='utf-8'));s=(d['series'].get('GBA',{}).get('01') or {}).get('semanal') or [];print('Última semana de alimentos GBA:',s[-1] if s else 'sin datos')"

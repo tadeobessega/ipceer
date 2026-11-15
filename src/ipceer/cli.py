@@ -308,6 +308,11 @@ def cmd_sitio(cfg, args):
     datos = json.loads(ruta.read_text(encoding="utf-8"))
     _datos_fuentes(cfg, datos)
     resumen.recortar_series(datos, cfg)
+    if not (datos.get("hilo") or {}).get("indices"):  # datos de antes de D-51: armar el hilo por índice
+        try:
+            datos["hilo"] = resumen._limpio(hilo.armar_todos(cfg, datos, None, datos.get("indicadores", {})))
+        except Exception as e:
+            log.warning("Hilo: %s", e)
     ruta.write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
     destino = sitio.construir(cfg, datos)
     log.info("Sitio: %s", destino)

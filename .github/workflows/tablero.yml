@@ -49,6 +49,8 @@ jobs:
           fi
           if gh release download "$TAG" -p otras.tar.gz -O otras.tar.gz 2>/dev/null; then tar -xzf otras.tar.gz -C data; fi
           gh release download "$TAG" -p otras_fuentes_github.json -O resultados/otras_fuentes.json 2>/dev/null || true
+          # registro de lo publicado (primeros valores y revisiones)
+          gh release download "$TAG" -p vintages.csv -O resultados/vintages.csv 2>/dev/null || true
           mkdir -p data/web
           for n in $(gh release view "$TAG" --json assets -q '.assets[].name' | grep -E '^web_20[0-9-]+\.parquet$'); do
             gh release download "$TAG" -p "$n" -O "data/web/gh_${n#web_}"
@@ -60,6 +62,7 @@ jobs:
         run: |
           cp sitio/index.html tablero_github.html
           cp resultados/datos.json datos_github.json
+          cp resultados/vintages.csv vintages.csv 2>/dev/null && gh release upload "$TAG" vintages.csv --clobber || true
           gh release upload "$TAG" tablero_github.html datos_github.json --clobber
           # el tablero que sirve Cloudflare (tablero.html) se reemplaza solo si la PC está atrasada:
           # si la PC ya calculó con los mismos días, su versión es la completa

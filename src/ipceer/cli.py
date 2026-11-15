@@ -297,6 +297,10 @@ def cmd_calcular(cfg, args):
     except Exception as e:
         log.warning("Hilo: %s", e)
     (cfg.ruta("resultados") / "datos.json").write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
+    try:
+        log.info("Registro de lo publicado (vintages.csv): %d valores nuevos o revisados", resumen.registrar_vintages(cfg, datos))
+    except Exception as e:
+        log.warning("Registro de lo publicado: %s", e)
 
 
 def cmd_sitio(cfg, args):

@@ -258,3 +258,42 @@ def canasta_cobertura(cfg) -> list[dict]:
         out.append({"codigo": c, "nombre": r["nombre"], "peso": round(peso, 3),
                     "tipo": "servicio" if busca(c, est.get("servicios") or []) else "bien", "estado": estado})
     return out
+
+
+def registrar_vintages(cfg, datos: dict) -> int:
+    """Guarda cada valor publicado la primera vez que aparece y cada vez que cambia
+    (resultados/vintages.csv): región, rubro, frecuencia, período, variación, si era parcial y la
+    fecha del cálculo. Así queda el registro de lo que se estimó originalmente aunque después el
+    INDEC publique otro mes y los pesos se actualicen (D-11). También la proyección del mes."""
+    import csv
+    ruta = cfg.ruta("resultados") / "vintages.csv"
+    campos = ["calculado", "region", "codigo", "frecuencia", "periodo", "var", "parcial"]
+    ultimo = {}
+    if ruta.exists():
+        for r in csv.DictReader(open(ruta, encoding="utf-8")):
+            ultimo[(r["region"], r["codigo"], r["frecuencia"], r["periodo"])] = (r["var"], r["parcial"])
+    cuando = datos.get("generado") or ""
+    nuevas = []
+    for reg, cods in (datos.get("series") or {}).items():
+        for cod, s in cods.items():
+            filas = [("semanal", x.get("semana"), x.get("var"), x.get("parcial")) for x in s.get("semanal") or []]
+            filas += [("mensual", x.get("mes"), x.get("var"), x.get("parcial")) for x in s.get("mensual") or []]
+            p = s.get("proyeccion") or {}
+            if p.get("mes"):
+                filas += [("proyeccion", p["mes"], p.get("proyeccion"), True), ("relevado", p["mes"], p.get("relevado"), True)]
+            for frec, per, v, parc in filas:
+                if per is None or v is None:
+                    continue
+                val = (f"{float(v):.4f}", str(bool(parc)))
+                k = (reg, cod, frec, per)
+                if ultimo.get(k) != val:
+                    nuevas.append([cuando, reg, cod, frec, per, *val])
+                    ultimo[k] = val
+    if nuevas:
+        nuevo = not ruta.exists()
+        with open(ruta, "a", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            if nuevo:
+                w.writerow(campos)
+            w.writerows(nuevas)
+    return len(nuevas)

@@ -24,7 +24,7 @@ from pathlib import Path
 
 import polars as pl
 
-from . import combustibles, diario, otras_fuentes, externos, geo, descarga, hilo, municipios, historico, indec, indicadores, indice, lectura, panel, resumen, sitio, validacion
+from . import combustibles, diario, servicios, otras_fuentes, externos, geo, descarga, hilo, municipios, historico, indec, indicadores, indice, lectura, panel, resumen, sitio, validacion
 from .clasificador import SIN_CLASIFICAR
 from .config import cargar_config
 
@@ -171,12 +171,46 @@ def _datos_fuentes(cfg, datos: dict) -> None:
         log.warning("Series del INDEC para el empalme: %s", e)
 
 
+def _alimentos_web(cfg, res: dict) -> None:
+    """Alternativa (no publicada): alimentos y bebidas (división 01) sumando los precios web (frescos
+    por kilo de las tiendas en línea), al lado del oficial y del INDEC. resultados/alimentos_web.json."""
+    from .indec import directorio
+    from .validacion import leer_indec
+    out = {"nota": "Alternativa sin publicar: alimentos con los precios de las tiendas en línea (D-54)."}
+    try:
+        ind = leer_indec(directorio(cfg))
+    except Exception:
+        ind = None
+    for f in ("semanal", "mensual"):
+        if f not in res:
+            continue
+        alt = indice.calcular(cfg, f, web=True)["indices"]
+        filas = []
+        for reg in ("GBA", indice.NACIONAL):
+            sel = lambda d: {p: v for p, v in d.filter((pl.col("nivel") == "division") & (pl.col("codigo") == "01")
+                                                         & (pl.col("region") == reg)).select("periodo", "var_pct").iter_rows()
+                             if v is not None and v == v}
+            a, o = sel(alt), sel(res[f]["indices"])
+            ref = {}
+            if f == "mensual" and ind is not None and not ind.is_empty():
+                g = dict(ind.filter((pl.col("codigo") == "01") & (pl.col("region") == reg)).select("mes", "indice").iter_rows())
+                ms = sorted(g)
+                ref = {m: (g[m] / g[ms[i - 1]] - 1) * 100 for i, m in enumerate(ms) if i}
+            for p in sorted(set(a) | set(o)):
+                filas.append({"region": reg, "periodo": p, "con_web": a.get(p), "oficial": o.get(p), "indec": ref.get(p)})
+        out[f] = filas
+    (cfg.ruta("resultados") / "alimentos_web.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def cmd_calcular(cfg, args):
     res = {}
     for f in ("semanal", "mensual"):
         try:
             iw = (cfg["indice"] or {}).get("web") or {}  # D-52: tiendas en línea en el índice publicado
-            r = indice.calcular(cfg, f, web=bool(iw.get("usar")), web_excluir=tuple(iw.get("excluir_divisiones") or ()))
+            isv = (cfg["indice"] or {}).get("servicios") or {}  # D-53: tarifas, alquiler (ICL) y prepagas
+            ext = servicios.relativos(cfg, f, tuple(isv.get("fuentes") or servicios.FUENTES)) if isv.get("usar") else None
+            r = indice.calcular(cfg, f, web=bool(iw.get("usar")), web_excluir=tuple(iw.get("excluir_divisiones") or ()),
+                                extra=ext)
         except (ValueError, FileNotFoundError) as e:
             log.warning("Índice %s: %s", f, e)
             continue
@@ -184,6 +218,10 @@ def cmd_calcular(cfg, args):
         res[f] = r
     if not res:
         return
+    try:
+        _alimentos_web(cfg, res)
+    except Exception as e:
+        log.warning("Alimentos con web (alternativa): %s", e)
     val, cba_m = {}, None
     try:
         cba_m = indicadores.cba_mensual(cfg)

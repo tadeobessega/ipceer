@@ -11,6 +11,11 @@ on:
     workflows: ["Procesar SEPA (Plan A)"]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      solo_sitio:
+        description: "Solo rearmar la página con los últimos datos (cambios de diseño, sin recalcular)"
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency: tablero
@@ -57,7 +62,12 @@ jobs:
           done
           ls data/panel/semanal data/panel/mensual
       - name: Calcular y armar el tablero
-        run: ipceer github --base datos_base.json
+        run: |
+          if [ "${{ github.event.inputs.solo_sitio }}" = "true" ] && gh release download "$TAG" -p datos_github.json -O resultados/datos.json 2>/dev/null; then
+            ipceer sitio
+          else
+            ipceer github --base datos_base.json
+          fi
       - name: Guardar en el release
         run: |
           cp sitio/index.html tablero_github.html

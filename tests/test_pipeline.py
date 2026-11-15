@@ -22,7 +22,7 @@ def _sin_recorte(raiz):
     """Los datos sintéticos son de otras fechas: sin el recorte del tramo publicado del tablero."""
     c = raiz / "config" / "config.yaml"
     c.write_text("".join(l for l in c.read_text(encoding="utf-8").splitlines(True)
-                         if "publicado_desde_" not in l), encoding="utf-8")
+                         if "publicado_desde_" not in l and "nivel_general_desde_" not in l), encoding="utf-8")
 
 
 

@@ -312,7 +312,7 @@ def cmd_sitio(cfg, args):
     datos = json.loads(ruta.read_text(encoding="utf-8"))
     _datos_fuentes(cfg, datos)
     resumen.recortar_series(datos, cfg)
-    if not (datos.get("hilo") or {}).get("indices"):  # datos de antes de D-51: armar el hilo por índice
+    if True:  # el hilo se rearma sobre las series recortadas (ej. sin nivel general antes de tiempo)
         try:
             datos["hilo"] = resumen._limpio(hilo.armar_todos(cfg, datos, None, datos.get("indicadores", {})))
         except Exception as e:

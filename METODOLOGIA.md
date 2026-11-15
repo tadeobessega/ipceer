@@ -545,6 +545,12 @@ el total no se presenta como nivel general.
   arranca en la vista semanal. El gráfico de barras agrupa por índice comparable (rubro, región y
   medida) y muestra, del último período, cada consultora, su mediana y el ipceer redondeado a un
   decimal. En el dot plot, cuando se muestra el ipceer, su dato redondeado entra en la mediana.
+- **Nivel general desde la semana 47 (15/11/2026).** El tablero muestra el nivel general (código
+  TOTAL, en todas las regiones) recién desde la primera semana con variación de todo lo que se releva:
+  las tiendas en línea (ropa, calzado, hogar, farmacias) empezaron el 11/11/2026, así que la semana 46
+  es su base y la 47 (16 al 22/11) la primera variación; en el mensual, desde diciembre. Las semanas
+  anteriores quedan en `vintages.csv` y en la validación. Configurable en
+  `indice.nivel_general_desde_semana` y `_mes`. Mientras tanto la página arranca en alimentos de GBA.
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del

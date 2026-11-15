@@ -46,6 +46,10 @@ indice:
   # primer período que se publica en el tablero (lo anterior queda en los datos pero no se muestra)
   publicado_desde_semana: "2026-W43"
   publicado_desde_mes: "2026-10"
+  # nivel general: desde la primera semana y el primer mes con variación de todo lo que se releva
+  # (las tiendas en línea, con ropa y farmacias, empezaron el 11/11/2026: semana 46 de base)
+  nivel_general_desde_semana: "2026-W47"
+  nivel_general_desde_mes: "2026-12"
   # Precio que se usa: "lista" (precio de góndola sin promociones) o
   # "efectivo" (el menor entre lista y promo 1 unitaria).
   precio: lista

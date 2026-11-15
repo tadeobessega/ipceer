@@ -700,6 +700,8 @@ const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>'
 
 const SERIES = {TOTAL:'Nivel general (bienes relevados)','01':'Alimentos y bebidas no alcohólicas','02':'Bebidas alcohólicas y tabaco','05':'Equipamiento y mantenimiento del hogar','09':'Recreación y cultura','12':'Bienes y servicios varios'};
 const st = {reg:'Nacional', ser:'TOTAL', semModo:'s'};
+/* sin nivel general publicado todavía, la página arranca en alimentos de GBA */
+if(!((((D.series||{}).Nacional||{}).TOTAL||{}).semanal||[]).length&&(((D.series||{}).GBA||{})['01'])){ st.reg='GBA'; st.ser='01'; }
 const charts = {};
 
 function serie(){ return (D.series[st.reg]||{})[st.ser] || {}; }
@@ -801,6 +803,7 @@ function renderSemanal(){
   const sem=(serie().semanal||[]).filter(x=>x.var!=null), m=st.semModo==='m';
   document.getElementById('t-sem').textContent = m ? 'Variación semanal mensualizada' : 'Variación semanal';
   const bar=css('--bar'), bar2=css('--bar2'), ac=css('--ambar');
+  if(!sem.length){ sinDatos('c-sem',st.ser==='TOTAL'?'El nivel general se publica desde la semana del 16 al 22 de noviembre, la primera con variación de todo lo que se releva.':'Sin datos todavía.'); return; }
   draw('c-sem',{type:'bar',data:{labels:sem.map(semLbl),datasets:[
     {type:'line',label:'Promedio 4 semanas',data:sem.map(x=>m?x.prom4_mensualizada:x.prom4),borderColor:ac,backgroundColor:ac,borderWidth:2.5,pointRadius:0,pointHoverRadius:4,tension:.25,spanGaps:true,order:0},
     {label:m?'Semana (mensualizada)':'Semana',data:sem.map(x=>m?x.var_mensualizada:x.var),backgroundColor:sem.map(x=>x.parcial?bar2:bar),borderColor:sem.map(x=>x.parcial?bar:'transparent'),borderWidth:sem.map(x=>x.parcial?1:0),borderDash:[3,3],order:1,barPercentage:.8,categoryPercentage:.9}

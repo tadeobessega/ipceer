@@ -138,6 +138,27 @@ def recortar_series(datos: dict, cfg=None) -> None:
                         if x.get("indice") is not None:
                             x["indice"] = round(x["indice"] / b * 100, 4)
                 d["saltos_mensual"] = [x for x in d.get("saltos_mensual", []) if str(x.get("desde", "")) >= INICIO_MES]
+    # el nivel general se muestra recién desde que el índice cubre todo lo que se releva (config:
+    # indice.nivel_general_desde_semana / _mes); antes queda solo en vintages.csv y en la validación
+    ic = (cfg["indice"] if cfg is not None else {}) or {}
+    ng_s, ng_m = ic.get("nivel_general_desde_semana", ""), ic.get("nivel_general_desde_mes", "")
+    for cods in (datos.get("series") or {}).values():
+        d = cods.get("TOTAL")
+        if not d:
+            continue
+        if ng_s:
+            d["semanal"] = [x for x in d.get("semanal") or [] if x["semana"] >= ng_s]
+        if ng_m:
+            d["mensual"] = [x for x in d.get("mensual") or [] if x["mes"] >= ng_m]
+            if (d.get("proyeccion") or {}).get("mes", "9999") < ng_m:
+                d["proyeccion"] = None
+        for k in ("semanal", "mensual"):
+            xs = d.get(k) or []
+            if xs and xs[0].get("indice"):
+                b = xs[0]["indice"]
+                for x in xs:
+                    if x.get("indice") is not None:
+                        x["indice"] = round(x["indice"] / b * 100, 4)
 
 
 def _limpio(x):

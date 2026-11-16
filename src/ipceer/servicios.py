@@ -29,7 +29,7 @@ from .config import REGIONES, Config
 log = logging.getLogger(__name__)
 
 ESQUEMA = {"periodo": pl.Utf8, "codigo": pl.Utf8, "region": pl.Utf8, "logrel": pl.Float64, "fuente": pl.Utf8}
-FUENTES = ("tarifas", "prepagas", "educacion")  # "alquiler_icl" solo para pruebas (ver arriba)
+FUENTES = ("tarifas", "prepagas", "educacion", "alquiler_icl", "combustibles")
 # D-55: clases que se imputan con modelo (D-36, D-47)
 EDUCACION = ("10.1", "10.2", "10.3", "10.5")
 RESTAURANTES = ("11.1",)
@@ -71,8 +71,31 @@ def _icl_diario(cfg: Config) -> pl.DataFrame:
 
 
 def alquiler_icl(cfg: Config, frecuencia: str) -> pl.DataFrame:
-    """04.1.1 en todas las regiones: variación del promedio del ICL en el período contra el anterior.
-    Solo períodos completos (todos sus días con dato)."""
+    """D-56. 04.1.1 en todas las regiones con el ICL del BCRA: variación del promedio del mes contra
+    el del mes anterior (solo meses completos). En semanal, por devengado: los alquileres se pagan por
+    mes, así que el aumento del mes entra en la semana del día 1 (como tarifas y cuotas, D-53)."""
+    if frecuencia == "semanal":
+        return _a_semanas(_alquiler_icl(cfg, "mensual"))
+    return _alquiler_icl(cfg, "mensual")
+
+
+def combustibles_mensual(cfg: Config) -> pl.DataFrame:
+    """D-56. 07.2.2 con el índice de la Secretaría de Energía (precios y volúmenes por estación, Res.
+    1104/2004; resultados/combustibles_mensual.csv). Solo mensual: la fuente sale con unos dos meses de
+    atraso y no hay precios diarios vigentes (la Res. 314/2016 de precios en surtidor se derogó en
+    2025), así que el semanal no lo incluye y los últimos meses entran cuando Energía los publica."""
+    ruta = cfg.ruta("resultados") / "combustibles_mensual.csv"
+    if not ruta.exists():
+        return _vacio()
+    c = pl.read_csv(ruta, schema_overrides={"codigo": pl.Utf8, "periodo": pl.Utf8}, infer_schema_length=None)
+    if "nivel" in c.columns:
+        c = c.filter(pl.col("nivel") == "clase")
+    return c.filter(pl.col("region").is_in(REGIONES), pl.col("var_pct").is_not_null()).select(
+        "periodo", pl.lit("07.2.2").alias("codigo"), "region", (1 + pl.col("var_pct") / 100).log().alias("logrel"),
+        pl.lit("combustibles").alias("fuente")).cast(ESQUEMA)
+
+
+def _alquiler_icl(cfg: Config, frecuencia: str) -> pl.DataFrame:
     d = _icl_diario(cfg)
     if d.is_empty():
         return _vacio()
@@ -173,6 +196,9 @@ def relativos(cfg: Config, frecuencia: str, fuentes: tuple[str, ...] = FUENTES) 
                 partes.append(_a_semanas(x) if frecuencia == "semanal" else x)
             elif f == "alquiler_icl":
                 partes.append(alquiler_icl(cfg, frecuencia))
+            elif f == "combustibles":
+                if frecuencia == "mensual":
+                    partes.append(combustibles_mensual(cfg))
             else:
                 log.warning("Servicios: fuente desconocida %s", f)
         except Exception as e:

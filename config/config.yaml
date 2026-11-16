@@ -62,7 +62,7 @@ indice:
   # del mismo período)
   servicios:
     usar: true
-    fuentes: [tarifas, prepagas, educacion]
+    fuentes: [tarifas, prepagas, educacion, alquiler_icl, combustibles]  # D-56: alquiler y combustibles
     restaurantes: true
   # Precio que se usa: "lista" (precio de góndola sin promociones) o
   # "efectivo" (el menor entre lista y promo 1 unitaria).

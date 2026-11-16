@@ -417,13 +417,19 @@ def cmd_github(cfg, args):
         web.actualizar(cfg, bajar_ahora=False)
     except Exception as e:
         log.warning("Precios web: %s", e)
+    base = {}
+    if args.base and Path(args.base).exists():
+        base = json.loads(Path(args.base).read_text(encoding="utf-8"))
+    # combustibles (D-56): GitHub no tiene el panel de Energía; el índice 07.2.2 sale del de la PC
+    rc = cfg.ruta("resultados") / "combustibles_mensual.csv"
+    ci = (base.get("combustibles") or {}).get("indice") or []
+    if not rc.exists() and ci:
+        pl.DataFrame([{"periodo": x["mes"], "region": x["region"], "nivel": "clase", "codigo": "07.2.2",
+                       "indice": x.get("indice"), "var_pct": x.get("var")} for x in ci]).write_csv(rc)
     cmd_consolidar(cfg, args)
     cmd_calcular(cfg, args)
     ruta = cfg.ruta("resultados") / "datos.json"
     datos = json.loads(ruta.read_text(encoding="utf-8"))
-    base = {}
-    if args.base and Path(args.base).exists():
-        base = json.loads(Path(args.base).read_text(encoding="utf-8"))
     for k in DE_LA_PC:
         if k in base:
             datos[k] = base[k]

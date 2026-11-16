@@ -593,6 +593,19 @@ el total no se presenta como nivel general.
     publican por resolución).
   Los dos se marcan como estimados en `config/cobertura.yaml` y se pueden apagar en
   `indice.servicios` (fuente `educacion` y `restaurantes: true`).
+- **D-56 (16/11/2026). Alquiler y combustibles entran al índice.** Decisión de Tadeo.
+  - **Alquiler (04.1.1, 3,4%): ICL del BCRA**, la preferencia de Tadeo, para todas las regiones:
+    variación del promedio del mes contra el del mes anterior, solo con el mes completo. En semanal,
+    por devengado (D-53): los alquileres se pagan por mes, así que el aumento entra en la semana del
+    día 1 y las demás semanas no cambian. Zonaprop (avisos de GBA) se sigue calculando para comparar
+    con el INDEC; si se acerca más, se cambia.
+  - **Combustibles (07.2.2, 4,2%): índice de la Secretaría de Energía** (precios y volúmenes por
+    estación, Res. 1104/2004), ponderado por volumen. Solo en el mensual: la fuente sale con unos dos
+    meses de atraso y no hay precios diarios vigentes (la Res. 314/2016 de precios en surtidor se
+    derogó en mayo de 2025), así que los últimos meses entran cuando Energía los publica (queda en
+    `vintages.csv` como revisión) y el semanal no los incluye. Falta una fuente semanal (listas de
+    precios de las petroleras).
+  - GitHub no tiene el panel de Energía: toma el índice 07.2.2 del último `datos.json` de la PC.
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del
@@ -605,8 +618,8 @@ región), según `config/cobertura.yaml`, que es la misma clasificación del gr�
 
 | Estado | Bienes | Servicios | Total |
 |---|---|---|---|
-| Relevados e incluidos en el índice | 55,7% | 10,3% | 66,0% |
-| Relevados, sin incluir todavía | 6,8% | 3,4% | 10,2% |
+| Relevados e incluidos en el índice | 60,0% | 13,7% | 73,7% |
+| Relevados, sin incluir todavía | 2,6% | | 2,6% |
 | Sin relevar, estimados con un modelo | | 10,9% | 10,9% |
 | Sin relevar | 0,6% | 12,2% | 12,8% |
 
@@ -617,11 +630,9 @@ región), según `config/cobertura.yaml`, que es la misma clasificación del gr�
 - Tarifas por norma (D-53): electricidad y gas, agua, servicio doméstico, colectivos y subte.
 - Prepagas (D-53): cuotas de la Superintendencia de Servicios de Salud.
 
+- Alquiler con el ICL y combustibles de Energía (D-56; combustibles solo en el mensual).
+
 **Relevados, sin incluir todavía.**
-- Combustibles (07.2.2, 4,2%): precios por estación de la Secretaría de Energía; está en la variante
-  "completo". Falta probarlo contra el INDEC y decidir.
-- Alquiler (04.1.1, 3,4%): ICL y avisos de Zonaprop; falta compararlos contra el INDEC y definir
-  cómo se reparte en las semanas (D-53).
 - Autos (07.1.1, 2,6%): guía de precios de la CCA (D-41); falta probarla contra el INDEC.
 
 **Estimados con un modelo (D-55).** Restaurantes (11.1, 8,6%) con los bienes del mismo período;

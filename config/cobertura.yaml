@@ -1,15 +1,15 @@
 # Estado de cada clase de la canasta del IPC en el ipceer (gráfico de torta de la Metodología).
 # Se busca el prefijo más largo que coincida con el código de la clase; lo que no figura, "sin_relevar".
 # Actualizar a mano cuando una fuente entra al índice o empieza a relevarse.
-incluido:          # relevado y dentro del índice publicado (SEPA)
+incluido:          # dentro del índice publicado, con precios propios
+  # SEPA (supermercados)
   - "01"
   - "02"
   - "05.6.1"
   - "09.3.4"
   - "09.5.4"
   - "12.1.3"
-relevado:          # se releva todos los días, pero todavía no entra al índice publicado
-  # tiendas en línea desde el 11/11/2026 (config/web/clases.yaml)
+  # tiendas en línea desde el 11/11/2026, en el índice desde la semana 47 (D-52)
   - "03.1.2"
   - "03.1.3"
   - "03.2.1"
@@ -28,16 +28,19 @@ relevado:          # se releva todos los días, pero todavía no entra al índic
   - "09.3.1"
   - "09.3.2"
   - "09.5.1"
-  # tarifas, combustibles, prepagas, autos y servicio doméstico (regulados y otras fuentes)
+  # tarifas por norma y prepagas por la Superintendencia, por devengado (D-53)
   - "04.4"
   - "04.5"
   - "05.6.2"
   - "06.4"
-  - "07.1.1"
-  - "07.2.2"
   - "07.3.1"
-estimado:          # no se releva el precio: se estima con un indicador (alquiler: ICL o avisos de Zonaprop)
-  - "04.1.1"
+relevado:          # se releva, pero todavía no entra al índice publicado
+  - "04.1.1"       # alquiler: ICL y avisos de Zonaprop, a comparar con el INDEC
+  - "07.1.1"       # autos: guía de precios de la CCA (D-41)
+  - "07.2.2"       # combustibles: precios por estación de Energía (variante "completo")
+estimado:          # sin precios propios: entra al índice con un modelo (D-55)
+  - "10"           # educación: el INDEC del mismo mes del año anterior
+  - "11.1"         # restaurantes: los bienes del mismo período
 # servicios (el resto son bienes). Electricidad, gas y agua se cuentan como servicios públicos.
 servicios:
   - "03.1.4"

@@ -215,8 +215,12 @@ def cmd_calcular(cfg, args):
             iw = (cfg["indice"] or {}).get("web") or {}  # D-52: tiendas en línea en el índice publicado
             isv = (cfg["indice"] or {}).get("servicios") or {}  # D-53: tarifas, alquiler (ICL) y prepagas
             ext = servicios.relativos(cfg, f, tuple(isv.get("fuentes") or servicios.FUENTES)) if isv.get("usar") else None
-            r = indice.calcular(cfg, f, web=bool(iw.get("usar")), web_excluir=tuple(iw.get("excluir_divisiones") or ()),
-                                extra=ext)
+            kw = dict(web=bool(iw.get("usar")), web_excluir=tuple(iw.get("excluir_divisiones") or ()))
+            if isv.get("restaurantes"):  # D-55: primero los bienes solos, para imputar restaurantes con ellos
+                b = indice.calcular(cfg, f, **kw)["indices"]
+                rr = servicios.restaurantes(b)
+                ext = rr if ext is None or ext.is_empty() else pl.concat([ext, rr])
+            r = indice.calcular(cfg, f, **kw, extra=ext)
         except (ValueError, FileNotFoundError) as e:
             log.warning("Índice %s: %s", f, e)
             continue

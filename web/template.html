@@ -1997,7 +1997,7 @@ function renderReales(){
 }
 
 /* ---------- metodología: qué parte de la canasta medimos ---------- */
-const COB_EST=[['incluido','Relevados e incluidos','#1b6e3a'],['relevado','Relevados, sin incluir todavía','#8fd19e'],['estimado','Sin relevar, estimados','#f2c94c'],['sin_relevar','Sin relevar','#af3e30']];
+const COB_EST=[['incluido','Relevados e incluidos','#1b6e3a'],['relevado','Relevados, sin incluir todavía','#8fd19e'],['estimado','Sin relevar, estimados con un modelo','#f2c94c'],['sin_relevar','Sin relevar','#af3e30']];
 function rayado(col){ const c=document.createElement('canvas'); c.width=c.height=10; const x=c.getContext('2d'); x.fillStyle=col; x.fillRect(0,0,10,10);
   x.strokeStyle='rgba(255,255,255,.75)'; x.lineWidth=2.2; x.beginPath(); x.moveTo(-2,12); x.lineTo(12,-2); x.moveTo(-2,2); x.lineTo(2,-2); x.moveTo(8,12); x.lineTo(12,8); x.stroke(); return x.createPattern(c,'repeat'); }
 function renderCobertura(){

@@ -1,5 +1,6 @@
 """Servicios que entran al índice publicado sin precios relevados (D-53): tarifas reguladas (cuadros y
-normas) y cuotas de medicina prepaga (Superintendencia de Servicios de Salud). El alquiler queda
+normas) y cuotas de medicina prepaga (Superintendencia de Servicios de Salud). Con modelo (D-55):
+educación (el INDEC del mismo mes del año anterior) y restaurantes (los bienes del mismo período). El alquiler queda
 afuera hasta comparar el ICL y el relevamiento de avisos contra el INDEC (fuente "alquiler_icl",
 disponible para las pruebas).
 
@@ -28,7 +29,10 @@ from .config import REGIONES, Config
 log = logging.getLogger(__name__)
 
 ESQUEMA = {"periodo": pl.Utf8, "codigo": pl.Utf8, "region": pl.Utf8, "logrel": pl.Float64, "fuente": pl.Utf8}
-FUENTES = ("tarifas", "prepagas")  # "alquiler_icl" solo para pruebas (ver arriba)
+FUENTES = ("tarifas", "prepagas", "educacion")  # "alquiler_icl" solo para pruebas (ver arriba)
+# D-55: clases que se imputan con modelo (D-36, D-47)
+EDUCACION = ("10.1", "10.2", "10.3", "10.5")
+RESTAURANTES = ("11.1",)
 
 
 def _vacio() -> pl.DataFrame:
@@ -93,6 +97,38 @@ def alquiler_icl(cfg: Config, frecuencia: str) -> pl.DataFrame:
     return pl.DataFrame(filas, schema=ESQUEMA) if filas else _vacio()
 
 
+def educacion_mensual(cfg: Config) -> pl.DataFrame:
+    """D-55. Educación (10) por estacionalidad: la variación del INDEC del mismo mes del año anterior,
+    por región (D-36: el mejor indicador disponible; las cuotas suben en marzo y a mitad de año).
+    Se proyecta hasta 12 meses después del último publicado."""
+    from .indec import directorio
+    from .validacion import leer_indec
+    ind = leer_indec(directorio(cfg))
+    if ind.is_empty():
+        return _vacio()
+    filas = []
+    for reg in REGIONES:
+        g = dict(ind.filter((pl.col("codigo") == "10") & (pl.col("region") == reg)).select("mes", "indice").iter_rows())
+        ms = sorted(g)
+        for a, b in zip(ms, ms[1:]):
+            y, m = map(int, b.split("-"))
+            dest = f"{y + 1}-{m:02d}"
+            if g[a] and g[b]:
+                filas += [{"periodo": dest, "codigo": c, "region": reg, "logrel": math.log(g[b] / g[a]), "fuente": "educacion"}
+                          for c in EDUCACION]
+    return pl.DataFrame(filas, schema=ESQUEMA) if filas else _vacio()
+
+
+def restaurantes(bienes: pl.DataFrame) -> pl.DataFrame:
+    """D-55. Restaurantes (11.1) con los bienes del mismo período y región (D-36: el mejor indicador;
+    mejora del 61% fuera de muestra). `bienes`: los índices de un primer cálculo sin servicios."""
+    t = bienes.filter(pl.col("codigo") == "TOTAL", pl.col("region").is_in(REGIONES), pl.col("var_pct").is_not_null())
+    if t.is_empty():
+        return _vacio()
+    return t.select("periodo", pl.lit(RESTAURANTES[0]).alias("codigo"), "region",
+                    (1 + pl.col("var_pct") / 100).log().alias("logrel"), pl.lit("restaurantes").alias("fuente")).cast(ESQUEMA)
+
+
 def _a_semanas(m: pl.DataFrame) -> pl.DataFrame:
     """Saltos mensuales (vigentes desde el día 1) a semanas, por devengado: nivel diario escalonado,
     promedio de los 7 días de cada semana y variación contra la semana anterior."""
@@ -131,6 +167,9 @@ def relativos(cfg: Config, frecuencia: str, fuentes: tuple[str, ...] = FUENTES) 
                 partes.append(_a_semanas(x) if frecuencia == "semanal" else x)
             elif f == "prepagas":
                 x = prepagas_mensual(cfg)
+                partes.append(_a_semanas(x) if frecuencia == "semanal" else x)
+            elif f == "educacion":
+                x = educacion_mensual(cfg)
                 partes.append(_a_semanas(x) if frecuencia == "semanal" else x)
             elif f == "alquiler_icl":
                 partes.append(alquiler_icl(cfg, frecuencia))

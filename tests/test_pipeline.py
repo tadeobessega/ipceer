@@ -296,3 +296,14 @@ def test_servicios_devengado_semanal():
     assert set(w) == {"2026-W49", "2026-W50"}
     assert abs(math.exp(w["2026-W49"]) - (1 + 0.1 * 6 / 7)) < 1e-9
     assert abs(math.exp(sum(w.values())) - 1.1) < 1e-9
+
+
+def test_restaurantes_con_bienes():
+    """D-55: restaurantes toma la variación de los bienes del mismo período y región."""
+    import math
+    import polars as pl
+    from ipceer import servicios
+    b = pl.DataFrame({"periodo": ["2026-W47"] * 3, "codigo": ["TOTAL", "TOTAL", "01"], "region": ["GBA", "Nacional", "GBA"],
+                      "var_pct": [0.5, 0.4, 0.3]})
+    r = servicios.restaurantes(b)
+    assert r.height == 1 and r["codigo"][0] == "11.1" and abs(math.exp(r["logrel"][0]) - 1.005) < 1e-12

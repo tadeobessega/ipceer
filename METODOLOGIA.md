@@ -33,7 +33,7 @@ Se publican tres números (D-16):
 | IPC por región, división, grupo y clase; CBA y CBT | INDEC | Ponderadores actualizados, validación, empalme | PC |
 | Ponderadores de la canasta | INDEC, Metodología n° 32 (2019), Cuadros 6 y 7 | Agregación | PC (`scripts/extraer_ponderadores.py`) |
 | Combustibles por estación (precio y volumen) | Secretaría de Energía (Res. 1104/2004) | Clase 07.2.2 y variante "completo" | PC |
-| Tarifas reguladas (Edenor, Metrogas, AySA) | Cuadros tarifarios y normas, cargados a mano con fuente (`config/regulados/tarifas.csv`) | Canasta de servicios y variante "completo" | Carga manual |
+| Tarifas reguladas (Edenor, Metrogas, AySA) | Cuadros tarifarios y normas, cargados a mano con fuente (`config/regulados/tarifas.csv`) | Índice publicado desde el 15/11/2026 (D-53) | Carga manual |
 | Canasta de servicios del AMBA | IIEP (UBA-CONICET), AFISPOP (`config/regulados/afispop.csv`) | Referencia y empalme | Carga manual |
 | Hacienda en pie | Mercado Agroganadero de Cañuelas | Referencia mayorista, no entra al índice | GitHub Actions (`otras_fuentes.yml`); la PC trae el resultado (D-33) |
 | Frutas y hortalizas | Mercado Central de Buenos Aires | Referencia mayorista, no entra al índice | GitHub Actions; la PC trae el resultado |
@@ -303,8 +303,8 @@ el total no se presenta como nivel general.
   descartan). Se bajan las 13 entidades más grandes (`config/regulados/prepagas.yaml`), de a 50
   filas por pedido (con más, el servidor corta), hasta 3 meses por corrida, siempre los dos últimos
   de nuevo porque se pueden corregir. Va a la clase 06.4.1 en todas las regiones, en la variante
-  "completo" de la carrera. No entra al índice publicado hasta compararla con el INDEC (la serie
-  06.4.1 de GBA existe desde 2017, así que hay 14 meses para probar).
+  "completo" de la carrera. Desde el 15/11/2026 entra al índice publicado (D-53, decisión de Tadeo);
+  la comparación con la serie 06.4.1 de GBA del INDEC sigue pendiente.
 - **Farmacias.** Farmacity, Farmaonline, Farmaplus y Farmacias del Pueblo ya se bajan todos los días
   con las tiendas en línea (unos 58.000 productos el 12/11/2026) y se clasifican en 06.1.1, 06.1.2 y
   06.1.3. Entran en las variantes "web" y "completo"; necesitan historia para probarse.
@@ -577,30 +577,79 @@ el total no se presenta como nivel general.
   tiendas en línea, al lado del oficial y del INDEC (`resultados/alimentos_web.json`). El índice
   publicado no cambia. Primera variación semanal comparable: semana 47; primer mes contra el INDEC:
   diciembre.
+- **D-55 (16/11/2026). Educación y restaurantes entran al índice con un modelo.** Decisión de Tadeo.
+  Son rubros sin precios propios que se estiman con el mejor indicador de D-36 y entran al índice
+  publicado como "estimados con un modelo" (amarillo en la torta de la canasta):
+  - **Restaurantes y comidas fuera del hogar (11.1, 8,6% de la canasta):** la variación de los bienes
+    que medimos en el mismo período y región (primero se calcula el índice de bienes solo y con él se
+    imputa 11.1). En D-36 los bienes del mismo mes mejoran 61% el error fuera de muestra (correlación
+    reciente 0,62); en D-47, RMSE 1,35 pp por mes contra 1,29 del nivel general, que no se conoce a
+    tiempo.
+  - **Educación (10.1, 10.2, 10.3 y 10.5; 2,3%):** la variación del INDEC del mismo mes del año
+    anterior, por región, porque las cuotas suben en los mismos meses (marzo, julio). En semanal, por
+    devengado desde el día 1 (D-53). Es el mejor indicador disponible pero débil: RMSE 6,84 pp contra
+    7,25 de imputar bienes, sin diferencia significativa (p = 0,80). Hay que reemplazarlo por cuotas
+    relevadas (aranceles autorizados de colegios con subsidio estatal, que la Provincia y la Ciudad
+    publican por resolución).
+  Los dos se marcan como estimados en `config/cobertura.yaml` y se pueden apagar en
+  `indice.servicios` (fuente `educacion` y `restaurantes: true`).
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del
   INDEC en su propia carpeta (vacía) y caía a la ponderación "propia": ahora usa la carpeta común.
 
-## 6. Qué falta para el índice completo
+## 6. Qué medimos, qué estimamos y qué falta (actualizado el 16/11/2026)
 
-Peso en la canasta nacional del INDEC (divisiones de `config/ponderadores_division.csv` ponderadas por
-región) y estado:
+Peso en la canasta nacional del INDEC (clases de `config/ponderadores_clase.csv` ponderadas por
+región), según `config/cobertura.yaml`, que es la misma clasificación del gráfico de torta del tablero:
 
-| Rubro | Peso | Estado | Qué falta |
+| Estado | Bienes | Servicios | Total |
 |---|---|---|---|
-| Alimentos y bebidas no alcohólicas (01) | 27,0% | Medido con SEPA; dentro de él, carnes 8,9%, verduras 2,7% y frutas 1,3% están débiles | Comercios tradicionales (panaderías, carnicerías, verdulerías, almacenes) y frescos por kilo |
-| Bebidas alcohólicas y tabaco (02) | 3,5% | Bebidas medidas; tabaco no | Precios de cigarrillos (listas de las tabacaleras) |
-| Ropa y calzado (03) | 9,9% | Variante web, sin historia | Juntar historia y probar contra el INDEC |
-| Vivienda, agua, electricidad, gas (04) | 9,4% | Electricidad y gas (Metrogas, Naturgy BAN) leídos solos de Infoleg (D-34, D-38); agua detectada, a mano; Zonaprop Ciudad en el índice y GBA guardado (D-39) | Factura base del agua (AySA), probar alquileres de GBA, expensas (sin fuente pública) |
-| Equipamiento del hogar (05) | 6,4% | Limpieza medida; electrodomésticos en variante web | Historia web, servicio doméstico (salario por norma) |
-| Salud (06) | 8,0% | Prepagas desde la Superintendencia (D-35) y farmacias en línea, en variantes | Historia para probarlas; servicios médicos y odontológicos |
-| Transporte (07) | 11,0% | Combustibles medidos; colectivos y subte de la Ciudad leídos de su boletín; colectivos de la Provincia de sus resoluciones (D-40); guía de autos de la CCA guardada (D-41) | Meses de la Provincia sin resolución, colectivos y trenes nacionales (anexos de Infoleg), probar autos contra el INDEC |
-| Comunicación (08) | 2,8% | No medido | Planes de telefonía e internet |
-| Recreación y cultura (09) | 7,3% | Muy poco (diarios, útiles) | Servicios digitales, turismo, libros |
-| Educación (10) | 2,3% | No medido | Cuotas de colegios privados |
-| Restaurantes y hoteles (11) | 9,0% | No medido | Precios de menús (cartas en línea, delivery) |
-| Bienes y servicios varios (12) | 3,6% | Cuidado personal medido | Servicios personales (peluquería) |
+| Relevados e incluidos en el índice | 55,7% | 10,3% | 66,0% |
+| Relevados, sin incluir todavía | 6,8% | 3,4% | 10,2% |
+| Sin relevar, estimados con un modelo | | 10,9% | 10,9% |
+| Sin relevar | 0,6% | 12,2% | 12,8% |
+
+**Relevados e incluidos.**
+- Supermercados (SEPA): alimentos y bebidas, limpieza, cuidado personal, mascotas, útiles.
+- Tiendas en línea (D-52, desde la semana 47): ropa y calzado, hogar, electrodomésticos, farmacia,
+  motos y bicicletas, repuestos, teléfonos, electrónica, juguetes, deporte, libros.
+- Tarifas por norma (D-53): electricidad y gas, agua, servicio doméstico, colectivos y subte.
+- Prepagas (D-53): cuotas de la Superintendencia de Servicios de Salud.
+
+**Relevados, sin incluir todavía.**
+- Combustibles (07.2.2, 4,2%): precios por estación de la Secretaría de Energía; está en la variante
+  "completo". Falta probarlo contra el INDEC y decidir.
+- Alquiler (04.1.1, 3,4%): ICL y avisos de Zonaprop; falta compararlos contra el INDEC y definir
+  cómo se reparte en las semanas (D-53).
+- Autos (07.1.1, 2,6%): guía de precios de la CCA (D-41); falta probarla contra el INDEC.
+
+**Estimados con un modelo (D-55).** Restaurantes (11.1, 8,6%) con los bienes del mismo período;
+educación (10, 2,3%) con el INDEC del mismo mes del año anterior.
+
+**Sin relevar (12,8%), de mayor a menor peso.** Servicios culturales (2,3%; cine, teatro,
+streaming), telefonía móvil (1,4%), expensas (1,2%; sin fuente pública), servicios médicos (0,9%),
+peluquería (0,7%), internet (0,7%), servicios recreativos y deportivos (0,6%; gimnasios, clubes),
+reparación de la vivienda (0,6%), telefonía fija (0,6%), diarios y revistas (0,5%), paquetes
+turísticos (0,5%), odontología (0,5%), otros servicios del auto (0,4%; estacionamiento, peajes),
+hoteles (0,4%), seguros (0,4%) y el resto con menos de 0,3% cada uno (servicios auxiliares de salud,
+tintorería, talleres mecánicos, pasajes aéreos, telas, correo). Para estos el índice reparte el peso
+entre lo medido (no imputa nada propio).
+
+**Lo que está incompleto dentro de lo incluido.**
+- Alimentos: carnes (8,9% de la canasta), verduras (2,7%) y frutas (1,3%) salen solo de
+  supermercados, donde la muestra de frescos es chica. Los frescos por kilo de la web se calculan
+  aparte (D-54); faltan comercios tradicionales (carnicerías, verdulerías, panaderías).
+- Bebidas alcohólicas y tabaco (02): el tabaco no se mide (listas de precios de las tabacaleras).
+- Tiendas en línea: sin historia hasta la semana 47; la primera validación contra el INDEC es con
+  diciembre, en enero.
+- Tarifas: electricidad y gas solo de las distribuidoras leídas (Edenor, Edesur, Metrogas, Naturgy
+  BAN), sin las cantidades por categoría (pedido a ENARGAS pendiente); agua (AySA) cargada a mano;
+  colectivos y subte solo de GBA, con meses de la Provincia sin resolución; faltan colectivos y
+  trenes nacionales.
+- Prepagas: las 13 entidades más grandes; el servidor de la Superintendencia corta seguido.
+- Semanal: los servicios suben una vez por mes, así que el nivel general semanal salta la primera
+  semana de cada mes (D-53).
 
 ## 7. Indicadores que el INDEC no mide (D-30)
 

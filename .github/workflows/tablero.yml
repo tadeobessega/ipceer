@@ -78,7 +78,10 @@ jobs:
           if [ "${{ github.event.inputs.solo_sitio }}" = "true" ] && gh release download "$TAG" -p datos_github.json -O resultados/datos.json 2>/dev/null; then
             ipceer sitio
           else
-            ipceer github --base datos_base.json
+            # diagnóstico: memoria cada minuto y, si se cuelga, la pila de Python a los 20 minutos (el
+            # proceso se corta a los 30, antes de que se caiga el runner y se pierda el log)
+            ( while true; do echo "memoria: $(free -m | awk '/Mem:/{print $3" MB usados de "$2}')"; sleep 60; done ) &
+            IPCEER_TRAZA=1200 timeout 1800 ipceer github --base datos_base.json
           fi
       - name: Guardar en el release
         run: |

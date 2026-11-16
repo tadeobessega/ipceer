@@ -549,6 +549,10 @@ def cmd_validar(cfg, args):
 
 
 def main(argv=None):
+    import os
+    if os.environ.get("IPCEER_TRAZA"):  # diagnóstico: pila de todos los hilos si el proceso se cuelga
+        import faulthandler
+        faulthandler.dump_traceback_later(int(os.environ["IPCEER_TRAZA"]), repeat=True)
     p = argparse.ArgumentParser(prog="ipceer", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--raiz", help="raíz del repo (por defecto, el directorio actual)")
     p.add_argument("-v", "--verbose", action="store_true")

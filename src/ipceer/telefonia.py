@@ -99,14 +99,20 @@ def _norm(s: str) -> str:
 
 
 def _clase(pagina_clase: str, ctx: str) -> str | None:
-    if pagina_clase != "hogar":
-        return pagina_clase
+    """Por el contexto de la tarjeta, en cualquier página (las de móvil también publicitan fibra y TV):
+    megas o fibra -> internet; TV sola -> afuera; línea fija sola -> fija; si no, la clase de la página."""
     c = _norm(ctx)
-    if re.search(r"\b(mb|megas?|fibra|wifi|internet)\b", c):
+    if re.search(r"\b(\d+ ?mb|megas?|fibra)\b", c):
         return "08.3.3"
+    if re.search(r"\b(tv|television|flow|disney|hbo|netflix)\b", c):
+        return None
     if re.search(r"\b(telefonia fija|linea fija|telefono fijo)\b", c):
         return "08.3.1"
-    return None  # TV u otros: no es una clase de comunicaciones
+    return None if pagina_clase == "hogar" else pagina_clase
+
+# líneas que no son el precio de un plan: legales, beneficios, regalos, montos de recarga sueltos
+RUIDO = re.compile(r"(legal|beneficio|regalo|gana|recomenda|credito|cashback|reintegro|si cargas|desafio|"
+                   r"vigente (del|desde)|alcance nacional|oferta|promocion|sorteo|bases y condiciones|cuotas sin interes)")
 
 
 def precios(lineas: list[str], ventana: int = 6) -> list[dict]:
@@ -117,6 +123,9 @@ def precios(lineas: list[str], ventana: int = 6) -> list[dict]:
     for i, l in enumerate(lineas):
         ms = list(PRECIO.finditer(l))
         if not ms:
+            continue
+        if len(l) > 140 or RUIDO.search(_norm(l)):
+            ultimo = i
             continue
         previas = lineas[max(ultimo + 1, i - ventana):i]
         if previas:  # precios seguidos (tachado y vigente) comparten la tarjeta

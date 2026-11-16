@@ -32,16 +32,21 @@ jobs:
           ref: datos-base
           path: base
       - name: Recuperar lo ya bajado
+        id: recuperar
         run: |
           mkdir -p data
           # sin el archivo anterior se subiría uno sin historia: si está en el release, se baja sí o sí
           activos=""
           for i in 1 2 3 4 5 6; do activos=$(gh release view "$TAG" --json assets -q '.assets[].name') && [ -n "$activos" ] && break; sleep $((i*20)); done
           [ -n "$activos" ] || { echo "::error::no se pudo leer el release"; exit 1; }
-          if grep -qx otras.tar.gz <<<"$activos"; then
+          estado=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/$TAG" -q '.assets[]|select(.name=="otras.tar.gz")|.state' 2>/dev/null || true)
+          if [ "$estado" = "uploaded" ]; then
             ok=""; for i in 1 2 3 4 5 6; do gh release download "$TAG" -p otras.tar.gz -O otras.tar.gz --clobber && ok=1 && break; sleep $((i*20)); done
             [ -n "$ok" ] || { echo "::error::no se pudo bajar otras.tar.gz"; exit 1; }
             tar -xzf otras.tar.gz -C data
+            cp otras.tar.gz otras_prev.tar.gz   # copia de lo anterior, por si la subida nueva sale mal
+          elif [ -n "$estado" ]; then
+            echo "::warning::otras.tar.gz quedó a medio subir (estado $estado): se arma de nuevo con lo de datos-base"
           fi
           # lo que bajó la PC y GitHub no tiene (ej. meses viejos de prepagas)
           if [ -d base/otras ]; then mkdir -p data/otras; cp -rn base/otras/. data/otras/; fi
@@ -73,11 +78,15 @@ jobs:
           json.dump(muestra, open("muestra_mcba.json", "w"), ensure_ascii=False)
           PY
       - name: Guardar en el release
-        if: always()
+        # solo si se recuperó lo anterior: si no, se subiría un archivo sin historia
+        if: always() && steps.recuperar.outcome == 'success'
         run: |
           tar -czf otras.tar.gz -C data otras
           ls -la otras.tar.gz
+          subir() { for i in 1 2 3 4; do gh release upload "$TAG" "$1" --clobber && return 0; sleep $((i*15)); done; echo "::error::no se pudo subir $1"; return 1; }
+          if [ -f otras_prev.tar.gz ]; then subir otras_prev.tar.gz || true; fi
+          subir otras.tar.gz
           cp resultados/otras_fuentes.json otras_fuentes_github.json 2>/dev/null || echo '{"incompleta": true}' > otras_fuentes_github.json
-          touch muestra_mcba.json
-          gh release upload "$TAG" otras.tar.gz otras_fuentes_github.json muestra_mcba.json --clobber
-          if [ -f muestra_mcba.bin ]; then gh release upload "$TAG" muestra_mcba.bin --clobber; fi
+          subir otras_fuentes_github.json
+          if [ -s muestra_mcba.json ]; then subir muestra_mcba.json || true; fi
+          if [ -s muestra_mcba.bin ]; then subir muestra_mcba.bin || true; fi

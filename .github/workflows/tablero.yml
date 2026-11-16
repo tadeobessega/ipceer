@@ -81,7 +81,8 @@ jobs:
             # diagnóstico: memoria cada minuto y, si se cuelga, la pila de Python a los 20 minutos (el
             # proceso se corta a los 30, antes de que se caiga el runner y se pierda el log)
             ( while true; do echo "memoria: $(free -m | awk '/Mem:/{print $3" MB usados de "$2}')"; sleep 60; done ) &
-            IPCEER_TRAZA=1200 timeout 1800 ipceer github --base datos_base.json
+            # con 4 hilos el cálculo mensual llegó a 13,8 GB de 16; con 2 baja el pico
+            POLARS_MAX_THREADS=2 IPCEER_TRAZA=1200 timeout 1800 ipceer github --base datos_base.json
           fi
       - name: Guardar en el release
         run: |

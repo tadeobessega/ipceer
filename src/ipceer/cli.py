@@ -398,6 +398,16 @@ def cmd_diario(cfg, args):
 DE_LA_PC = ("validacion", "carrera", "carrera_historico", "variantes", "pronosticos", "combustibles")
 
 
+def cmd_telefonia(cfg, args):
+    """Relevamiento diario de planes de telefonía e internet (D-57)."""
+    from . import telefonia
+    df = telefonia.relevar(cfg)
+    if not df.is_empty():
+        with pl.Config(tbl_rows=200, fmt_str_lengths=90, tbl_width_chars=250):
+            print(df.select("empresa", "clase", "precio", "antes", "sin_impuestos", "promo", "contexto", "linea"))
+    print(json.dumps(telefonia.resumen(cfg), ensure_ascii=False, indent=1))
+
+
 def cmd_github(cfg, args):
     """Tablero calculado en GitHub, sin la PC (decisión D-49).
 
@@ -536,6 +546,7 @@ def main(argv=None):
     sub.add_parser("combustibles", help="baja y procesa los precios de combustibles de Energía").set_defaults(
         fn=lambda cfg, args: combustibles.actualizar(cfg))
     sub.add_parser("cadenas", help="nombres de las cadenas desde los últimos zips").set_defaults(fn=cmd_cadenas)
+    sub.add_parser("telefonia", help="planes de telefonía e internet de los sitios de las empresas (D-57)").set_defaults(fn=cmd_telefonia)
     g = sub.add_parser("github", help="calcula el tablero en GitHub, sin la PC (D-49)")
     g.add_argument("--base", default="", help="último datos.json de la PC (partes que GitHub no recalcula)")
     g.set_defaults(fn=cmd_github)

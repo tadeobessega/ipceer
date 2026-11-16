@@ -307,3 +307,14 @@ def test_restaurantes_con_bienes():
                       "var_pct": [0.5, 0.4, 0.3]})
     r = servicios.restaurantes(b)
     assert r.height == 1 and r["codigo"][0] == "11.1" and abs(math.exp(r["logrel"][0]) - 1.005) < 1e-12
+
+
+def test_telefonia_parser():
+    """D-57: precio de lista (tachado), promo y sin impuestos con su tarjeta."""
+    from ipceer import telefonia as t
+    html = ('<div><h3>Plan 10 GB</h3><s>$ 46.590</s><span>$ 32.613</span><small>Precio sin impuestos: $ 26.952</small></div>'
+            '<div><h3>Fibra 600 megas</h3><del>$83.898</del> $22.000</div>')
+    p = t.precios(t.texto(html))
+    assert [(x["precio"], x["antes"], x["sin_impuestos"]) for x in p] == [
+        (46590, True, False), (32613, False, False), (26952, False, True), (83898, True, False), (22000, False, False)]
+    assert p[3]["contexto"] == "Fibra 600 megas" and t._clase("hogar", p[3]["contexto"]) == "08.3.3"

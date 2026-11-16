@@ -196,6 +196,9 @@ def relativos(cfg: Config, frecuencia: str, fuentes: tuple[str, ...] = FUENTES) 
                 partes.append(_a_semanas(x) if frecuencia == "semanal" else x)
             elif f == "alquiler_icl":
                 partes.append(alquiler_icl(cfg, frecuencia))
+            elif f == "telefonia":
+                from . import telefonia
+                partes.append(telefonia.relativos(cfg, frecuencia))
             elif f == "combustibles":
                 if frecuencia == "mensual":
                     partes.append(combustibles_mensual(cfg))

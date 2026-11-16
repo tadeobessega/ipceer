@@ -1,0 +1,46 @@
+name: Telefonía
+
+# D-57: planes de telefonía e internet de Claro, Movistar y Personal, una vez por día. Guarda el HTML
+# y la tabla de precios en el release (telefonia.tar.gz), acumulando los días.
+on:
+  schedule:
+    - cron: "17 13 * * *"   # 10:17 de Argentina
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: telefonia
+  cancel-in-progress: false
+
+jobs:
+  relevar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: sepa-archivo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Recuperar lo ya relevado
+        run: |
+          mkdir -p data/otras
+          activos=""
+          for i in 1 2 3 4 5 6; do activos=$(gh release view "$TAG" --json assets -q '.assets[].name') && [ -n "$activos" ] && break; sleep $((i*20)); done
+          [ -n "$activos" ] || { echo "::error::no se pudo leer el release"; exit 1; }
+          if grep -qx telefonia.tar.gz <<<"$activos"; then
+            ok=""; for i in 1 2 3 4 5 6; do gh release download "$TAG" -p telefonia.tar.gz -O telefonia.tar.gz --clobber && ok=1 && break; sleep $((i*20)); done
+            [ -n "$ok" ] || { echo "::error::no se pudo bajar telefonia.tar.gz"; exit 1; }
+            tar -xzf telefonia.tar.gz -C data/otras
+          fi
+      - name: Relevar
+        run: ipceer telefonia
+      - name: Guardar
+        run: |
+          tar -czf telefonia.tar.gz -C data/otras telefonia
+          gh release upload "$TAG" telefonia.tar.gz --clobber

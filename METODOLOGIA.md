@@ -606,6 +606,20 @@ el total no se presenta como nivel general.
     `vintages.csv` como revisión) y el semanal no los incluye. Falta una fuente semanal (listas de
     precios de las petroleras).
   - GitHub no tiene el panel de Energía: toma el índice 07.2.2 del último `datos.json` de la PC.
+- **D-57 (16/11/2026). Planes de telefonía e internet.** Pedido de Tadeo. Todos los días a las
+  10:17 un workflow de GitHub (`telefonia.yml`, `ipceer telefonia`) lee las páginas públicas de
+  planes de Claro, Movistar y Personal (respeta robots.txt, 3 s entre pedidos, nada que pida cuenta),
+  guarda el HTML y una tabla con cada precio y el texto de su tarjeta (`telefonia.tar.gz` del
+  release). Precio: el final con impuestos de lista (el tachado, o el mayor de los dos si hay lista y
+  promoción); se descartan los "sin impuestos", legales, beneficios y regalos. La clase sale del
+  texto de la tarjeta: megas o fibra -> internet (08.3.3); el resto de las páginas de celulares ->
+  móvil (08.3.2); TV, afuera. Índice: mismo plan entre períodos (promedio del período), Jevons por
+  empresa (con al menos 2 planes) y promedio de empresas, igual en todas las regiones (los planes
+  son nacionales). El primer día (16/11) relevó unos 40 precios útiles: packs y planes de Movistar y
+  Claro, fibra de Claro, Movistar y Personal. Entra al índice solo, con el segundo período (semana
+  47 y diciembre). Pendiente: telefonía fija sola (08.3.1, ninguna empresa la publica aparte de los
+  combos), los planes con factura de Personal (la página no responde) y las páginas que se arman con
+  JavaScript (prepago e internet de Movistar).
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del
@@ -638,9 +652,12 @@ región), según `config/cobertura.yaml`, que es la misma clasificación del gr�
 **Estimados con un modelo (D-55).** Restaurantes (11.1, 8,6%) con los bienes del mismo período;
 educación (10, 2,3%) con el INDEC del mismo mes del año anterior.
 
-**Sin relevar (12,8%), de mayor a menor peso.** Servicios culturales (2,3%; cine, teatro,
-streaming), telefonía móvil (1,4%), expensas (1,2%; sin fuente pública), servicios médicos (0,9%),
-peluquería (0,7%), internet (0,7%), servicios recreativos y deportivos (0,6%; gimnasios, clubes),
+**Relevándose desde el 16/11/2026 (D-57).** Telefonía móvil (1,4%) e internet (0,7%): entran con el
+segundo período.
+
+**Sin relevar, de mayor a menor peso.** Servicios culturales (2,3%; cine, teatro,
+streaming), expensas (1,2%; sin fuente pública), servicios médicos (0,9%),
+peluquería (0,7%), servicios recreativos y deportivos (0,6%; gimnasios, clubes),
 reparación de la vivienda (0,6%), telefonía fija (0,6%), diarios y revistas (0,5%), paquetes
 turísticos (0,5%), odontología (0,5%), otros servicios del auto (0,4%; estacionamiento, peajes),
 hoteles (0,4%), seguros (0,4%) y el resto con menos de 0,3% cada uno (servicios auxiliares de salud,

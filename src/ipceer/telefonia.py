@@ -8,7 +8,7 @@ GB, megas) que lo identifica de un día a otro.
 
 Precio: el final con impuestos que paga un cliente que ya tiene el plan. Cuando la tarjeta muestra
 un precio tachado ("antes") y uno de promoción, se usa el de lista; los precios "sin impuestos" se
-descartan. El índice compara el mismo plan (misma empresa, página y contexto) entre períodos, Jevons
+descartan; si la tarjeta muestra dos precios sin tachar (lista y promoción), el mayor. El índice compara el mismo plan (misma empresa, página y contexto) entre períodos, Jevons
 por empresa y clase, y promedia las empresas.
 """
 from __future__ import annotations
@@ -205,6 +205,8 @@ def _vigentes(cfg: Config) -> pl.DataFrame:
         pl.col("precio").filter(~pl.col("antes")).alias("otros"))
     g = g.with_columns(pl.when(pl.col("lista").is_not_null()).then(pl.col("lista"))
                        .when(pl.col("otros").list.len() == 1).then(pl.col("otros").list.first())
+                       # dos precios sin tachado: lista y promoción ("72% OFF por 6 meses"); el de lista es el mayor
+                       .when(pl.col("otros").list.len() == 2).then(pl.col("otros").list.max())
                        .otherwise(None).alias("precio")).drop_nulls("precio")
     return g.select("fecha", "empresa", "clase", "clave", "precio").with_columns(pl.col("fecha").str.to_date())
 
@@ -229,7 +231,7 @@ def relativos(cfg: Config, frecuencia: str) -> pl.DataFrame:
             continue
         e = x.with_columns((pl.col("lp_b") - pl.col("lp")).alias("lr")).filter(pl.col("lr").abs() < math.log(2)) \
              .group_by("clase", "empresa").agg(pl.col("lr").mean(), pl.len().alias("n")) \
-             .filter(pl.col("n") >= 3).group_by("clase").agg(pl.col("lr").mean())  # al menos 3 planes por empresa
+             .filter(pl.col("n") >= 2).group_by("clase").agg(pl.col("lr").mean())  # al menos 2 planes por empresa
         for clase, lr in e.iter_rows():
             filas += [{"periodo": b, "codigo": clase, "region": r, "logrel": lr, "fuente": "telefonia"} for r in REGIONES]
     return pl.DataFrame(filas, schema=esquema) if filas else pl.DataFrame(schema=esquema)

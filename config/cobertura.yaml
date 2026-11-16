@@ -38,6 +38,9 @@ relevado:          # se releva todos los días, pero todavía no entra al índic
   - "07.3.1"
 estimado:          # no se releva el precio: se estima con un indicador (alquiler: ICL o avisos de Zonaprop)
   - "04.1.1"
+  # D-55: modelos con salarios de convenio, alimentos y el nivel general propio (desde 2026-11)
+  - "10"
+  - "11.1"
 # servicios (el resto son bienes). Electricidad, gas y agua se cuentan como servicios públicos.
 servicios:
   - "03.1.4"

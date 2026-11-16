@@ -208,20 +208,64 @@ def _alimentos_web(cfg, res: dict) -> None:
     (cfg.ruta("resultados") / "alimentos_web.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def _extras_con_modelos(cfg, kw: dict, ext: dict) -> tuple[dict, dict]:
+    """D-55: primer cálculo (tramo actual) sin los rubros modelados; de ahí salen alimentos y el
+    nivel general sin esos rubros, que alimentan los modelos de restaurantes y educación. Devuelve
+    los extras de cada frecuencia con las variaciones modeladas sumadas y el detalle para el tablero."""
+    from . import modelos
+    base = {}
+    for f in ("mensual", "semanal"):
+        try:
+            base[f] = indice.calcular(cfg, f, extra=ext.get(f), solo_tramo_actual=True, **kw)["indices"]
+        except (ValueError, FileNotFoundError) as e:
+            log.warning("Modelos, cálculo base %s: %s", f, e)
+    if "mensual" not in base:
+        return ext, {}
+    mens, info = modelos.mensual(cfg, base["mensual"])
+    nuevos = {"mensual": mens}
+    if "semanal" in base:
+        nuevos["semanal"] = modelos.semanal(cfg, base["semanal"], mens)
+    out = dict(ext)
+    for f, x in nuevos.items():
+        if x.is_empty():
+            continue
+        e = out.get(f)
+        x = x.select(e.columns) if e is not None and not e.is_empty() else x
+        out[f] = x if e is None or e.is_empty() else pl.concat([e, x], how="vertical_relaxed")
+        log.info("Modelos (%s): %s", f, dict(x.group_by("fuente").agg(pl.col("periodo").max()).iter_rows()))
+    return out, info
+
+
 def cmd_calcular(cfg, args):
     res = {}
+    ic = cfg["indice"] or {}
+    iw = ic.get("web") or {}  # D-52: tiendas en línea en el índice publicado
+    isv = ic.get("servicios") or {}  # D-53: tarifas, alquiler (ICL) y prepagas
+    kw = dict(web=bool(iw.get("usar")), web_excluir=tuple(iw.get("excluir_divisiones") or ()))
+    ext = {}
     for f in ("semanal", "mensual"):
         try:
-            iw = (cfg["indice"] or {}).get("web") or {}  # D-52: tiendas en línea en el índice publicado
-            isv = (cfg["indice"] or {}).get("servicios") or {}  # D-53: tarifas, alquiler (ICL) y prepagas
-            ext = servicios.relativos(cfg, f, tuple(isv.get("fuentes") or servicios.FUENTES)) if isv.get("usar") else None
-            r = indice.calcular(cfg, f, web=bool(iw.get("usar")), web_excluir=tuple(iw.get("excluir_divisiones") or ()),
-                                extra=ext)
+            ext[f] = servicios.relativos(cfg, f, tuple(isv.get("fuentes") or servicios.FUENTES)) if isv.get("usar") else None
+        except Exception as e:
+            log.warning("Servicios %s: %s", f, e)
+            ext[f] = None
+    info_modelos = {}
+    if (ic.get("modelos") or {}).get("usar"):  # D-55: restaurantes y educación con modelo
+        try:
+            ext, info_modelos = _extras_con_modelos(cfg, kw, ext)
+        except Exception as e:
+            log.warning("Modelos de restaurantes y educación: %s", e)
+    for f in ("semanal", "mensual"):
+        try:
+            r = indice.calcular(cfg, f, extra=ext.get(f), **kw)
         except (ValueError, FileNotFoundError) as e:
             log.warning("Índice %s: %s", f, e)
             continue
         indice.guardar(r, cfg, f)
         res[f] = r
+    if info_modelos:
+        (cfg.ruta("resultados") / "modelos.json").write_text(
+            json.dumps(info_modelos, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     if not res:
         return
     try:
@@ -320,6 +364,8 @@ def cmd_calcular(cfg, args):
     except Exception as e:
         log.warning("Carrera de métodos: %s", e)
     _datos_fuentes(cfg, datos)
+    if info_modelos:
+        datos["modelos"] = resumen._limpio(info_modelos)
     try:
         datos["municipios"] = resumen._limpio(municipios.calcular(cfg))
     except Exception as e:

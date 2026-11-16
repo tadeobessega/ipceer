@@ -61,6 +61,20 @@ indice:
   servicios:
     usar: true
     fuentes: [tarifas, prepagas]
+  # D-55: rubros sin precios propios que entran con un modelo, desde noviembre de 2026. Coeficientes
+  # congelados (estimados con el IPC del INDEC de GBA, 2017-02 a 2026-08; se revisan solo con meses
+  # nuevos del INDEC, ver METODOLOGIA.md). Salarios: github.com/marcos-sacca/salarios.
+  modelos:
+    usar: true
+    desde_mes: "2026-11"
+    salarios_max_horas: 12
+    restaurantes:     # 11.1, en %: alimentos (01.1) y nivel general sin los rubros modelados, del mes
+      con_salario: {alim: 0.2183, ngex: 0.5649, salario: 0.2169}   # salario: gastronómicos, prom. t-7 a t-2
+      sin_salario: {alim: 0.1072, ngex: 0.8928}
+    educacion:        # 10.1, 10.2, 10.3 y 10.5
+      con_paritarias: {const: 1.5870, ngex: 0.2098, ene: -2.7595, dic: -1.5547, paritarias_t1: 0.2889}
+      sin_paritarias: {const: 2.0137, ngex: 0.4034, ene: -3.3851, dic: -1.8745}
+      marzo: {const: 0.0799, ng12: 0.4732, educ_abr_feb: -0.4052}   # en logaritmos
   # Precio que se usa: "lista" (precio de góndola sin promociones) o
   # "efectivo" (el menor entre lista y promo 1 unitaria).
   precio: lista

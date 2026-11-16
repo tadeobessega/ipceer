@@ -296,3 +296,37 @@ def test_servicios_devengado_semanal():
     assert set(w) == {"2026-W49", "2026-W50"}
     assert abs(math.exp(w["2026-W49"]) - (1 + 0.1 * 6 / 7)) < 1e-9
     assert abs(math.exp(sum(w.values())) - 1.1) < 1e-9
+
+
+def test_modelos_en_el_indice(cfg, monkeypatch):
+    """D-55: restaurantes y educación entran al nivel general con el modelo, con los insumos propios."""
+    from ipceer import cli, modelos
+    monkeypatch.setitem(cfg["indice"], "modelos", {**cfg["indice"]["modelos"], "desde_mes": "2026-09"})
+    monkeypatch.setattr(modelos, "salarios", lambda c: {"gastro": {f"2026-{m:02d}": 3.0 for m in range(1, 11)},
+                                                        "paritarias": {f"2026-{m:02d}": 2.0 for m in range(1, 11)}})
+    monkeypatch.setattr(modelos, "_indec", lambda c: {})
+    rp = cfg.dir_config / "ponderadores_clase.csv"
+    orig = rp.read_text(encoding="utf-8")
+    rp.write_text(orig + "".join(f'{c},"{n}",{w},{w},{w},{w},{w},{w}\n' for c, n, w in [
+        ("11.1", "Restaurantes y comidas fuera del hogar", 9.0), ("10.1", "Educación primaria", 1.0),
+        ("10.2", "Educación secundaria", 0.5), ("10.3", "Postsecundaria", 0.5), ("10.5", "Otra", 0.5)]), encoding="utf-8")
+    try:
+        _modelos_en_el_indice(cfg)
+    finally:
+        rp.write_text(orig, encoding="utf-8")
+
+
+def _modelos_en_el_indice(cfg):
+    from ipceer import cli
+    ext, info = cli._extras_con_modelos(cfg, {}, {"mensual": None, "semanal": None})
+    m = ext["mensual"]
+    assert set(m["codigo"]) == {"11.1", "10.1", "10.2", "10.3", "10.5"} and set(m["periodo"]) == {"2026-09", "2026-10"}
+    base = indice.calcular(cfg, "mensual")["indices"]
+    con = indice.calcular(cfg, "mensual", extra=m)["indices"]
+    g = lambda d, c: d.filter((pl.col("region") == "GBA") & (pl.col("codigo") == c) & (pl.col("periodo") == "2026-10"))["var_pct"]
+    ng, al = g(base, "TOTAL")[0], g(base, "01.1")[0]
+    w = cfg["indice"]["modelos"]["restaurantes"]["con_salario"]
+    assert g(con, "11.1")[0] == pytest.approx(w["alim"] * al + w["ngex"] * ng + w["salario"] * 3.0, abs=1e-3)
+    assert len(g(con, "10")) == 1 and g(con, "TOTAL")[0] != pytest.approx(ng)
+    assert not ext["semanal"].filter(pl.col("codigo") == "11.1").is_empty()
+    assert info["detalle"]

@@ -16,6 +16,7 @@ Comandos:
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 from datetime import date
 import logging
@@ -177,6 +178,16 @@ def _datos_fuentes(cfg, datos: dict) -> None:
         log.warning("Series del INDEC para el empalme: %s", e)
 
 
+def cmd_alimentos_web(cfg, args):
+    """D-54 en un proceso aparte: el oficial sale de los índices ya guardados."""
+    res = {}
+    for f in ("semanal", "mensual"):
+        r = cfg.ruta("resultados") / f"indices_{f}.csv"
+        if r.exists():
+            res[f] = {"indices": pl.read_csv(r, schema_overrides={"codigo": pl.Utf8, "periodo": pl.Utf8}, infer_schema_length=None)}
+    _alimentos_web(cfg, res)
+
+
 def _alimentos_web(cfg, res: dict) -> None:
     """Alternativa (no publicada): alimentos y bebidas (división 01) sumando los precios web (frescos
     por kilo de las tiendas en línea), al lado del oficial y del INDEC. resultados/alimentos_web.json."""
@@ -219,6 +230,8 @@ def cmd_calcular(cfg, args):
             if isv.get("restaurantes"):  # D-55: primero los bienes solos, para imputar restaurantes con ellos
                 b = indice.calcular(cfg, f, **kw)["indices"]
                 rr = servicios.restaurantes(b)
+                del b
+                gc.collect()
                 ext = rr if ext is None or ext.is_empty() else pl.concat([ext, rr])
             r = indice.calcular(cfg, f, **kw, extra=ext)
         except (ValueError, FileNotFoundError) as e:
@@ -228,8 +241,11 @@ def cmd_calcular(cfg, args):
         res[f] = r
     if not res:
         return
+    # D-54: la alternativa de alimentos con web corre en otro proceso, para no sumar su memoria a la
+    # del cálculo principal (el runner de GitHub se quedaba sin memoria y se cortaba sin log)
     try:
-        _alimentos_web(cfg, res)
+        import subprocess
+        subprocess.run([sys.executable, "-m", "ipceer.cli", "alimentos-web"], check=False, timeout=1800)
     except Exception as e:
         log.warning("Alimentos con web (alternativa): %s", e)
     val, cba_m = {}, None
@@ -546,6 +562,7 @@ def main(argv=None):
     sub.add_parser("combustibles", help="baja y procesa los precios de combustibles de Energía").set_defaults(
         fn=lambda cfg, args: combustibles.actualizar(cfg))
     sub.add_parser("cadenas", help="nombres de las cadenas desde los últimos zips").set_defaults(fn=cmd_cadenas)
+    sub.add_parser("alimentos-web", help="alternativa de alimentos con los precios web (D-54)").set_defaults(fn=cmd_alimentos_web)
     sub.add_parser("telefonia", help="planes de telefonía e internet de los sitios de las empresas (D-57)").set_defaults(fn=cmd_telefonia)
     g = sub.add_parser("github", help="calcula el tablero en GitHub, sin la PC (D-49)")
     g.add_argument("--base", default="", help="último datos.json de la PC (partes que GitHub no recalcula)")

@@ -24,6 +24,8 @@ function Log($m) { "$(Get-Date -Format s) $m" | Out-File -Append -Encoding utf8 
 function AlLog { process { "$_" | Out-File -Append -Encoding utf8 $Log } }
 $env:IPCEER_ARCHIVO = $Archivo
 $env:PYTHONIOENCODING = "utf-8"
+# menos hilos de Polars: el cálculo se quedaba sin memoria en la PC
+$env:POLARS_MAX_THREADS = "2"
 $Python = "$Repo\.venv\Scripts\python.exe"
 
 # --- preparación (solo la primera vez) ---

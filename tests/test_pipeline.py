@@ -318,3 +318,31 @@ def test_telefonia_parser():
     assert [(x["precio"], x["antes"], x["sin_impuestos"]) for x in p] == [
         (46590, True, False), (32613, False, False), (26952, False, True), (83898, True, False), (22000, False, False)]
     assert p[3]["contexto"] == "Fibra 600 megas" and t._clase("hogar", p[3]["contexto"]) == "08.3.3"
+
+
+def test_modelos_d62_en_el_indice(cfg, monkeypatch):
+    """D-62: restaurantes y educación entran al nivel general con los modelos, con los insumos propios."""
+    from ipceer import cli, modelos
+    monkeypatch.setitem(cfg["indice"], "modelos", {**cfg["indice"]["modelos"], "desde_mes": "2026-09"})
+    monkeypatch.setattr(modelos, "salarios", lambda c: {"gastro": {f"2026-{m:02d}": 3.0 for m in range(1, 11)},
+                                                        "paritarias": {f"2026-{m:02d}": 2.0 for m in range(1, 11)}})
+    monkeypatch.setattr(modelos, "_indec", lambda c: {})
+    rp = cfg.dir_config / "ponderadores_clase.csv"
+    orig = rp.read_text(encoding="utf-8")
+    rp.write_text(orig + "".join(f'{c},"{n}",{w},{w},{w},{w},{w},{w}\n' for c, n, w in [
+        ("11.1", "Restaurantes y comidas fuera del hogar", 9.0), ("10.1", "Educación primaria", 1.0),
+        ("10.2", "Educación secundaria", 0.5), ("10.3", "Postsecundaria", 0.5), ("10.5", "Otra", 0.5)]), encoding="utf-8")
+    try:
+        ext, info = cli._modelos_d62(cfg, {}, {"mensual": None, "semanal": None})
+        m = ext["mensual"]
+        assert set(m["codigo"]) == {"11.1", "10.1", "10.2", "10.3", "10.5"} and set(m["periodo"]) == {"2026-09", "2026-10"}
+        base = indice.calcular(cfg, "mensual")["indices"]
+        con = indice.calcular(cfg, "mensual", extra=m)["indices"]
+        g = lambda d, c: d.filter((pl.col("region") == "GBA") & (pl.col("codigo") == c) & (pl.col("periodo") == "2026-10"))["var_pct"]
+        ng, al = g(base, "TOTAL")[0], g(base, "01.1")[0]
+        w = cfg["indice"]["modelos"]["restaurantes"]["con_salario"]
+        assert g(con, "11.1")[0] == pytest.approx(w["alim"] * al + w["ngex"] * ng + w["salario"] * 3.0, abs=1e-3)
+        assert len(g(con, "10")) == 1
+        assert not ext["semanal"].filter(pl.col("codigo") == "11.1").is_empty() and info["detalle"]
+    finally:
+        rp.write_text(orig, encoding="utf-8")

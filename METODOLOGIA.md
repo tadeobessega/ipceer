@@ -578,6 +578,7 @@ el total no se presenta como nivel general.
   publicado no cambia. Primera variación semanal comparable: semana 47; primer mes contra el INDEC:
   diciembre.
 - **D-55 (16/11/2026). Educación y restaurantes entran al índice con un modelo.** Decisión de Tadeo.
+  Sus estimadores se reemplazaron el 18/11/2026 por los de D-62.
   Son rubros sin precios propios que se estiman con el mejor indicador de D-36 y entran al índice
   publicado como "estimados con un modelo" (amarillo en la torta de la canasta):
   - **Restaurantes y comidas fuera del hogar (11.1, 8,6% de la canasta):** la variación de los bienes
@@ -685,6 +686,74 @@ el total no se presenta como nivel general.
     datos estructurados (8 planes). Interesa la variación, que es la misma en todos los planes.
   - **Turismo:** Despegar rechaza a los robots y Booking prohíbe el relevamiento automático en sus
     condiciones de uso; pendiente.
+- **D-62 (18/11/2026). Restaurantes y educación con modelos propios, desde noviembre de 2026; reemplaza
+  los estimadores de D-55.** Decisión de Tadeo (son los del PR #6, del 15/11, que no se había fusionado).
+  Contra los de D-55, en los mismos meses de julio de 2024 a octubre de 2026 (GBA, RMSE en pp por mes):
+  restaurantes 0,79 contra 1,43 (bienes del mes); educación 1,50 contra 7,52 (el mismo mes del año
+  anterior). Como en D-55, son clases que no salen de precios ni de normas sino de un modelo
+  (`ipceer/modelos.py`, parámetros en `indice.modelos`; con eso activo no corren los estimadores de
+  D-55); es una excepción explícita a D-20, rotulada: cada variación lleva su fuente (`modelo_restaurantes`,
+  `modelo_educacion`, `modelo_educacion_marzo` y las variantes `_sin_salario` y
+  `_sin_paritarias`) y el detalle de cada mes queda en `resultados/modelos.json`. Cuando el INDEC
+  publica el mes, manda su dato (D-19). Servicios médicos (06.2) se probó y se descartó.
+  - **Restaurantes y comidas fuera del hogar (11.1)**, en %:
+    `0,2183 × alimentos(t) + 0,5649 × nivel general sin estos rubros(t) + 0,2169 × S(t)`, con
+    `S(t)` el promedio del aumento mensual del salario de convenio de gastronómicos (CCT 389/04, serie
+    Representativa del boletín STEySS) de t−7 a t−2: los aumentos de paritaria pasan a precios con
+    2 a 7 meses de rezago. Pesos ≥ 0 que suman 1, sin constante. Si falta el salario de algún mes,
+    `0,1072 × alimentos + 0,8928 × nivel general sin estos rubros`.
+  - **Educación (10.1, 10.2, 10.3 y 10.5)**. Marzo, en logaritmos:
+    `ln(1+v) = 0,0799 + 0,4732 × ln(1 + nivel general acumulado de marzo a febrero) − 0,4052 ×
+    ln(1 + educación acumulada de abril a febrero)`: marzo recupera la inflación del año que las
+    cuotas todavía no trasladaron. Resto de los meses (MCO): `1,587 + 0,2098 × nivel general sin
+    estos rubros(t) − 2,7595 × [enero] − 1,5547 × [diciembre] + 0,2889 × índice de paritarias(t−1)`;
+    sin paritarias, `2,0137 + 0,4034 × NG sin rubros − 3,3851 × [enero] − 1,8745 × [diciembre]`.
+    Lo acumulado de marzo usa el IPC del INDEC de la región; si falta un mes, el nivel general propio
+    y la educación del modelo; si tampoco hay, marzo queda sin dato.
+  - **Insumos.** Alimentos (grupo 01.1) y el nivel general sin estos rubros son los del propio
+    IPCEER del período: se hace un primer cálculo del tramo actual sin los modelos y su total (las
+    clases con dato, que no incluyen a estos rubros) hace de nivel general sin rubros. Salarios: el
+    repositorio público `github.com/marcos-sacca/salarios` (CEER): Excel del índice de paritarias
+    (27 convenios, boletín STEySS), acuerdos de los meses que el boletín todavía no publicó
+    (`nowcast/acuerdos_*.csv`, relevados de prensa) y el último nowcast del índice
+    (`estudio/nowcast_v*.csv`). Se baja cada 12 horas a `data/otras/salarios`; si GitHub no
+    responde, se usa la copia. El índice de paritarias del repositorio difiere hasta 4,4 puntos de
+    nivel del Excel con que se estimó (los salarios por convenio son idénticos); los coeficientes de
+    educación se reestimaron con el del repositorio.
+  - **Regiones y semanas.** Coeficientes estimados en GBA y aplicados en las seis regiones con los
+    datos propios de cada una (no se probó fuera de GBA). Semanal: restaurantes con la misma fórmula
+    sobre las variaciones semanales, con el término salarial semanalizado, `(1+S)^(7/30,44) − 1`;
+    educación por devengado del mes (como las tarifas, D-53). Una semana que tiene días de un mes sin
+    modelo queda sin dato.
+  - **Evidencia** (IPC del INDEC, GBA; cada mes estimado solo con datos anteriores; referencias:
+    nivel general t−1, el rubro t−1 y el nivel general sin rubros del mes):
+
+    | | Restaurantes | Educación |
+    |---|---|---|
+    | RMSE 2021-01 a 2026-08 | 1,26 contra 1,58 (p = 0,04) | 3,49 contra 7,24 (p = 0,02) |
+    | RMSE 2024-07 a 2026-08 | 0,74 contra 0,92 | 1,50 contra 3,19 |
+    | R² fuera de muestra 2024-07 a 2026-08 | 0,59 (referencia 0,38) | 0,80 (referencia 0,09) |
+    | MAPE / WAPE 2024-07 a 2026-08 | 21,5% / 19,0% (NG t−1: 24,2% / 22,7%) | 61% / 33% (mediana 42%; meses cerca de cero) |
+    | Marzos 2022-2026 | | error medio 4,2 pp (antes 10,2; repetir el marzo previo 14,5) |
+    | Sep-oct 2026 (no usados) | erró +0,7 y +1,3 pp | sep −0,1 pp; oct sin paritarias |
+
+  - **Qué se descartó y por qué.** Restaurantes: ~30 variantes (rezagos de alimentos, servicios y
+    núcleo, paritaria t+1, índice de salarios del INDEC, suavizados de 9 y 12 meses, estacionalidad,
+    corrección de error, ventanas móviles, ponderación exponencial) y un modelo relativo al nivel
+    general con el rubro t−1: ninguno domina en todos los períodos. Montecarlo de 10.052 pesos fijos,
+    rezagos (0 a 8) y suavizados (1 a 12 meses) desde julio de 2024: el elegido está en el 3% mejor; la
+    zona buena es 0,2 alimentos y 0,2 salario con suavizado de 6 a 12 meses y rezago de 1 a 3; las 100
+    mejores combinaciones de la primera mitad pierden en la segunda contra el nivel general sin rubros
+    (sobreajuste). Random forest, gradient boosting, ridge, lasso, elastic net y MCO con unas 50
+    variables: ninguno le gana; el lasso sin la inflación núcleo (que contiene al rubro) elige la misma
+    estructura. Educación: para marzo, paritarias e índice de salarios público acumulados, inflación
+    de enero y febrero y paritarias de febrero a abril, peores. Scripts del estudio:
+    `scripts/estudio_d55/`.
+  - **Regla de revisión.** Los coeficientes quedan congelados. Se revisan solo con meses del INDEC
+    posteriores a esta decisión (noviembre de 2026 en adelante), comparando el error contra las tres
+    referencias; un cambio de especificación se prueba en meses que no se usaron para elegirlo.
+    Pendientes: marzo y abril juntos (en 2026 parte del aumento de marzo cayó en abril), un salario
+    docente, precios de menús propios.
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del
@@ -713,8 +782,9 @@ región), según `config/cobertura.yaml`, que es la misma clasificación del gr�
 - Desde D-60, también autos (guía de la CCA), telefonía móvil, internet, TV paga, streaming, cine y
   diarios (estos desde su segundo período).
 
-**Estimados con un modelo.** Restaurantes (11.1, 8,6%) con los bienes del mismo período; educación
-(10, 2,3%) con el INDEC del mismo mes del año anterior (D-55); telefonía fija (08.3.1, 0,6%) con el
+**Estimados con un modelo.** Restaurantes (11.1, 8,6%) con alimentos, el nivel general sin estos rubros
+y el salario de convenio gastronómico; educación (10, 2,3%) con un modelo propio para marzo y, el resto
+del año, el nivel general sin estos rubros y las paritarias (D-62, desde noviembre de 2026); telefonía fija (08.3.1, 0,6%) con el
 aumento de las mismas empresas en móvil e internet (D-59).
 
 **Sin relevar, de mayor a menor peso.** Servicios culturales (2,3%; cine, teatro,

@@ -110,11 +110,40 @@ class _Texto(HTMLParser):
             self.partes.append(data.strip() + " ")
 
 
+def _ld_ofertas(html: str) -> list[str]:
+    """Ofertas de los datos estructurados (JSON-LD de schema.org) que trae la página aunque sus
+    precios se dibujen con JavaScript (impuestito.org, carteleras): un título y un precio por oferta."""
+    import json
+    out = []
+
+    def recorrer(x, nombre=""):
+        if isinstance(x, list):
+            for y in x:
+                recorrer(y, nombre)
+        elif isinstance(x, dict):
+            n = x.get("name") if isinstance(x.get("name"), str) else ""
+            if x.get("@type") in ("Offer",) and x.get("price") not in (None, ""):
+                try:
+                    v = float(str(x["price"]).replace(",", "."))
+                    out.extend([f"## {nombre} {n}".strip(), f"$ {v:.0f}"])
+                except ValueError:
+                    pass
+            for k, y in x.items():
+                if k != "name":
+                    recorrer(y, (nombre + " " + n).strip() if x.get("@type") not in ("Offer",) else nombre)
+    for m in re.finditer(r'<script[^>]*application/ld\+json[^>]*>(.*?)</script>', html, re.S | re.I):
+        try:
+            recorrer(json.loads(m.group(1)))
+        except Exception:
+            continue
+    return out
+
+
 def texto(html: str) -> list[str]:
     p = _Texto()
     p.feed(html)
     lineas = [re.sub(r"\s+", " ", x).strip() for x in "".join(p.partes).split("\n")]
-    return [x for x in lineas if x]
+    return [x for x in lineas if x] + _ld_ofertas(html)
 
 
 def _norm(s: str) -> str:
@@ -236,9 +265,12 @@ def relevar(cfg: Config, hoy: date | None = None) -> pl.DataFrame:
         if url in seguir:  # índice (cartelera, sitemap): se encolan sus páginas, a lo sumo MAX_SEGUIR
             patron, base = seguir[url], re.match(r"https?://[^/]+", url).group(0)
             enlaces = []
-            for h in re.findall(r'(?:href=["\']|^)(\S+?)(?:["\']|$)', html, flags=re.M):
+            for h in re.findall(r'(?:href=["\']|^)(\S+?)(?:["\']|\r?$)', html.replace("\r", ""), flags=re.M):
                 h = h if h.startswith("http") else base + h if h.startswith("/") else None
-                if h and re.search(patron, h) and h not in enlaces:
+                if not h:
+                    continue
+                h = h.split("#")[0]
+                if re.search(patron, h) and h.lower().rstrip("/") not in {x.lower().rstrip("/") for x in enlaces}:
                     enlaces.append(h)
             cola += [(empresa, clase, h) for h in enlaces[:MAX_SEGUIR]]
             log.info("Telefonía: %s -> %d enlaces (se siguen %d)", url, len(enlaces), min(len(enlaces), MAX_SEGUIR))

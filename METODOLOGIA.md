@@ -620,6 +620,30 @@ el total no se presenta como nivel general.
   47 y diciembre). Pendiente: telefonía fija sola (08.3.1, ninguna empresa la publica aparte de los
   combos), los planes con factura de Personal (la página no responde) y las páginas que se arman con
   JavaScript (prepago e internet de Movistar).
+- **D-58 (18/11/2026). Combustibles contra el INDEC, 2017 a 2026.** Con la serie de Energía desde
+  2004 se comparó la variación mensual de 07.2.2 contra la apertura "Combustibles y lubricantes para
+  vehículos" del INDEC en las seis regiones (117 meses). Tal cual: error medio 2,04 pp, correlación
+  0,86, dirección correcta en el 82-97% de los meses desde 2024 según la región, con un sesgo de -0,3
+  pp (medimos un poco menos). Corrida un mes, empeora (3,0 pp). Tomando el nivel del mes como la media
+  geométrica del cierre del mes y del anterior (las estaciones informan el precio vigente al cierre;
+  el INDEC promedia lo relevado en el mes), mejora: 1,96 pp en todo el período y 2,08 contra 2,34
+  desde 2024, correlación 0,88. Se adopta en el índice publicado (mejora la dispersión).
+- **D-59 (18/11/2026). TV paga, streaming, diarios y telefonía fija.** Pedido de Tadeo. El
+  relevamiento de precios publicados (D-57, `telefonia.py`) suma:
+  - **Servicios culturales (09.4.2, 2,3%):** abonos de TV de Claro, Movistar y Personal (Flow), que
+    ya estaban en las páginas de planes (antes se descartaban) y planes de Max. Netflix y Disney+ no
+    permiten robots en sus páginas de planes, así que no se leen. Faltan cine y teatro.
+  - **Diarios (09.5.2, 0,5%):** suscripciones de Clarín y El Cronista. El precio es el de lista: el
+    tachado o el que rige "luego" de la promoción. La Nación no tiene una página pública de planes
+    que responda (la de suscripción está excluida en su robots.txt).
+  - **Telefonía fija (08.3.1, 0,6%), con modelo:** ninguna empresa publica la línea fija sola; toma
+    el aumento promedio de las mismas empresas en móvil e internet, que suben todo junto. Va como
+    estimada en la torta.
+  Entran solas con el segundo período, como telefonía.
+- **Rotación en GitHub (18/11/2026).** La rotación de una semana compara el último día con el de la
+  semana anterior y necesita los paneles diarios, que GitHub guarda solo de las últimas dos semanas:
+  faltaba la semana 44 (contra el 25/10). Ahora el cálculo de GitHub completa con las semanas que
+  calculó la PC los indicadores semanales que no puede calcular.
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del

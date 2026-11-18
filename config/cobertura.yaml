@@ -41,7 +41,10 @@ relevado:          # se releva, pero todavía no entra al índice publicado
   - "07.1.1"       # autos: guía de precios de la CCA (D-41)
   - "08.3.2"       # telefonía móvil: planes de las empresas desde el 16/11/2026 (D-57)
   - "08.3.3"       # internet: ídem; entran con el segundo período
+  - "09.4.2"       # servicios culturales: TV paga y streaming desde el 18/11/2026 (D-59); faltan cine y teatro
+  - "09.5.2"       # diarios: suscripciones de Clarín y El Cronista desde el 18/11/2026 (D-59)
 estimado:          # sin precios propios: entra al índice con un modelo (D-55)
+  - "08.3.1"       # telefonía fija: el aumento de las mismas empresas en móvil e internet (D-59)
   - "10"           # educación: el INDEC del mismo mes del año anterior
   - "11.1"         # restaurantes: los bienes del mismo período
 # servicios (el resto son bienes). Electricidad, gas y agua se cuentan como servicios públicos.

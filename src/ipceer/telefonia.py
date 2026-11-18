@@ -141,7 +141,9 @@ def precios(lineas: list[str], ventana: int = 6) -> list[dict]:
             ultimo = i
             continue
         previas = lineas[max(ultimo + 1, i - ventana):i]
-        if previas:  # precios seguidos (tachado y vigente) comparten la tarjeta
+        luego = bool(re.search(r"\bluego\b", _norm(l)))
+        # "Durante 9 meses / Luego $22.400": el precio después de la promoción es de la misma tarjeta
+        if previas and not (luego and ultimo >= 0 and i - ultimo <= 3):
             ctx = " | ".join(previas[-4:])
         for m in ms:
             v = float(m.group(1).replace(".", "") + ("." + m.group(2) if m.group(2) else ""))
@@ -149,7 +151,7 @@ def precios(lineas: list[str], ventana: int = 6) -> list[dict]:
                 continue
             antes_txt = _norm(l[max(0, m.start() - 40):m.start()])
             out.append({"linea": l[:200], "contexto": ctx[:300], "precio": v,
-                        "antes": "[antes]" in antes_txt[-12:] or bool(re.search(r"\bantes\b\W*$", antes_txt)),
+                        "antes": "[antes]" in antes_txt[-12:] or bool(re.search(r"\b(antes|luego)\b\W*$", antes_txt)),
                         "sin_impuestos": bool(re.search(r"sin impuesto", antes_txt)),
                         "promo": bool(re.search(r"\b(off|descuento|promo|bonific|primer(os)? \d+ mes)", _norm(l)))})
         ultimo = i

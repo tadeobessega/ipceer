@@ -71,8 +71,10 @@ def _icl_diario(cfg: Config) -> pl.DataFrame:
 
 
 def alquiler_icl(cfg: Config, frecuencia: str) -> pl.DataFrame:
-    """D-56. 04.1.1 en todas las regiones con el ICL del BCRA: variación del promedio del mes contra
-    el del mes anterior (solo meses completos). En semanal, por devengado: los alquileres se pagan por
+    """D-56 y D-64. 04.1.1 en todas las regiones con el ICL del BCRA. D-64: promedio de las variaciones
+    mensuales del promedio del ICL de los últimos `meses` meses, con `rezago` meses de rezago
+    (`indice.servicios.alquiler_icl`; con meses 1 y rezago 0 es el de D-56: el mes contra el anterior,
+    solo meses completos). En semanal, por devengado: los alquileres se pagan por
     mes, así que el aumento del mes entra en la semana del día 1 (como tarifas y cuotas, D-53)."""
     if frecuencia == "semanal":
         return _a_semanas(_alquiler_icl(cfg, "mensual"))
@@ -117,11 +119,35 @@ def _alquiler_icl(cfg: Config, frecuencia: str) -> pl.DataFrame:
     else:  # mes completo: el último día del mes tiene dato
         g = g.filter(pl.col("fin") == pl.col("fin").dt.month_end())
     filas, prev = [], None
+    cfg_icl = ((cfg["indice"] or {}).get("servicios") or {}).get("alquiler_icl") or {}
+    k, L = int(cfg_icl.get("meses", 1)), int(cfg_icl.get("rezago", 0))
+    var = {}                      # variación mensual del promedio del ICL (%)
     for p, v, _, _ in g.iter_rows():
         if prev is not None and v and prev[1]:
-            filas += [{"periodo": p, "codigo": "04.1.1", "region": r, "logrel": math.log(v / prev[1]), "fuente": "alquiler_icl"}
-                      for r in REGIONES]
+            var[p] = (v / prev[1] - 1) * 100
         prev = (p, v)
+    if frecuencia == "semanal" or (k == 1 and L == 0):
+        rel = {p: math.log1p(x / 100) for p, x in var.items()}
+        fuente = "alquiler_icl"
+    else:
+        # D-64: los contratos ajustan cada varios meses por el acumulado del ICL y están escalonados,
+        # así que el stock sube cada mes el promedio de las variaciones de los últimos k meses, con L de rezago
+        def mas(m, i):
+            a, mm = int(m[:4]), int(m[5:]) + i
+            return f"{a + (mm - 1) // 12}-{(mm - 1) % 12 + 1:02d}"
+        rel = {}
+        for t in sorted({mas(m, L) for m in var}):
+            xs = [var.get(mas(t, -L - i)) for i in range(k)]
+            if all(x is not None for x in xs):
+                rel[t] = math.log1p(sum(xs) / k / 100)
+        fuente = f"alquiler_icl_{k}m"
+        desde = str(cfg_icl.get("desde_mes") or "")
+        if desde:  # antes de `desde_mes` queda lo ya publicado con D-56
+            rel = {**{p: math.log1p(x / 100) for p, x in var.items() if p < desde},
+                   **{p: v for p, v in rel.items() if p >= desde}}
+    for p, lr in sorted(rel.items()):
+        f = "alquiler_icl" if fuente != "alquiler_icl" and p < str(cfg_icl.get("desde_mes") or "") else fuente
+        filas += [{"periodo": p, "codigo": "04.1.1", "region": r, "logrel": lr, "fuente": f} for r in REGIONES]
     return pl.DataFrame(filas, schema=ESQUEMA) if filas else _vacio()
 
 

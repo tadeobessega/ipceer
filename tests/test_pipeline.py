@@ -325,17 +325,21 @@ def test_modelos_d62_en_el_indice(cfg, monkeypatch):
     from ipceer import cli, modelos
     monkeypatch.setitem(cfg["indice"], "modelos", {**cfg["indice"]["modelos"], "desde_mes": "2026-09"})
     monkeypatch.setattr(modelos, "salarios", lambda c: {"gastro": {f"2026-{m:02d}": 3.0 for m in range(1, 11)},
-                                                        "paritarias": {f"2026-{m:02d}": 2.0 for m in range(1, 11)}})
+                                                        "paritarias": {f"2026-{m:02d}": 2.0 for m in range(1, 11)},
+                                                        "encargados": {"2026-09": 1.5}})
     monkeypatch.setattr(modelos, "_indec", lambda c: {})
     rp = cfg.dir_config / "ponderadores_clase.csv"
     orig = rp.read_text(encoding="utf-8")
     rp.write_text(orig + "".join(f'{c},"{n}",{w},{w},{w},{w},{w},{w}\n' for c, n, w in [
         ("11.1", "Restaurantes y comidas fuera del hogar", 9.0), ("10.1", "Educación primaria", 1.0),
-        ("10.2", "Educación secundaria", 0.5), ("10.3", "Postsecundaria", 0.5), ("10.5", "Otra", 0.5)]), encoding="utf-8")
+        ("10.2", "Educación secundaria", 0.5), ("10.3", "Postsecundaria", 0.5), ("10.5", "Otra", 0.5),
+        ("04.1.3", "Gastos comunes", 2.0), ("09.6", "Paquete turístico", 0.5)]), encoding="utf-8")
     try:
         ext, info = cli._modelos_d62(cfg, {}, {"mensual": None, "semanal": None})
         m = ext["mensual"]
-        assert set(m["codigo"]) == {"11.1", "10.1", "10.2", "10.3", "10.5"} and set(m["periodo"]) == {"2026-09", "2026-10"}
+        assert set(m["codigo"]) == {"11.1", "10.1", "10.2", "10.3", "10.5", "04.1.3", "09.6"} and set(m["periodo"]) == {"2026-09", "2026-10"}
+        fu = dict(m.filter(pl.col("codigo") == "04.1.3").select("periodo", "fuente").unique().iter_rows())
+        assert fu == {"2026-09": "modelo_expensas", "2026-10": "modelo_expensas_sin_paritaria"}  # D-64
         base = indice.calcular(cfg, "mensual")["indices"]
         con = indice.calcular(cfg, "mensual", extra=m)["indices"]
         g = lambda d, c: d.filter((pl.col("region") == "GBA") & (pl.col("codigo") == c) & (pl.col("periodo") == "2026-10"))["var_pct"]
@@ -343,6 +347,11 @@ def test_modelos_d62_en_el_indice(cfg, monkeypatch):
         w = cfg["indice"]["modelos"]["restaurantes"]["con_salario"]
         assert g(con, "11.1")[0] == pytest.approx(w["alim"] * al + w["ngex"] * ng + w["salario"] * 3.0, abs=1e-3)
         assert len(g(con, "10")) == 1
+        pe = cfg["indice"]["modelos"]["expensas"]["sin_paritaria"]
+        assert g(con, "04.1.3")[0] == pytest.approx(pe["const"] + pe["ngex"] * ng, abs=1e-3)
+        pq = cfg["indice"]["modelos"]["paquetes"]
+        assert g(con, "09.6")[0] == pytest.approx(pq["const"] + pq["ngex"] * ng + pq["meses"][9], abs=1e-3)
+        assert not ext["semanal"].filter(pl.col("codigo") == "04.1.3").is_empty()
         assert not ext["semanal"].filter(pl.col("codigo") == "11.1").is_empty() and info["detalle"]
     finally:
         rp.write_text(orig, encoding="utf-8")

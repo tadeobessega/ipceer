@@ -759,6 +759,59 @@ el total no se presenta como nivel general.
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del
   INDEC en su propia carpeta (vacía) y caía a la ponderación "propia": ahora usa la carpeta común.
 
+- **D-63 (18/11/2026). Prepagas: las entidades declaran tarde y algunas saltean meses.** Revisando
+  la API de la Superintendencia entidad por entidad apareció que la descarga perdía datos sin
+  avisar: Medicus no declaró noviembre de 2025 a enero de 2026 ni octubre y noviembre de 2026; Galeno
+  faltó en agosto a octubre de 2026; Avalian y el Alemán no tienen octubre; Medifé y el Británico,
+  noviembre. Como solo se volvían a bajar los dos últimos períodos, una entidad que declaraba tarde
+  quedaba afuera para siempre, y una entidad que no respondía tiraba el período entero. Cambios:
+  - Se guarda un archivo por período y entidad (`data/otras/prepagas/partes/`); el del período es su
+    unión. Lo bajado antes se parte solo, sin volver a pedirlo.
+  - En cada corrida se revisan los últimos 6 períodos con un pedido de una fila por entidad y se baja
+    de nuevo la que apareció o cambió su cantidad de filas (los dos últimos, siempre). Una entidad que
+    no responde queda anotada y se reintenta en la próxima corrida; no tira el período.
+  - El índice informa la cobertura de cada mes (cápitas comparadas sobre las del mes anterior, en %)
+    y qué entidades faltan. Nada se completa: el mes se calcula con las entidades que declararon en
+    los dos meses (D-35) y se revisa solo cuando declara la que faltaba.
+  - Sobre Medicus: no publica precios en su sitio (el cotizador pide datos personales) y su robots.txt
+    excluye a los robots en general; su fuente es la Superintendencia.
+- **D-64 (18/11/2026). Expensas, paquetes turísticos y alquiler (ICL de 6 meses), desde noviembre de
+  2026.** Decisión de Tadeo. Criterio para entrar: mejorar a la vez RMSE, MAPE y R² contra lo que
+  hacía el índice en julio de 2024 a octubre de 2026 (GBA, pronóstico fuera de muestra con ventana
+  creciente). Expensas entra por decisión de Tadeo con la versión con aguinaldo.
+
+  | Rubro | Hoy | Modelo | Entra |
+  |---|---|---|---|
+  | Expensas (04.1.3) | reparto: RMSE 7,02; MAPE 129%; R² 0,01 | 2,31; 30%; 0,89 | sí |
+  | 09.3 y 09.6 (juguetes, mascotas y paquetes) | 6,25; 325%; −0,05 | 4,70; 201%; 0,41 | sí, en 09.6 |
+  | Alquiler (04.1.1) | ICL mes a mes: 3,15; 35%; 0,39 | ICL 6 meses: 1,54; 19%; 0,85 | sí |
+  | Educación (10) | D-55: 7,52; 177%; −4,06 | D-62: 1,50; 61%; 0,80 | ya estaba (D-62) |
+  | Hoteles (11.2) | 15,77; 136%; −0,02 | 8,71; 149%; 0,69 | no: el MAPE empeora |
+
+  - **Expensas (04.1.3)**, en %: `0,1556 + 0,1596 × NG sin rubros(t) + 0,7007 × paritaria de encargados(t) + 14,2859 × [junio o diciembre] − 11,9882 × [julio o enero]`.
+    La paritaria (serie Representativa del boletín STEySS y acuerdos relevados del repositorio de
+    salarios) va en el mismo mes: con uno o dos meses de rezago empeora, y en 2019, 2021 y 2022 cada
+    aumento aparece en las expensas del INDEC ese mismo mes. El aguinaldo: desde 2025 las expensas del
+    INDEC suben en junio (15,0% y 16,8%) y bajan en julio, como en diciembre y enero; antes de 2025
+    junio casi nunca saltaba. El efecto se estima con los diciembres y eneros desde 2017 y se aplica
+    igual a junio y julio; los junios y julios anteriores a 2025 quedan fuera de la estimación (esa
+    regla sale de mirar 2025 y 2026: se revisa con junio de 2027). Contra el reparto, desde 2025:
+    RMSE 0,54 contra 5,68 (Diebold-Mariano p = 0,05). Sin paritaria del mes (el boletín sale con
+    atraso), la variante sin ese término: `1,0942 + 0,6601 × NG sin rubros + 10,4365 × [jun o dic] − 9,6813 × [jul o ene]`
+    (julio de 2024 a octubre de 2026: RMSE 3,00, R² 0,81, MAPE 130%, peor en MAPE que el reparto).
+  - **Paquetes turísticos (09.6)**: el INDEC no publica 09.6 solo sino junto con 09.3 (el residuo
+    09 − 09.1 − 09.4 − 09.5). El modelo de esa mezcla (NG sin rubros y mes calendario, 2019 a 2026)
+    se aplica a 09.6; 09.3 sigue con precios propios. Es una aproximación: no se puede validar 09.6
+    por separado, y como en la mezcla 09.6 pesa un tercio, el modelo probablemente subestima sus
+    saltos de enero y julio.
+  - **Alquiler (04.1.1)**: los contratos ajustan cada varios meses por el acumulado del ICL y están
+    escalonados, así que el stock sube cada mes el promedio de las variaciones mensuales del ICL de
+    los últimos 6 meses, tomado con un mes de rezago (`indice.servicios.alquiler_icl`). Elegido en
+    julio de 2021 a diciembre de 2023 y probado en 2024 a 2026; mejora en las seis regiones. Los
+    meses anteriores a noviembre de 2026 quedan como se publicaron (D-56). Como usa hasta el mes
+    anterior, el dato del mes se conoce el día 1.
+  - Semanal: expensas y paquetes por devengado de la variación del mes, como educación.
+
 ## 6. Qué medimos, qué estimamos y qué falta (actualizado el 18/11/2026; detalle en D-55 a D-60)
 
 Peso en la canasta nacional del INDEC (clases de `config/ponderadores_clase.csv` ponderadas por

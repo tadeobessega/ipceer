@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: telefonia
@@ -45,11 +46,14 @@ jobs:
           ref: datos-base
           path: base
       - name: Precios en surtidor (D-60)
-        continue-on-error: true
         run: |
+          activos=$(gh release view "$TAG" --json assets -q '.assets[].name')
           mkdir -p data/combustibles/surtidor
-          if grep -qx surtidor.tar.gz <<<"$(gh release view "$TAG" --json assets -q '.assets[].name')"; then
-            gh release download "$TAG" -p surtidor.tar.gz -O surtidor.tar.gz --clobber && tar -xzf surtidor.tar.gz -C data/combustibles
+          # si el archivo está en el release y no se puede bajar, no se sube nada (no se pierde historia)
+          if grep -qx surtidor.tar.gz <<<"$activos"; then
+            ok=""; for i in 1 2 3 4 5; do gh release download "$TAG" -p surtidor.tar.gz -O surtidor.tar.gz --clobber && ok=1 && break; sleep $((i*20)); done
+            [ -n "$ok" ] || { echo "::error::no se pudo bajar surtidor.tar.gz"; exit 1; }
+            tar -xzf surtidor.tar.gz -C data/combustibles
           fi
           if [ -d base/combustibles/surtidor ]; then cp -n base/combustibles/surtidor/* data/combustibles/surtidor/; fi
           timeout 900 ipceer surtidor
@@ -59,3 +63,8 @@ jobs:
         run: |
           tar -czf telefonia.tar.gz -C data/otras telefonia
           gh release upload "$TAG" telefonia.tar.gz --clobber
+      - name: Avisar si falló
+        if: failure()
+        run: |
+          gh issue create -R "$GITHUB_REPOSITORY" --title "Falló el relevamiento de precios publicados ($(date -u +%F))" \
+            --body "Corrida: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Lo guardado antes queda como estaba." || true

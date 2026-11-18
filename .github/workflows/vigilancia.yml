@@ -1,0 +1,44 @@
+name: Vigilancia
+
+# Si una corrida se cae sin poder avisar (el runner se queda sin memoria y se corta), este flujo lo
+# detecta: cada 3 horas mira la última corrida terminada de cada flujo y abre un issue (llega por
+# correo) si falló o si hace más de 30 horas que no termina bien. Un issue por flujo y día.
+on:
+  schedule:
+    - cron: "41 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  issues: write
+
+jobs:
+  vigilar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Revisar las corridas
+        run: |
+          R="$GITHUB_REPOSITORY"; hoy=$(date -u +%F); ahora=$(date -u +%s)
+          for wf in tablero.yml telefonia.yml otras_fuentes.yml; do
+            ult=$(gh run list -R "$R" -w "$wf" -L 10 --json conclusion,status,createdAt,url \
+                  -q '[.[] | select(.status=="completed")] | .[0] | [.conclusion, .createdAt, .url] | @tsv')
+            ok=$(gh run list -R "$R" -w "$wf" -L 30 --json conclusion,createdAt -q '[.[] | select(.conclusion=="success")] | .[0].createdAt')
+            [ -z "$ult" ] && continue
+            concl=$(cut -f1 <<<"$ult"); url=$(cut -f3 <<<"$ult")
+            edad=$(( (ahora - $(date -d "${ok:-1970-01-01}" +%s)) / 3600 ))
+            motivo=""
+            [ "$concl" != "success" ] && [ "$concl" != "cancelled" ] && motivo="la última corrida terminó en '$concl'"
+            [ "$edad" -gt 30 ] && motivo="hace $edad horas que no termina bien"
+            if [ -n "$motivo" ]; then
+              titulo="Vigilancia: $wf ($hoy)"
+              if ! gh issue list -R "$R" --state open --search "\"$titulo\" in:title" --json number -q '.[0].number' | grep -q .; then
+                gh issue create -R "$R" --title "$titulo" --body "$motivo. Última corrida: $url. Lo guardado en el release no se pisa cuando una corrida falla; la PC recalcula todo en su corrida diaria."
+              fi
+              echo "::warning::$wf: $motivo"
+            else
+              echo "$wf: bien"
+            fi
+          done

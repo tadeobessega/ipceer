@@ -35,6 +35,7 @@ log = logging.getLogger(__name__)
 
 UA = "ipceer/1.0 (indice de precios; contacto en el repositorio tadeobessega/ipceer)"
 PAUSA = 3.0
+MAX_SEGUIR = 40  # páginas por índice y por día
 # (empresa, clase, url). Las páginas de hogar mezclan internet, TV y teléfono: la clase de cada
 # precio se decide por su contexto (megas / fibra -> internet; línea fija -> fija).
 PAGINAS = [
@@ -55,6 +56,15 @@ PAGINAS = [
     # D-60: cine (entradas de Cinemark Hoyts por complejo y formato)
     ("cinemark", "09.4.2", "https://www.cinemark.com.ar/precios"),
     # Despegar (paquetes turísticos) rechaza a los robots (HTTP 403): turismo queda pendiente
+    # D-61: teatro. El Complejo Teatral de Buenos Aires publica "Valor de las localidades" en la página
+    # de cada obra (se siguen desde la portada); Plateanet, por su sitemap; Alternativa Teatral pide
+    # 10 minutos entre pedidos (Crawl-delay): una página por día
+    ("complejoteatral", "09.4.2", "https://complejoteatral.gob.ar/", r"complejoteatral\.gob\.ar/produccion/"),
+    ("plateanet", "09.4.2", "https://www.plateanet.com/sitemap.txt", r"plateanet\.com/obra/\d+"),
+    ("alternativateatral", "09.4.2", "https://www.alternativateatral.com/cartelera.asp?cat=1-teatro"),
+    # D-61: Netflix (sus páginas no permiten robots): el precio que publica impuestito.org; interesa
+    # la variación, que es la misma en todos los planes
+    ("netflix", "09.4.2", "https://impuestito.org/suscripciones/netflix"),
     # D-59: diarios (suscripciones digitales y en papel, 09.5.2)
     ("lanacion", "09.5.2", "https://www.lanacion.com.ar/suscripciones/"),
     ("clarin", "09.5.2", "https://www.clarin.com/suscripciones/landing.html"),
@@ -166,10 +176,15 @@ def precios(lineas: list[str], ventana: int = 6) -> list[dict]:
             if v < 500:  # recargas mínimas y cifras sueltas
                 continue
             antes_txt = _norm(l[max(0, m.start() - 40):m.start()])
+            prev_fin = max([x.end() for x in ms if x.end() <= m.start()], default=0)
+            # varias categorías en una línea ("Platea $ 32.000 Pulman $ 26.000"): las últimas palabras
+            # antes de cada precio la distinguen; con un solo precio en la línea no hace falta
+            etiqueta = " ".join(re.sub(r"[^a-z0-9 ]", " ", _norm(l[prev_fin:m.start()])).split()[-2:]) if len(ms) > 1 else ""
             if futuro:
                 continue
             tit = " > ".join(t for t in ([seccion] if seccion else []) + titulos if t and t not in ctx)
             out.append({"linea": l[:200], "contexto": ((tit + " | ") if tit else "") + ctx[:300], "precio": v,
+                        "etiqueta": etiqueta,
                         "antes": "[antes]" in antes_txt[-12:] or bool(re.search(r"\b(antes|luego)\b\W*$", antes_txt)),
                         "sin_impuestos": bool(re.search(r"sin impuesto", antes_txt)),
                         "promo": bool(re.search(r"\b(off|descuento|promo|bonific|primer(os)? \d+ mes)", _norm(l)))})
@@ -197,7 +212,14 @@ def relevar(cfg: Config, hoy: date | None = None) -> pl.DataFrame:
     dh = d / "html" / hoy.isoformat()
     dh.mkdir(parents=True, exist_ok=True)
     filas, robots = [], {}
-    for empresa, clase, url in PAGINAS:
+    cola = [(e, c, u) for e, c, u, *_ in PAGINAS]
+    seguir = {u: x[0] for e, c, u, *x in PAGINAS if x}  # página índice -> patrón de enlaces a seguir
+    vistos = set()
+    while cola:
+        empresa, clase, url = cola.pop(0)
+        if url in vistos:
+            continue
+        vistos.add(url)
         if not _robots(url, robots):
             log.info("Telefonía: robots.txt no permite %s", url)
             continue
@@ -211,6 +233,15 @@ def relevar(cfg: Config, hoy: date | None = None) -> pl.DataFrame:
         except Exception as e:
             log.warning("Telefonía: %s: %s", url, e)
             continue
+        if url in seguir:  # índice (cartelera, sitemap): se encolan sus páginas, a lo sumo MAX_SEGUIR
+            patron, base = seguir[url], re.match(r"https?://[^/]+", url).group(0)
+            enlaces = []
+            for h in re.findall(r'(?:href=["\']|^)(\S+?)(?:["\']|$)', html, flags=re.M):
+                h = h if h.startswith("http") else base + h if h.startswith("/") else None
+                if h and re.search(patron, h) and h not in enlaces:
+                    enlaces.append(h)
+            cola += [(empresa, clase, h) for h in enlaces[:MAX_SEGUIR]]
+            log.info("Telefonía: %s -> %d enlaces (se siguen %d)", url, len(enlaces), min(len(enlaces), MAX_SEGUIR))
         slug = re.sub(r"[^a-z0-9]+", "_", url.split("//", 1)[1].lower()).strip("_")[:80]
         (dh / f"{slug}.html.gz").write_bytes(gzip.compress(html.encode("utf-8")))
         ps = precios(texto(html))
@@ -218,7 +249,10 @@ def relevar(cfg: Config, hoy: date | None = None) -> pl.DataFrame:
             c = _clase(clase, p["contexto"] + " " + p["linea"])
             if c is None:
                 continue
-            clave = hashlib.sha1(f"{empresa}|{url}|{_norm(re.sub(PRECIO, '', p['contexto']))}".encode()).hexdigest()[:16]
+            # la clave del plan: empresa, página, contexto y la etiqueta del precio en su línea
+            # ("Platea", "Pulman", "Miércoles")
+            clave = hashlib.sha1(f"{empresa}|{url}|{_norm(re.sub(PRECIO, '', p['contexto']))}|{p.get('etiqueta', '')}"
+                                 .encode()).hexdigest()[:16]
             filas.append({"fecha": hoy.isoformat(), "empresa": empresa, "clase": c, "url": url, "clave": clave, **p})
         log.info("Telefonía: %s %s -> %d precios", empresa, url, len(ps))
     df = pl.DataFrame(filas) if filas else pl.DataFrame()

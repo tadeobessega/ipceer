@@ -18,6 +18,7 @@ on:
         default: false
 permissions:
   contents: write
+  issues: write
 concurrency: tablero
 jobs:
   tablero:
@@ -37,6 +38,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e .
+      - name: Memoria de reserva
+        # 8 GB de swap: si el cálculo pasa los 16 GB, se pone lento en lugar de que se caiga el runner
+        run: |
+          sudo fallocate -l 8G /swap_ipceer && sudo chmod 600 /swap_ipceer && sudo mkswap /swap_ipceer >/dev/null && sudo swapon /swap_ipceer
+          free -m
       - name: Paneles cerrados, otras fuentes y precios web
         run: |
           mkdir -p data resultados
@@ -106,3 +112,9 @@ jobs:
             echo "tablero.html reemplazado por el de GitHub"
           fi
           python -c "import json;d=json.load(open('datos_github.json',encoding='utf-8'));s=(d['series'].get('GBA',{}).get('01') or {}).get('semanal') or [];print('Última semana de alimentos GBA:',s[-1] if s else 'sin datos')"
+      - name: Avisar si falló
+        # crea un issue (llega por correo); lo anterior del release queda como estaba
+        if: failure()
+        run: |
+          gh issue create -R "$GITHUB_REPOSITORY" --title "Falló el tablero en GitHub ($(date -u +%F))" \
+            --body "Corrida: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. No se subió nada nuevo: el tablero y los datos del release quedan como estaban. La PC lo recalcula en su corrida diaria." || true

@@ -23,10 +23,20 @@ $destino = "$Repo\resultados\estado_pc.json"
 [IO.File]::WriteAllText($destino, $json, (New-Object System.Text.UTF8Encoding $false))
 Write-Output $json
 
+# fallas en GitHub: issues abiertos por los flujos o por la vigilancia (también llegan por correo)
+$fallasGh = @()
+if (Get-Command gh -ErrorAction SilentlyContinue) {
+  try { $fallasGh = @(gh issue list -R tadeobessega/ipceer --state open --limit 20 --json title -q ".[].title" 2>$null | Where-Object { $_ -match "^(Falló|Fallaron|Vigilancia)" }) } catch {}
+}
+$estado["fallas_github"] = $fallasGh
+$json = $estado | ConvertTo-Json
+[IO.File]::WriteAllText($destino, $json, (New-Object System.Text.UTF8Encoding $false))
+
 # aviso en Windows
 $msg = $null
 if ($atraso -ge 2) { $msg = "La base de precios tiene datos hasta el $ultimo ($atraso días de atraso)." }
 elseif ($errores.Count) { $msg = "La última actualización tuvo errores en: $($errores -join ', '). Ver logs." }
+elseif ($fallasGh.Count) { $msg = "GitHub avisó fallas: $($fallasGh -join '; '). La PC ya recalculó todo; revisar el issue y cerrarlo." }
 if ($msg) {
   try {
     [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null

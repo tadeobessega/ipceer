@@ -224,6 +224,41 @@ def _base_regulados(cfg: Config, res: dict) -> None:
         log.warning("Base de regulados: %s", e)
 
 
+def _extras_github(cfg: Config) -> dict:
+    """Lo que solo baja GitHub (D-57, D-60): precios publicados (telefonia.tar.gz) y el archivo diario
+    de precios en surtidor (surtidor.tar.gz). Se suman sin pisar lo que ya hay en la PC."""
+    import tarfile
+    from .descarga import bajar_asset
+    data = cfg.ruta("panel_diario").parent.parent
+    out = {}
+    for asset, destino, raiz in (("telefonia.tar.gz", data / "otras", "telefonia/"),
+                                 ("surtidor.tar.gz", data / "combustibles", "surtidor/")):
+        tgz = data / asset
+        try:
+            if not bajar_asset(cfg, asset, tgz):
+                out[asset] = "no se pudo bajar"
+                continue
+            n = 0
+            with tarfile.open(tgz) as tf:
+                for m in tf.getmembers():
+                    rel = Path(m.name)
+                    if not m.isfile() or not m.name.startswith(raiz) or ".." in rel.parts or rel.is_absolute():
+                        continue
+                    dst = destino / rel
+                    if dst.exists():
+                        continue
+                    dst.parent.mkdir(parents=True, exist_ok=True)
+                    dst.write_bytes(tf.extractfile(m).read())
+                    n += 1
+            out[asset] = f"{n} archivos nuevos"
+        except Exception as e:
+            out[asset] = f"error: {e}"
+        finally:
+            tgz.unlink(missing_ok=True)
+    log.info("Publicados desde GitHub: %s", out)
+    return out
+
+
 def desde_github(cfg: Config) -> dict | None:
     """Plan A (D-33): trae lo que GitHub Actions ya bajó (otras.tar.gz y su resumen) en lugar de
     bajarlo de nuevo desde la PC. Devuelve el resumen, o None si no se pudo (la PC baja por su cuenta)."""
@@ -240,6 +275,7 @@ def desde_github(cfg: Config) -> dict | None:
             tf.extractall(data, members=seguros)
         res = json.loads(js.read_text(encoding="utf-8"))
         res["origen"] = "github"
+        res["publicados_github"] = _extras_github(cfg)
         _base_regulados(cfg, res)
         (cfg.ruta("resultados") / "otras_fuentes.json").write_text(json.dumps(res, ensure_ascii=False, indent=1),
                                                                    encoding="utf-8")

@@ -11,6 +11,7 @@ on:
     paths: [".github/workflows/otras_fuentes.yml", "src/ipceer/frescos.py", "src/ipceer/otras_fuentes.py", "src/ipceer/prepagas.py", "src/ipceer/normas.py", "src/ipceer/boletines.py", "src/ipceer/autos.py", "config/regulados/prepagas.yaml", "config/regulados/normas.yaml", "config/regulados/boletines.yaml"]
 permissions:
   contents: write
+  issues: write
 concurrency: otras-fuentes
 jobs:
   otras:
@@ -90,3 +91,8 @@ jobs:
           subir otras_fuentes_github.json
           if [ -s muestra_mcba.json ]; then subir muestra_mcba.json || true; fi
           if [ -s muestra_mcba.bin ]; then subir muestra_mcba.bin || true; fi
+      - name: Avisar si falló
+        if: failure()
+        run: |
+          gh issue create -R "$GITHUB_REPOSITORY" --title "Fallaron las otras fuentes ($(date -u +%F))" \
+            --body "Corrida: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID. Lo guardado antes queda como estaba." || true

@@ -57,11 +57,10 @@ PAGINAS = [
     ("cinemark", "09.4.2", "https://www.cinemark.com.ar/precios"),
     # Despegar (paquetes turísticos) rechaza a los robots (HTTP 403): turismo queda pendiente
     # D-61: teatro. El Complejo Teatral de Buenos Aires publica "Valor de las localidades" en la página
-    # de cada obra (se siguen desde la portada); Plateanet, por su sitemap; Alternativa Teatral pide
-    # 10 minutos entre pedidos (Crawl-delay): una página por día
+    # de cada obra (se siguen desde la portada)
     ("complejoteatral", "09.4.2", "https://complejoteatral.gob.ar/", r"complejoteatral\.gob\.ar/produccion/"),
-    ("plateanet", "09.4.2", "https://www.plateanet.com/sitemap.txt", r"plateanet\.com/obra/\d+"),
-    ("alternativateatral", "09.4.2", "https://www.alternativateatral.com/cartelera.asp?cat=1-teatro"),
+    # Plateanet y Alternativa Teatral arman sus páginas con JavaScript (el HTML no trae obras ni
+    # precios): quedan pendientes de encontrar de dónde cargan los datos
     # D-61: Netflix (sus páginas no permiten robots): el precio que publica impuestito.org; interesa
     # la variación, que es la misma en todos los planes
     ("netflix", "09.4.2", "https://impuestito.org/suscripciones/netflix"),

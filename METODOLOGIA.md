@@ -667,6 +667,24 @@ el total no se presenta como nivel general.
     (general, menores, mayores de 60, días de semana); los anunciados "a partir del" se descartan
     hasta que rigen. **Teatro y turismo, pendientes:** Alternativa Teatral arma la cartelera con
     JavaScript (y pide 10 minutos entre pedidos); Despegar rechaza a los robots.
+- **D-61 (18/11/2026). Sin pérdida de datos, teatro y Netflix.**
+  - **Avisos.** Cada flujo de GitHub (tablero, precios publicados, otras fuentes) abre un issue
+    cuando falla, que llega por correo; nada del release se pisa cuando una corrida falla (los
+    archivos acumulados se bajan con reintentos y, si no se pueden bajar, no se sube nada). Como una
+    corrida que se queda sin memoria se corta sin poder avisar, el flujo `vigilancia.yml` revisa cada
+    3 horas la última corrida de cada flujo y abre un issue si falló o si hace más de 30 horas que no
+    termina bien. El runner del tablero suma 8 GB de swap (si pasa los 16 GB se pone lento en vez de
+    caerse) y la consolidación de paneles es por partes. En la PC, `control.ps1` muestra un aviso de
+    Windows si hay issues de fallas abiertos, y la corrida diaria trae de GitHub los precios
+    publicados y el archivo de surtidor, así la PC calcula todo aunque GitHub falle.
+  - **Teatro (09.4.2):** el Complejo Teatral de Buenos Aires publica "Valor de las localidades" en
+    la página de cada obra (platea, pulman, tertulia, miércoles): se leen todos los días las obras
+    enlazadas desde su portada (unas 20, unos 50 precios). Plateanet y Alternativa Teatral arman sus
+    páginas con JavaScript y quedan pendientes.
+  - **Netflix:** sus páginas no permiten robots; se toma el precio que publica impuestito.org en sus
+    datos estructurados (8 planes). Interesa la variación, que es la misma en todos los planes.
+  - **Turismo:** Despegar rechaza a los robots y Booking prohíbe el relevamiento automático en sus
+    condiciones de uso; pendiente.
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del

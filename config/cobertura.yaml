@@ -48,6 +48,10 @@ estimado:          # sin precios propios: entra al índice con un modelo (D-55)
   - "08.3.1"       # telefonía fija: el aumento de las mismas empresas en móvil e internet (D-59)
   - "10"           # educación: modelo de D-62 (marzo propio, paritarias)
   - "11.1"         # restaurantes: modelo de D-62 (alimentos, resto y salario gastronómico)
+  - "04.1.3"       # expensas: modelo de D-64 (resto, paritaria de encargados y aguinaldo)
+  - "09.6"         # paquetes turísticos: modelo de D-65 (09.6 implícito, resto y mes calendario)
+  - "11.2"         # hoteles: modelo de D-65 (resto y mes calendario)
+  - "06.2"         # servicios médicos: modelo de D-65 (resto e IPCBA de dos meses antes)
 # servicios (el resto son bienes). Electricidad, gas y agua se cuentan como servicios públicos.
 servicios:
   - "03.1.4"

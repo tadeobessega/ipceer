@@ -759,7 +759,85 @@ el total no se presenta como nivel general.
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del
   INDEC en su propia carpeta (vacía) y caía a la ponderación "propia": ahora usa la carpeta común.
 
-## 6. Qué medimos, qué estimamos y qué falta (actualizado el 18/11/2026; detalle en D-55 a D-62)
+- **D-63 (18/11/2026). Prepagas: las entidades declaran tarde y algunas saltean meses.** Revisando
+  la API de la Superintendencia entidad por entidad apareció que la descarga perdía datos sin
+  avisar: Medicus no declaró noviembre de 2025 a enero de 2026 ni octubre y noviembre de 2026; Galeno
+  faltó en agosto a octubre de 2026; Avalian y el Alemán no tienen octubre; Medifé y el Británico,
+  noviembre. Como solo se volvían a bajar los dos últimos períodos, una entidad que declaraba tarde
+  quedaba afuera para siempre, y una entidad que no respondía tiraba el período entero. Cambios:
+  - Se guarda un archivo por período y entidad (`data/otras/prepagas/partes/`); el del período es su
+    unión. Lo bajado antes se parte solo, sin volver a pedirlo.
+  - En cada corrida se revisan los últimos 6 períodos con un pedido de una fila por entidad y se baja
+    de nuevo la que apareció o cambió su cantidad de filas (los dos últimos, siempre). Una entidad que
+    no responde queda anotada y se reintenta en la próxima corrida; no tira el período.
+  - El índice informa la cobertura de cada mes (cápitas comparadas sobre las del mes anterior, en %)
+    y qué entidades faltan. Nada se completa: el mes se calcula con las entidades que declararon en
+    los dos meses (D-35) y se revisa solo cuando declara la que faltaba.
+  - Sobre Medicus: no publica precios en su sitio (el cotizador pide datos personales) y su robots.txt
+    excluye a los robots en general; su fuente es la Superintendencia.
+- **D-64 (18/11/2026). Expensas, paquetes turísticos y alquiler (ICL de 6 meses), desde noviembre de
+  2026.** Decisión de Tadeo. Criterio para entrar: mejorar a la vez RMSE, MAPE y R² contra lo que
+  hacía el índice en julio de 2024 a octubre de 2026 (GBA, pronóstico fuera de muestra con ventana
+  creciente). Expensas entra por decisión de Tadeo con la versión con aguinaldo.
+
+  | Rubro | Hoy | Modelo | Entra |
+  |---|---|---|---|
+  | Expensas (04.1.3) | reparto: RMSE 7,02; MAPE 129%; R² 0,01 | 2,31; 30%; 0,89 | sí |
+  | 09.3 y 09.6 (juguetes, mascotas y paquetes) | 6,25; 325%; −0,05 | 4,70; 201%; 0,41 | sí, en 09.6 (D-65 lo reemplaza) |
+  | Alquiler (04.1.1) | ICL mes a mes: 3,15; 35%; 0,39 | ICL 6 meses: 1,54; 19%; 0,85 | sí |
+  | Educación (10) | D-55: 7,52; 177%; −4,06 | D-62: 1,50; 61%; 0,80 | ya estaba (D-62) |
+  | Hoteles (11.2) | 15,77; 136%; −0,02 | 8,71; 149%; 0,69 | no por el criterio (MAPE); entra por D-65 |
+
+  - **Expensas (04.1.3)**, en %: `0,1556 + 0,1596 × NG sin rubros(t) + 0,7007 × paritaria de encargados(t) + 14,2859 × [junio o diciembre] − 11,9882 × [julio o enero]`.
+    La paritaria (serie Representativa del boletín STEySS y acuerdos relevados del repositorio de
+    salarios) va en el mismo mes: con uno o dos meses de rezago empeora, y en 2019, 2021 y 2022 cada
+    aumento aparece en las expensas del INDEC ese mismo mes. El aguinaldo: desde 2025 las expensas del
+    INDEC suben en junio (15,0% y 16,8%) y bajan en julio, como en diciembre y enero; antes de 2025
+    junio casi nunca saltaba. El efecto se estima con los diciembres y eneros desde 2017 y se aplica
+    igual a junio y julio; los junios y julios anteriores a 2025 quedan fuera de la estimación (esa
+    regla sale de mirar 2025 y 2026: se revisa con junio de 2027). Contra el reparto, desde 2025:
+    RMSE 0,54 contra 5,68 (Diebold-Mariano p = 0,05). Sin paritaria del mes (el boletín sale con
+    atraso), la variante sin ese término: `1,0942 + 0,6601 × NG sin rubros + 10,4365 × [jun o dic] − 9,6813 × [jul o ene]`
+    (julio de 2024 a octubre de 2026: RMSE 3,00, R² 0,81, MAPE 130%, peor en MAPE que el reparto).
+  - **Paquetes turísticos (09.6)**: el INDEC no publica 09.6 solo sino junto con 09.3 (el residuo
+    09 − 09.1 − 09.4 − 09.5). El modelo de esa mezcla (NG sin rubros y mes calendario, 2019 a 2026)
+    se aplica a 09.6; 09.3 sigue con precios propios. Es una aproximación: no se puede validar 09.6
+    por separado, y como en la mezcla 09.6 pesa un tercio, el modelo probablemente subestima sus
+    saltos de enero y julio.
+  - **Alquiler (04.1.1)**: los contratos ajustan cada varios meses por el acumulado del ICL y están
+    escalonados, así que el stock sube cada mes el promedio de las variaciones mensuales del ICL de
+    los últimos 6 meses, tomado con un mes de rezago (`indice.servicios.alquiler_icl`). Elegido en
+    julio de 2021 a diciembre de 2023 y probado en 2024 a 2026; mejora en las seis regiones. Los
+    meses anteriores a noviembre de 2026 quedan como se publicaron (D-56). Como usa hasta el mes
+    anterior, el dato del mes se conoce el día 1.
+  - Semanal: expensas y paquetes por devengado de la variación del mes, como educación.
+
+- **D-65 (18/11/2026). Hoteles, servicios médicos y paquetes turísticos, desde noviembre de 2026.**
+  Decisión de Tadeo (hoteles entra aunque su MAPE empeora: 149% contra 136% del reparto, inflado por
+  meses con variación cerca de cero; RMSE 8,71 contra 15,77 y R² 0,69 contra −0,02). Julio de 2024 a
+  octubre de 2026, GBA, fuera de muestra:
+  - **Hoteles (11.2)**: nivel general sin rubros y mes calendario (2019 a 2026).
+  - **Servicios médicos (06.2)**: `0,618 × NG sin rubros(t) + 0,382 × IPCBA servicios para pacientes
+    externos(t−2)` (combinación convexa, 2022-05 a 2026-10). Contra el reparto: RMSE 1,31 contra
+    1,91; MAPE 36% contra 40%; R² 0,40 contra −0,26. El IPCBA (IDECBA, `ipcba.py`) se usa solo como
+    insumo, con dos meses de rezago (se conoce antes del mes a estimar); no se compara con el INDEC.
+    Se baja de la página del IPCBA y, si no se puede, se usa la copia más nueva (`config/ipcba`).
+    Sin el IPCBA de dos meses antes, el mes queda sin modelo (reparto).
+  - **Paquetes turísticos (09.6), desarrollado**: el INDEC publica 09.3 y 09.6 juntos. En D-64 el
+    modelo de la mezcla se aplicaba a 09.6, pero en el índice 09.3 va con precios propios, así que
+    los saltos de 09.6 quedaban diluidos. Ahora se modela el 09.6 implícito del INDEC: (mezcla −
+    0,68 × bienes) / 0,32 (pesos de GBA; bienes del INDEC como aproximación de 09.3), con nivel
+    general sin rubros y mes calendario. Evaluado como entra al índice (09.3 con bienes y 09.6
+    modelado, contra la mezcla del INDEC): RMSE 4,80 contra 5,43 del modelo de D-64 y 6,27 del
+    reparto; MAPE 170% contra 246% y 289%; R² 0,38 contra 0,20 y −0,06. El IPCBA de paquetes
+    turísticos se probó y no mejora (del mismo mes no se conoce a tiempo; del anterior empeora).
+  - **Pendiente (salarios, para revisar con el ISCEER)**: las expensas usan la paritaria de
+    encargados del mismo mes, que el boletín publica con atraso; casi siempre corre la variante sin
+    paritaria (peor en MAPE que el reparto). Revisar con el índice de salarios del CEER si se puede
+    tener la paritaria del mes a tiempo (actas firmadas, como la de SUTERH de septiembre de 2026 que
+    fija sin aumento de octubre a febrero).
+
+## 6. Qué medimos, qué estimamos y qué falta (actualizado el 18/11/2026; detalle en D-55 a D-65)
 
 Peso en la canasta nacional del INDEC (clases de `config/ponderadores_clase.csv` ponderadas por
 región), según `config/cobertura.yaml`, que es la misma clasificación del gráfico de torta del tablero:
@@ -767,8 +845,8 @@ región), según `config/cobertura.yaml`, que es la misma clasificación del gr�
 | Estado | Bienes | Servicios | Total |
 |---|---|---|---|
 | Relevados e incluidos en el índice | 63,1% | 18,1% | 81,2% |
-| Sin relevar, estimados con un modelo | | 11,5% | 11,5% |
-| Sin relevar | 0,1% | 7,2% | 7,3% |
+| Sin relevar, estimados con un modelo | | 15,2% | 15,2% |
+| Sin relevar | 0,1% | 3,5% | 3,6% |
 
 **Relevados e incluidos.**
 - Supermercados (SEPA): alimentos y bebidas, limpieza, cuidado personal, mascotas, útiles.
@@ -786,16 +864,18 @@ región), según `config/cobertura.yaml`, que es la misma clasificación del gr�
 
 **Estimados con un modelo.** Restaurantes (11.1, 8,6%) con alimentos, el nivel general sin estos rubros
 y el salario de convenio gastronómico; educación (10, 2,3%) con un modelo propio para marzo y, el resto
-del año, el nivel general sin estos rubros y las paritarias (D-62, desde noviembre de 2026); telefonía fija (08.3.1, 0,6%) con el
-aumento de las mismas empresas en móvil e internet (D-59).
+del año, el nivel general sin estos rubros y las paritarias (D-62); servicios médicos y odontológicos
+(06.2, 1,6%) con el nivel general sin estos rubros y el IPC de la Ciudad de esos servicios de dos meses
+antes; expensas (04.1.3, 1,2%) con el nivel general sin estos rubros, la paritaria de encargados de
+edificio y el aguinaldo de junio y diciembre; paquetes turísticos (09.6, 0,5%) y hoteles (11.2, 0,4%)
+con el nivel general sin estos rubros y el mes del año (D-64 y D-65). Todos desde noviembre de 2026.
+Telefonía fija (08.3.1, 0,6%) con el aumento de las mismas empresas en móvil e internet (D-59).
 
-**Sin relevar, de mayor a menor peso.** Expensas (1,2%; se evalúa sacarlas de los avisos de alquiler de
-Zonaprop, que las informan), servicios médicos (0,9%), peluquería (0,7%), servicios recreativos y
-deportivos (0,6%; gimnasios, clubes), reparación de la vivienda (0,6%), paquetes turísticos (0,5%),
-odontología (0,5%), otros servicios del auto (0,4%; estacionamiento, peajes), hoteles (0,4%), seguros
-(0,4%) y el resto con menos de 0,3% cada uno (otros servicios, servicios auxiliares de salud,
-tintorería, talleres mecánicos, pasajes aéreos, telas, correo). Para estos el índice reparte el peso
-entre lo medido (no imputa nada propio).
+**Sin relevar, de mayor a menor peso.** Peluquería (0,7%), servicios recreativos y deportivos (0,6%;
+gimnasios, clubes), reparación de la vivienda (0,6%), otros servicios del auto (0,4%; estacionamiento,
+peajes), seguros (0,4%) y el resto con menos de 0,3% cada uno (otros servicios, tintorería, talleres
+mecánicos, pasajes aéreos, telas, correo). Para estos el índice reparte el peso entre lo medido (no
+imputa nada propio).
 
 **Lo que está incompleto dentro de lo incluido.**
 - Alimentos: carnes (8,9% de la canasta), verduras (2,7%) y frutas (1,3%) salen solo de
@@ -808,7 +888,8 @@ entre lo medido (no imputa nada propio).
   BAN), sin las cantidades por categoría (pedido a ENARGAS pendiente); agua (AySA) cargada a mano;
   colectivos y subte solo de GBA, con meses de la Provincia sin resolución; faltan colectivos y
   trenes nacionales.
-- Prepagas: las 13 entidades más grandes; el servidor de la Superintendencia corta seguido.
+- Prepagas: las 13 entidades más grandes; varias declaran tarde o saltean meses (Medicus, Galeno,
+  Avalian): el mes se calcula con las que declararon y se revisa cuando declaran (D-63).
 - Combustibles semanal: YPF casi no informa precios al surtidor, así que las semanas sin dato de
   Energía salen de Shell, Axion, Puma y blancas.
 - Telefonía, internet, TV y streaming: planes publicados de las principales empresas (Claro, Movistar,

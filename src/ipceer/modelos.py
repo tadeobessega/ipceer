@@ -1,5 +1,13 @@
 """Rubros sin precios propios que entran al índice con un modelo (D-62): restaurantes y comidas
-fuera del hogar (11.1) y educación (10.1, 10.2, 10.3 y 10.5).
+fuera del hogar (11.1) y educación (10.1, 10.2, 10.3 y 10.5). D-64: expensas (04.1.3) y paquetes
+turísticos (09.6).
+
+  Expensas (mes t, en %): const + b × NG sin rubros(t) + c × paritaria de encargados de edificio(t)
+    + d × [junio o diciembre] + e × [julio o enero]. Sin paritaria del mes, la variante sin ese término.
+  Paquetes turísticos (mes t, en %): const + b × NG sin rubros(t) + efecto del mes calendario (D-65:
+    estimado sobre el 09.6 implícito del INDEC, no sobre la mezcla con 09.3).
+  Hoteles (D-65): const + b × NG sin rubros(t) + efecto del mes calendario.
+  Servicios médicos (D-65): a × NG sin rubros(t) + (1 − a) × IPCBA servicios para pacientes externos(t−2).
 
 Los coeficientes están congelados en config.yaml (`indice.modelos`); se estimaron con el IPC del
 INDEC de GBA (2017-02 a 2026-08) y se probaron fuera de muestra (METODOLOGIA.md, D-62). Se aplican
@@ -48,6 +56,7 @@ log = logging.getLogger(__name__)
 
 ESQUEMA = {"periodo": pl.Utf8, "codigo": pl.Utf8, "region": pl.Utf8, "logrel": pl.Float64, "fuente": pl.Utf8}
 CLASES_EDUC = ("10.1", "10.2", "10.3", "10.5")
+CLASES_MED = ("06.2.1", "06.2.2", "06.2.3")
 MESES = {"ene": 1, "feb": 2, "mar": 3, "abr": 4, "may": 5, "jun": 6, "jul": 7, "ago": 8, "sep": 9, "oct": 10,
          "nov": 11, "dic": 12}
 REPO = "marcos-sacca/salarios"
@@ -127,11 +136,13 @@ def _variaciones(niveles: dict[str, float]) -> dict[str, float]:
 def _leer_excel(d: Path):
     ruta = d / "Indice_Salarios_Paritarias.xlsx"
     if not ruta.exists():
-        return {}, {}
+        return {}, {}, {}
     s = pl.read_excel(ruta, sheet_name="Salarios")
     s = s.with_columns(pl.col("Fecha").cast(pl.Date).dt.strftime("%Y-%m").alias("mes"))
     g = s.filter((pl.col("Convenio") == "Gastronómicos") & (pl.col("Serie") == "Representativa"))
     gastro = _variaciones(dict(g.select("mes", "Salario conformado").iter_rows()))
+    e = s.filter((pl.col("Convenio") == "Encargados de Edificio") & (pl.col("Serie") == "Representativa"))
+    encargados = _variaciones(dict(e.select("mes", "Salario conformado").iter_rows()))
     ix = pl.read_excel(ruta, sheet_name="Indice", read_options={"header_row": 7})
     col = next((c for c in ix.columns if c.startswith("Índice (base")), None)
     par = {}
@@ -139,11 +150,11 @@ def _leer_excel(d: Path):
         ix = ix.filter(pl.col("Mes").is_not_null(), pl.col(col).cast(pl.Float64, strict=False) > 0)
         par = _variaciones({m.strftime("%Y-%m") if hasattr(m, "strftime") else str(m)[:7]: float(v)
                             for m, v in ix.select("Mes", col).iter_rows()})
-    return gastro, par
+    return gastro, par, encargados
 
 
-def _acuerdos(d: Path, ultimo: str | None) -> dict[str, float]:
-    """Gastronómicos en los meses que el boletín todavía no publicó (relevados de prensa)."""
+def _acuerdos(d: Path, ultimo: str | None, convenio: str = "Gastronómicos") -> dict[str, float]:
+    """Un convenio en los meses que el boletín todavía no publicó (acuerdos relevados de prensa)."""
     out = {}
     for ruta in sorted(d.glob("nowcast__acuerdos_*.csv")):
         anio = int(re.search(r"(\d{4})", ruta.name).group(1))
@@ -157,7 +168,7 @@ def _acuerdos(d: Path, ultimo: str | None) -> dict[str, float]:
                 a -= 1
             anios.insert(0, a)
         for f in filas:
-            if f.get("Convenio", "").strip() != "Gastronómicos":
+            if f.get("Convenio", "").strip() != convenio:
                 continue
             for c, m, a in zip(cols, meses, anios):
                 if m and f.get(c) not in (None, ""):
@@ -185,13 +196,14 @@ def salarios(cfg: Config) -> dict[str, dict[str, float]]:
     relevados o estimados del repositorio después del último boletín. Columna 'origen' aparte."""
     d = bajar_salarios(cfg, (cfg["indice"].get("modelos") or {}).get("salarios_max_horas", 12))
     try:
-        gastro, par = _leer_excel(d)
+        gastro, par, encar = _leer_excel(d)
     except Exception as e:
         log.warning("Salarios: no se pudo leer el Excel (%s)", e)
-        gastro, par = {}, {}
+        gastro, par, encar = {}, {}, {}
     gastro.update(_acuerdos(d, max(gastro) if gastro else None))
+    encar.update(_acuerdos(d, max(encar) if encar else None, "Encargados de Edificio"))
     par.update(_nowcast_indice(d, max(par) if par else None))
-    return {"gastro": gastro, "paritarias": par}
+    return {"gastro": gastro, "paritarias": par, "encargados": encar}
 
 
 # ---------------------------------------------------------------- insumos del IPCEER y del INDEC
@@ -215,6 +227,35 @@ def _indec(cfg: Config) -> dict[tuple[str, str, str], float]:
 
 
 # ---------------------------------------------------------------- modelos
+def _expensas(p: dict, mes: str, ngex: float, par: float | None) -> tuple[float, str]:
+    """D-64. 04.1.3: nivel general sin rubros modelados, paritaria de encargados del mismo mes y un
+    efecto aguinaldo (junio y diciembre suben, julio y enero bajan lo mismo)."""
+    m = int(mes[5:])
+    c, fu = (p["con_paritaria"], "modelo_expensas") if par is not None else (p["sin_paritaria"], "modelo_expensas_sin_paritaria")
+    v = c["const"] + c["ngex"] * ngex + c["aguinaldo"] * (m in (6, 12)) + c["post_aguinaldo"] * (m in (1, 7))
+    if par is not None:
+        v += c["paritaria"] * par
+    return v, fu
+
+
+def _paquetes(p: dict, mes: str, ngex: float) -> tuple[float, str]:
+    """D-65. 09.6: modelo del 09.6 implícito del INDEC (nivel general sin rubros y mes calendario)."""
+    return p["const"] + p["ngex"] * ngex + p["meses"][int(mes[5:]) - 1], "modelo_paquetes"
+
+
+def _hoteles(p: dict, mes: str, ngex: float) -> tuple[float, str]:
+    """D-65. 11.2: nivel general sin rubros y mes calendario."""
+    return p["const"] + p["ngex"] * ngex + p["meses"][int(mes[5:]) - 1], "modelo_hoteles"
+
+
+def _medicos(p: dict, ngex: float, ba_t2: float | None) -> tuple[float | None, str]:
+    """D-65. 06.2: combinación convexa del nivel general sin rubros y del IPCBA de servicios para
+    pacientes externos de dos meses antes. Sin IPCBA, sin dato (queda el reparto)."""
+    if ba_t2 is None:
+        return None, ""
+    return p["ngex"] * ngex + p["ipcba_t2"] * ba_t2, "modelo_medicos"
+
+
 def _restaurantes(p: dict, alim: float, ngex: float, s: float | None) -> tuple[float, str]:
     if s is not None:
         w = p["con_salario"]
@@ -254,6 +295,10 @@ def mensual(cfg: Config, base: pl.DataFrame) -> tuple[pl.DataFrame, dict]:
     sal = salarios(cfg)
     alim, ngex = _var(base, "grupo", "01.1"), _var(base, "total", "TOTAL")
     ind = _indec(cfg)
+    ba_med = {}
+    if pm.get("medicos"):
+        from . import ipcba
+        ba_med = ipcba.variaciones(cfg, "Servicios para pacientes externos")
     periodos = sorted({p for p, _ in ngex if p >= desde})
     filas, detalle, educ_prop = [], [], {}
     for p in periodos:
@@ -284,11 +329,32 @@ def mensual(cfg: Config, base: pl.DataFrame) -> tuple[pl.DataFrame, dict]:
                 filas += [{"periodo": p, "codigo": c, "region": r, "logrel": math.log1p(v / 100), "fuente": fu}
                           for c in CLASES_EDUC]
                 fila_det.update(educacion=round(v, 4), paritarias_t1=sal["paritarias"].get(_mas(p, -1)), fuente_educacion=fu)
+            if pm.get("expensas"):
+                pe = sal.get("encargados", {}).get(p)
+                v, fu = _expensas(pm["expensas"], p, ng, pe)
+                filas.append({"periodo": p, "codigo": "04.1.3", "region": r, "logrel": math.log1p(v / 100), "fuente": fu})
+                fila_det.update(expensas=round(v, 4), paritaria_encargados=pe, fuente_expensas=fu)
+            if pm.get("paquetes"):
+                v, fu = _paquetes(pm["paquetes"], p, ng)
+                filas.append({"periodo": p, "codigo": "09.6", "region": r, "logrel": math.log1p(v / 100), "fuente": fu})
+                fila_det.update(paquetes=round(v, 4))
+            if pm.get("hoteles"):
+                v, fu = _hoteles(pm["hoteles"], p, ng)
+                filas.append({"periodo": p, "codigo": "11.2", "region": r, "logrel": math.log1p(v / 100), "fuente": fu})
+                fila_det.update(hoteles=round(v, 4))
+            if pm.get("medicos"):
+                b2 = ba_med.get(_mas(p, -2))
+                v, fu = _medicos(pm["medicos"], ng, b2)
+                if v is not None:
+                    filas += [{"periodo": p, "codigo": c, "region": r, "logrel": math.log1p(v / 100), "fuente": fu}
+                              for c in CLASES_MED]
+                    fila_det.update(medicos=round(v, 4), ipcba_medicos_t2=b2)
             detalle.append(fila_det)
     df = pl.DataFrame(filas, schema=ESQUEMA) if filas else pl.DataFrame(schema=ESQUEMA)
     info = {"desde_mes": desde, "detalle": detalle,
             "salarios": {"gastro_ultimos": dict(sorted(sal["gastro"].items())[-8:]),
-                         "paritarias_ultimos": dict(sorted(sal["paritarias"].items())[-4:]), "fuente": REPO}}
+                         "paritarias_ultimos": dict(sorted(sal["paritarias"].items())[-4:]),
+                         "encargados_ultimos": dict(sorted(sal.get("encargados", {}).items())[-4:]), "fuente": REPO}}
     return df, info
 
 
@@ -308,8 +374,15 @@ def semanal(cfg: Config, base: pl.DataFrame, mens: pl.DataFrame) -> pl.DataFrame
         s_sem = None if s is None else ((1 + s / 100) ** (7 / 30.44) - 1) * 100
         v, fu = _restaurantes(pm["restaurantes"], al, ng, s_sem)
         filas.append({"periodo": sem, "codigo": "11.1", "region": r, "logrel": math.log1p(v / 100), "fuente": fu})
-    # educación: el nivel diario sube el día 1 de cada mes; la semana es el promedio de sus 7 días
-    ed = mens.filter(pl.col("codigo") == CLASES_EDUC[0])
+    # educación, expensas y paquetes (D-64): el nivel diario sube el día 1 de cada mes; la semana es
+    # el promedio de sus 7 días
+    for codigos in (CLASES_EDUC, ("04.1.3",), ("09.6",), ("11.2",), CLASES_MED):
+        filas += _devengado(mens.filter(pl.col("codigo") == codigos[0]), codigos, desde)
+    return pl.DataFrame(filas, schema=ESQUEMA) if filas else pl.DataFrame(schema=ESQUEMA)
+
+
+def _devengado(ed: pl.DataFrame, codigos: tuple, desde: str) -> list[dict]:
+    filas = []
     for (r,), g in ed.group_by("region"):
         rel = dict(g.select("periodo", "logrel").iter_rows())
         fu = dict(g.select("periodo", "fuente").iter_rows())
@@ -338,6 +411,6 @@ def semanal(cfg: Config, base: pl.DataFrame, mens: pl.DataFrame) -> pl.DataFrame
             if all(m < desde for m in ms) or any(m >= desde and m not in rel for m in ms):
                 continue
             lr = math.log((sum(sem[k1]) / 7) / (sum(sem[k0]) / 7))
-            f = fu.get(mes) or fu.get(_mas(mes, 1)) or "modelo_educacion"
-            filas += [{"periodo": k1, "codigo": c, "region": r, "logrel": lr, "fuente": f} for c in CLASES_EDUC]
-    return pl.DataFrame(filas, schema=ESQUEMA) if filas else pl.DataFrame(schema=ESQUEMA)
+            f = fu.get(mes) or fu.get(_mas(mes, 1)) or next(iter(fu.values()))
+            filas += [{"periodo": k1, "codigo": c, "region": r, "logrel": lr, "fuente": f} for c in codigos]
+    return filas

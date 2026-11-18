@@ -64,16 +64,20 @@ def _get(ruta: str, params: dict, reintentos: int = 3) -> dict:
     raise RuntimeError(f"Prepagas: sin respuesta de {ruta} {params}")
 
 
-def bajar_periodo(periodo: int, rnemps: list[int], pausa: float = 1.0) -> pl.DataFrame:
-    filas = []
-    for rn in rnemps:
-        pagina, ultima = 1, 1
-        while pagina <= ultima:
-            j = _get("getCuadrosTarifarios", {"page": pagina, "per_page": POR_PAGINA, "periodo": periodo, "rnemp": rn})
-            filas += j.get("data") or []
-            ultima = (j.get("paginacion") or {}).get("ultima_pagina") or 1
-            pagina += 1
-            time.sleep(pausa)
+def _total(periodo: int, rn: int) -> int:
+    """Cuántas filas declaró la entidad para el período (un pedido de una fila: rápido)."""
+    j = _get("getCuadrosTarifarios", {"page": 1, "per_page": 1, "periodo": periodo, "rnemp": rn})
+    return int((j.get("paginacion") or {}).get("total") or 0)
+
+
+def bajar_entidad(periodo: int, rn: int, pausa: float = 1.0) -> pl.DataFrame:
+    filas, pagina, ultima = [], 1, 1
+    while pagina <= ultima:
+        j = _get("getCuadrosTarifarios", {"page": pagina, "per_page": POR_PAGINA, "periodo": periodo, "rnemp": rn})
+        filas += j.get("data") or []
+        ultima = (j.get("paginacion") or {}).get("ultima_pagina") or 1
+        pagina += 1
+        time.sleep(pausa)
     if not filas:
         return pl.DataFrame()
     cols = [*CLAVE, "periodo", "nombre_comercial", "nombre_plan", "valor_capital", "cantidad_capitas",
@@ -81,32 +85,93 @@ def bajar_periodo(periodo: int, rnemps: list[int], pausa: float = 1.0) -> pl.Dat
     return pl.DataFrame(filas, infer_schema_length=None).select([c for c in cols if c in filas[0]])
 
 
-def actualizar(cfg: Config, max_periodos: int = 3) -> dict:
-    """Baja los períodos que faltan (los más recientes primero) y vuelve a bajar los dos últimos,
-    que las entidades pueden corregir. `max_periodos` limita cuántos se bajan por corrida."""
+def bajar_periodo(periodo: int, rnemps: list[int], pausa: float = 1.0) -> pl.DataFrame:
+    partes = [bajar_entidad(periodo, rn, pausa) for rn in rnemps]
+    partes = [x for x in partes if not x.is_empty()]
+    return pl.concat(partes, how="diagonal_relaxed") if partes else pl.DataFrame()
+
+
+def _partes(cfg: Config) -> Path:
+    d = _dir(cfg) / "partes"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _migrar(cfg: Config) -> None:
+    """Parte los archivos por período que se bajaron antes de D-63 en un archivo por entidad, así no
+    se vuelven a bajar."""
+    d, dp = _dir(cfg), _partes(cfg)
+    for a in d.glob("*.parquet"):
+        if any(dp.glob(f"{a.stem}_*.parquet")):
+            continue
+        x = pl.read_parquet(a)
+        if "rnemp" not in x.columns:
+            continue
+        for (rn,), g in x.group_by("rnemp"):
+            g.write_parquet(dp / f"{a.stem}_{rn}.parquet", compression="zstd")
+
+
+def _armar(cfg: Config, periodo: int) -> int:
+    """El archivo del período es la unión de lo que declaró cada entidad."""
+    ps = sorted(_partes(cfg).glob(f"{periodo}_*.parquet"))
+    if not ps:
+        return 0
+    x = pl.concat([pl.read_parquet(p) for p in ps], how="diagonal_relaxed")
+    x.write_parquet(_dir(cfg) / f"{periodo}.parquet", compression="zstd")
+    return x.height
+
+
+def actualizar(cfg: Config, max_periodos: int = 3, revisar: int = 6) -> dict:
+    """D-63. Las entidades declaran con atraso y algunas saltean meses, así que en cada corrida:
+    - se revisan los últimos `revisar` períodos entidad por entidad (un pedido de una fila cada una) y
+      se baja de nuevo la entidad que apareció o cambió la cantidad de filas (los dos últimos períodos
+      se bajan siempre: las entidades corrigen valores);
+    - de los períodos más viejos se completan hasta `max_periodos` que todavía no se tienen;
+    - una entidad que no responde no tira el período: queda anotada y se reintenta en la próxima corrida.
+    Nada se completa ni se estima: lo que una entidad no declaró queda sin dato."""
     ents = entidades(cfg)
     if not ents:
         return {"error": "sin entidades en config/regulados/prepagas.yaml"}
-    d = _dir(cfg)
+    d, dp = _dir(cfg), _partes(cfg)
+    _migrar(cfg)
     try:
         periodos = sorted(_get("getPeriodo", {}).get("data") or [], reverse=True)
     except RuntimeError as e:
         return {"error": str(e)}
+    ruta_cob = d / "cobertura.json"
+    cob = json.loads(ruta_cob.read_text(encoding="utf-8")) if ruta_cob.exists() else {}
     tengo = {int(p.stem) for p in d.glob("*.parquet")}
-    cola = [p for p in periodos[:2]] + [p for p in periodos[2:] if p not in tengo]
+    viejos = [p for p in periodos[revisar:] if p not in tengo][:max_periodos]
     hechos, errores = [], []
-    for p in cola[:max_periodos]:
-        try:
-            df = bajar_periodo(p, [e["rnemp"] for e in ents])
-            if df.is_empty():
-                errores.append(f"{p}: vacío")
-                continue
-            df.write_parquet(d / f"{p}.parquet", compression="zstd")
+    for k, p in enumerate(periodos[:revisar] + viejos):
+        c = cob.setdefault(str(p), {})
+        cambio = False
+        for e in ents:
+            rn, parte = e["rnemp"], dp / f"{p}_{e['rnemp']}.parquet"
+            try:
+                n = _total(p, rn)
+                if n == 0:
+                    c[str(rn)] = 0
+                    continue
+                if parte.exists() and c.get(str(rn)) == n and k >= 2:
+                    continue
+                x = bajar_entidad(p, rn)
+                if x.is_empty():
+                    continue
+                x.write_parquet(parte, compression="zstd")
+                c[str(rn)] = n
+                cambio = True
+            except Exception as ex:
+                errores.append(f"{p} {e['nombre']}: {ex}")
+        if cambio or (p not in tengo and any(dp.glob(f"{p}_*.parquet"))):
+            log.info("Prepagas %s: %d filas", p, _armar(cfg, p))
             hechos.append(p)
-            log.info("Prepagas %s: %d filas", p, df.height)
-        except Exception as e:
-            errores.append(f"{p}: {e}")
+    ruta_cob.write_text(json.dumps(cob, indent=1, sort_keys=True), encoding="utf-8")
+    nombres = {str(e["rnemp"]): e["nombre"] for e in ents}
+    sin = {p: [nombres.get(rn, rn) for rn, n in sorted(cob.get(str(p), {}).items()) if n == 0]
+           for p in periodos[:revisar]}
     return {"periodos_publicados": periodos, "bajados": hechos, "errores": errores,
+            "sin_declarar": {p: v for p, v in sin.items() if v},
             "faltan": sorted(set(periodos) - {int(x.stem) for x in d.glob("*.parquet")})}
 
 
@@ -133,10 +198,15 @@ def indice(cfg: Config) -> pl.DataFrame:
         if x.is_empty():
             continue
         lr = (x["rel"].log() * x["w"]).sum() / x["w"].sum()
+        a0 = leer(a)
+        cap_a = float(a0["cantidad_capitas"].fill_null(0).sum()) or 1.0
+        ent_a, ent_ab = set(a0["rnemp"].to_list()), set(x["rnemp"].to_list())
         tasa = (x["tasa"].fill_null(float("nan")) * x["w"]).filter(x["tasa"].is_not_null()).sum() / \
             x["w"].filter(x["tasa"].is_not_null()).sum() if x["tasa"].is_not_null().any() else None
         filas.append({"periodo": f"{pb // 100}-{pb % 100:02d}", "var_pct": (math.exp(lr) - 1) * 100,
                       "n_celdas": x.height, "capitas": int(x["w"].sum()),
+                      "cobertura_pct": round(100 * float(x["w"].sum()) / cap_a, 1),
+                      "entidades": len(ent_ab), "faltan_entidades": sorted(ent_a - ent_ab),
                       "tasa_declarada_pct": tasa * 100 if tasa is not None and math.isfinite(tasa) else None})
     return pl.DataFrame(filas)
 

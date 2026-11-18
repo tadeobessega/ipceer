@@ -64,6 +64,9 @@ indice:
     usar: true
     fuentes: [tarifas, prepagas, educacion, alquiler_icl, combustibles, telefonia, autos]  # D-56, D-57 y D-60
     restaurantes: true   # D-55; con indice.modelos.usar (D-62) no se usa
+    # D-64: alquiler con el promedio de las variaciones del ICL de los últimos 6 meses, rezago 1
+    # (con meses: 1 y rezago: 0 vuelve a D-56). Jul-24 a oct-26, GBA: RMSE 1,54 contra 3,15.
+    alquiler_icl: {meses: 6, rezago: 1, desde_mes: "2026-11"}
   # D-62 (reemplaza a D-55): restaurantes y educación con modelos, desde noviembre de 2026.
   # Coeficientes congelados (IPC del INDEC de GBA, 2017-02 a 2026-08; se revisan solo con meses
   # nuevos del INDEC, ver METODOLOGIA.md). Salarios: github.com/marcos-sacca/salarios.
@@ -78,6 +81,15 @@ indice:
       con_paritarias: {const: 1.5870, ngex: 0.2098, ene: -2.7595, dic: -1.5547, paritarias_t1: 0.2889}
       sin_paritarias: {const: 2.0137, ngex: 0.4034, ene: -3.3851, dic: -1.8745}
       marzo: {const: 0.0799, ng12: 0.4732, educ_abr_feb: -0.4052}   # en logaritmos
+    expensas:         # 04.1.3 (D-64): NG sin rubros(t), paritaria de encargados(t), aguinaldo (jun, dic) y después (jul, ene)
+      con_paritaria: {const: 0.1556, ngex: 0.1596, paritaria: 0.7007, aguinaldo: 14.2859, post_aguinaldo: -11.9882}
+      sin_paritaria: {const: 1.0942, ngex: 0.6601, aguinaldo: 10.4365, post_aguinaldo: -9.6813}
+    paquetes:         # 09.6 (D-65): modelo del 09.6 implícito del INDEC ((09.3 y 09.6) − peso de 09.3 × bienes), NG sin rubros(t) y mes (ene a dic)
+      {const: 13.988, ngex: 1.349, meses: [0.0, -24.89, -34.4, -27.51, -20.39, -6.21, 19.48, -30.8, -19.69, -16.12, -13.83, -14.79]}
+    hoteles:          # 11.2 (D-65): NG sin rubros(t) y mes calendario (ene a dic)
+      {const: 31.166, ngex: 0.885, meses: [0.0, -40.89, -44.63, -39.85, -32.39, -28.84, -6.77, -37.81, -37.87, -30.79, -29.24, -29.06]}
+    medicos:          # 06.2 (D-65): ngex × NG sin rubros(t) + ipcba_t2 × IPCBA servicios para pacientes externos(t−2)
+      {ngex: 0.6180, ipcba_t2: 0.3820}
   # Precio que se usa: "lista" (precio de góndola sin promociones) o
   # "efectivo" (el menor entre lista y promo 1 unitaria).
   precio: lista

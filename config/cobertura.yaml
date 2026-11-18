@@ -41,7 +41,7 @@ incluido:          # dentro del índice publicado, con precios propios
   - "07.1.1"       # autos: guía de precios de la CCA (D-41)
   - "08.3.2"       # telefonía móvil: planes de las empresas desde el 16/11/2026 (D-57)
   - "08.3.3"       # internet: ídem
-  - "09.4.2"       # servicios culturales: TV paga, streaming y cine (D-59, D-60); falta teatro
+  - "09.4.2"       # servicios culturales: TV paga, streaming, cine y teatro (D-59, D-60)
   - "09.5.2"       # diarios: suscripciones de Clarín y El Cronista desde el 18/11/2026 (D-59)
 relevado: []       # se releva, pero todavía no entra al índice publicado
 estimado:          # sin precios propios: entra al índice con un modelo (D-55)

@@ -54,8 +54,7 @@ PAGINAS = [
     ("telecentro", "hogar", "https://www.telecentro.com.ar/"),
     # D-60: cine (entradas de Cinemark Hoyts por complejo y formato)
     ("cinemark", "09.4.2", "https://www.cinemark.com.ar/precios"),
-    # D-60: paquetes turísticos (precios "desde" por destino; se prueba si la página los trae)
-    ("despegar", "09.6", "https://www.despegar.com.ar/paquetes/"),
+    # Despegar (paquetes turísticos) rechaza a los robots (HTTP 403): turismo queda pendiente
     # D-59: diarios (suscripciones digitales y en papel, 09.5.2)
     ("lanacion", "09.5.2", "https://www.lanacion.com.ar/suscripciones/"),
     ("clarin", "09.5.2", "https://www.clarin.com/suscripciones/landing.html"),
@@ -138,7 +137,7 @@ def precios(lineas: list[str], ventana: int = 6) -> list[dict]:
     """Cada precio con su contexto: las líneas sin precios desde el precio anterior (nombre del plan,
     GB, megas; a lo sumo `ventana`). Marca si es tachado ("antes"), sin impuestos o de promoción, con
     el texto de la misma línea que está justo antes de la cifra."""
-    out, ultimo, ctx, titulos, futuro = [], -1, "", [], False
+    out, ultimo, ctx, titulos, futuro, seccion = [], -1, "", [], False, ""
     for i, l in enumerate(lineas):
         n_l = _norm(l)
         if l.startswith("## ") and not PRECIO.search(l):
@@ -148,6 +147,9 @@ def precios(lineas: list[str], ventana: int = 6) -> list[dict]:
             futuro = True
         elif re.search(r"(tarifas|precios) vigentes", n_l):
             futuro = False
+            # la línea anterior nombra el bloque (el complejo de cine): va en el contexto de sus precios
+            ant = [x for x in lineas[max(0, i - 2):i] if not PRECIO.search(x)]
+            seccion = (ant[-1][3:] if ant and ant[-1].startswith("## ") else (ant[-1] if ant else "")).strip()
         ms = list(PRECIO.finditer(l))
         if not ms:
             continue
@@ -166,7 +168,7 @@ def precios(lineas: list[str], ventana: int = 6) -> list[dict]:
             antes_txt = _norm(l[max(0, m.start() - 40):m.start()])
             if futuro:
                 continue
-            tit = " > ".join(t for t in titulos if t not in ctx)
+            tit = " > ".join(t for t in ([seccion] if seccion else []) + titulos if t and t not in ctx)
             out.append({"linea": l[:200], "contexto": ((tit + " | ") if tit else "") + ctx[:300], "precio": v,
                         "antes": "[antes]" in antes_txt[-12:] or bool(re.search(r"\b(antes|luego)\b\W*$", antes_txt)),
                         "sin_impuestos": bool(re.search(r"sin impuesto", antes_txt)),

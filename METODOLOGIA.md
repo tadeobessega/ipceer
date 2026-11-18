@@ -644,22 +644,44 @@ el total no se presenta como nivel general.
   semana anterior y necesita los paneles diarios, que GitHub guarda solo de las últimas dos semanas:
   faltaba la semana 44 (contra el 25/10). Ahora el cálculo de GitHub completa con las semanas que
   calculó la PC los indicadores semanales que no puede calcular.
+- **D-60 (18/11/2026). Combustibles con pesos por gasto y semanal; todo lo relevado al índice.**
+  - **Error en la ponderación de combustibles.** Los productos se ponderaban por volumen, pero en
+    los datos de Energía el GNC viene en m3 de gas y los líquidos en m3 (miles de litros): el GNC
+    pesaba entre 50 y 95% del índice en vez de 1 a 6%. Ahora pesan por gasto (litros por precio).
+    Contra el INDEC (702 meses-región, 2017-2026, con el promedio de cierres de D-58): error medio
+    1,47 pp (antes 1,95), 1,50 desde 2024, correlación 0,92 y dirección correcta en el 96% de los
+    meses desde 2024. Sesgo: +0,5 pp (medimos algo más que el INDEC).
+  - **Semanal y meses recientes.** La serie de Energía sale con unos dos meses de atraso, así que
+    no sirve para el dato del mes. El dataset "Precios en surtidor" se sigue publicando aunque la
+    Res. 314/2016 se derogó, pero ya no es obligatorio: de unas 18.000 combinaciones de estación y
+    producto, solo unas 3.400 se actualizaron en los últimos 75 días, casi todas de Shell, Axion,
+    Puma y blancas; YPF (más de la mitad del mercado) casi no informa y además fija precios por
+    estación y hora ("micropricing"). Con esas 3.400 se arma el semanal (precio medio de la semana
+    por estación y producto, mismas estaciones, productos por gasto) y los meses que Energía todavía
+    no publicó. GitHub archiva el dataset todos los días (`ipceer surtidor`, `surtidor.tar.gz`).
+    Falta YPF: no publica precios en su sitio (los muestra la app).
+  - **Todo lo relevado entra al índice**, pedido de Tadeo: autos (guía de la CCA; en semanal por
+    devengado) y lo que se lee de las páginas (telefonía, internet, TV paga, streaming, diarios,
+    cine) desde su segundo período.
+  - **Cine (09.4.2):** precios vigentes de Cinemark Hoyts por complejo, formato y categoría
+    (general, menores, mayores de 60, días de semana); los anunciados "a partir del" se descartan
+    hasta que rigen. **Teatro y turismo, pendientes:** Alternativa Teatral arma la cartelera con
+    JavaScript (y pide 10 minutos entre pedidos); Despegar rechaza a los robots.
 - **Ponderación (confirmado el 13/11/2026).** El índice usa la ponderación "indec" (D-11): los
   pesos de diciembre de 2016 llevados al último mes publicado con los índices oficiales y desde ahí
   movidos con nuestras variaciones. Se encontró que el índice de Morón buscaba las series del
   INDEC en su propia carpeta (vacía) y caía a la ponderación "propia": ahora usa la carpeta común.
 
-## 6. Qué medimos, qué estimamos y qué falta (actualizado el 16/11/2026)
+## 6. Qué medimos, qué estimamos y qué falta (actualizado el 18/11/2026; detalle en D-55 a D-60)
 
 Peso en la canasta nacional del INDEC (clases de `config/ponderadores_clase.csv` ponderadas por
 región), según `config/cobertura.yaml`, que es la misma clasificación del gráfico de torta del tablero:
 
 | Estado | Bienes | Servicios | Total |
 |---|---|---|---|
-| Relevados e incluidos en el índice | 60,0% | 13,7% | 73,7% |
-| Relevados, sin incluir todavía | 2,6% | | 2,6% |
-| Sin relevar, estimados con un modelo | | 10,9% | 10,9% |
-| Sin relevar | 0,6% | 12,2% | 12,8% |
+| Relevados e incluidos en el índice | 63,1% | 18,1% | 81,2% |
+| Sin relevar, estimados con un modelo | | 11,5% | 11,5% |
+| Sin relevar | 0,1% | 7,2% | 7,3% |
 
 **Relevados e incluidos.**
 - Supermercados (SEPA): alimentos y bebidas, limpieza, cuidado personal, mascotas, útiles.

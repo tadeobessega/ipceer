@@ -692,14 +692,12 @@ región), según `config/cobertura.yaml`, que es la misma clasificación del gr�
 
 - Alquiler con el ICL y combustibles de Energía (D-56; combustibles solo en el mensual).
 
-**Relevados, sin incluir todavía.**
-- Autos (07.1.1, 2,6%): guía de precios de la CCA (D-41); falta probarla contra el INDEC.
+- Desde D-60, también autos (guía de la CCA), telefonía móvil, internet, TV paga, streaming, cine y
+  diarios (estos desde su segundo período).
 
-**Estimados con un modelo (D-55).** Restaurantes (11.1, 8,6%) con los bienes del mismo período;
-educación (10, 2,3%) con el INDEC del mismo mes del año anterior.
-
-**Relevándose desde el 16/11/2026 (D-57).** Telefonía móvil (1,4%) e internet (0,7%): entran con el
-segundo período.
+**Estimados con un modelo.** Restaurantes (11.1, 8,6%) con los bienes del mismo período; educación
+(10, 2,3%) con el INDEC del mismo mes del año anterior (D-55); telefonía fija (08.3.1, 0,6%) con el
+aumento de las mismas empresas en móvil e internet (D-59).
 
 **Sin relevar, de mayor a menor peso.** Servicios culturales (2,3%; cine, teatro,
 streaming), expensas (1,2%; sin fuente pública), servicios médicos (0,9%),

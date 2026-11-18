@@ -219,26 +219,76 @@ def _alimentos_web(cfg, res: dict) -> None:
     (cfg.ruta("resultados") / "alimentos_web.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def _modelos_d62(cfg, kw: dict, ext: dict) -> tuple[dict, dict]:
+    """D-62 (reemplaza a D-55): restaurantes y educación con los modelos de `modelos.py`. Primero un
+    cálculo del tramo actual con todo lo medido menos estos rubros: de ahí salen alimentos (01.1) y el
+    nivel general sin estos rubros, que alimentan los modelos. Devuelve los extras con lo modelado."""
+    from . import modelos
+    base = {}
+    for f in ("mensual", "semanal"):
+        try:
+            base[f] = indice.calcular(cfg, f, extra=ext.get(f), solo_tramo_actual=True, **kw)["indices"]
+        except (ValueError, FileNotFoundError) as e:
+            log.warning("Modelos D-62, cálculo base %s: %s", f, e)
+        gc.collect()
+    if "mensual" not in base:
+        return ext, {}
+    mens, info = modelos.mensual(cfg, base["mensual"])
+    nuevos = {"mensual": mens}
+    if "semanal" in base:
+        nuevos["semanal"] = modelos.semanal(cfg, base["semanal"], mens)
+    del base
+    gc.collect()
+    out = dict(ext)
+    for f, x in nuevos.items():
+        if x.is_empty():
+            continue
+        e = out.get(f)
+        out[f] = x if e is None or e.is_empty() else pl.concat([e, x.select(e.columns)], how="vertical_relaxed")
+        log.info("Modelos D-62 (%s): %s", f, dict(x.group_by("fuente").agg(pl.col("periodo").max()).iter_rows()))
+    return out, info
+
+
 def cmd_calcular(cfg, args):
     res = {}
+    iw = (cfg["indice"] or {}).get("web") or {}  # D-52: tiendas en línea en el índice publicado
+    isv = (cfg["indice"] or {}).get("servicios") or {}  # D-53: tarifas, alquiler (ICL) y prepagas
+    usar_mod = bool(((cfg["indice"] or {}).get("modelos") or {}).get("usar"))  # D-62
+    kw = dict(web=bool(iw.get("usar")), web_excluir=tuple(iw.get("excluir_divisiones") or ()))
+    fuentes = tuple(isv.get("fuentes") or servicios.FUENTES)
+    if usar_mod:  # D-62 reemplaza la educación de D-55
+        fuentes = tuple(x for x in fuentes if x != "educacion")
+    ext = {}
     for f in ("semanal", "mensual"):
         try:
-            iw = (cfg["indice"] or {}).get("web") or {}  # D-52: tiendas en línea en el índice publicado
-            isv = (cfg["indice"] or {}).get("servicios") or {}  # D-53: tarifas, alquiler (ICL) y prepagas
-            ext = servicios.relativos(cfg, f, tuple(isv.get("fuentes") or servicios.FUENTES)) if isv.get("usar") else None
-            kw = dict(web=bool(iw.get("usar")), web_excluir=tuple(iw.get("excluir_divisiones") or ()))
-            if isv.get("restaurantes"):  # D-55: primero los bienes solos, para imputar restaurantes con ellos
+            ext[f] = servicios.relativos(cfg, f, fuentes) if isv.get("usar") else None
+        except Exception as e:
+            log.warning("Servicios %s: %s", f, e)
+            ext[f] = None
+    info_modelos = {}
+    if usar_mod:
+        try:
+            ext, info_modelos = _modelos_d62(cfg, kw, ext)
+        except Exception as e:
+            log.warning("Modelos de restaurantes y educación (D-62): %s", e)
+    for f in ("semanal", "mensual"):
+        try:
+            ext_f = ext.get(f)
+            if isv.get("restaurantes") and not usar_mod:  # D-55: primero los bienes solos, para imputar restaurantes con ellos
                 b = indice.calcular(cfg, f, **kw)["indices"]
                 rr = servicios.restaurantes(b)
                 del b
                 gc.collect()
-                ext = rr if ext is None or ext.is_empty() else pl.concat([ext, rr])
-            r = indice.calcular(cfg, f, **kw, extra=ext)
+                ext_f = rr if ext_f is None or ext_f.is_empty() else pl.concat([ext_f, rr])
+            r = indice.calcular(cfg, f, **kw, extra=ext_f)
         except (ValueError, FileNotFoundError) as e:
             log.warning("Índice %s: %s", f, e)
             continue
         indice.guardar(r, cfg, f)
         res[f] = r
+    if info_modelos:
+        (cfg.ruta("resultados") / "modelos.json").write_text(
+            json.dumps(info_modelos, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     if not res:
         return
     # D-54: la alternativa de alimentos con web corre en otro proceso, para no sumar su memoria a la
@@ -340,6 +390,8 @@ def cmd_calcular(cfg, args):
     except Exception as e:
         log.warning("Carrera de métodos: %s", e)
     _datos_fuentes(cfg, datos)
+    if info_modelos:
+        datos["modelos"] = resumen._limpio(info_modelos)
     try:
         datos["municipios"] = resumen._limpio(municipios.calcular(cfg))
     except Exception as e:

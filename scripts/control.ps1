@@ -54,12 +54,15 @@ if ($Subir -and (Get-Command gh -ErrorAction SilentlyContinue)) {
     Copy-Item $destino "$env:TEMP\estado_pc.json" -Force
     gh release upload sepa-archivo "$env:TEMP\estado_pc.json" --clobber -R tadeobessega/ipceer 2>&1 | Write-Output
     # tablero: lo sirve el Worker "ipceer" de Cloudflare (ipceer.tadeobessega.workers.dev)
-    if (Test-Path "$Repo\sitio\index.html") {
+    # si el cálculo falló, el sitio y los datos son de una corrida anterior: no se suben (GitHub sirve el suyo)
+    $calculoFallo = @($errores | Where-Object { $_ -match "lculo" }).Count -gt 0
+    if ($calculoFallo) { Write-Output "El cálculo falló: no se sube tablero.html ni datos_pc.json." }
+    if (-not $calculoFallo -and (Test-Path "$Repo\sitio\index.html")) {
       Copy-Item "$Repo\sitio\index.html" "$env:TEMP\tablero.html" -Force
       gh release upload sepa-archivo "$env:TEMP\tablero.html" --clobber -R tadeobessega/ipceer 2>&1 | Write-Output
     }
     # datos del último cálculo: GitHub los usa para las partes que no puede recalcular (D-49)
-    if (Test-Path "$Repo\resultados\datos.json") {
+    if (-not $calculoFallo -and (Test-Path "$Repo\resultados\datos.json")) {
       Copy-Item "$Repo\resultados\datos.json" "$env:TEMP\datos_pc.json" -Force
       gh release upload sepa-archivo "$env:TEMP\datos_pc.json" --clobber -R tadeobessega/ipceer 2>&1 | Write-Output
     }

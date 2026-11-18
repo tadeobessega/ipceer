@@ -84,8 +84,12 @@ indice:
     expensas:         # 04.1.3 (D-64): NG sin rubros(t), paritaria de encargados(t), aguinaldo (jun, dic) y después (jul, ene)
       con_paritaria: {const: 0.1556, ngex: 0.1596, paritaria: 0.7007, aguinaldo: 14.2859, post_aguinaldo: -11.9882}
       sin_paritaria: {const: 1.0942, ngex: 0.6601, aguinaldo: 10.4365, post_aguinaldo: -9.6813}
-    paquetes:         # 09.6 (D-64): modelo de 09.3 y 09.6 del INDEC, NG sin rubros(t) y mes calendario (ene a dic)
-      {const: 4.159, ngex: 1.165, meses: [0.0, -8.019, -11.163, -8.895, -6.542, -2.219, 6.063, -9.713, -5.934, -5.038, -4.276, -4.533]}
+    paquetes:         # 09.6 (D-65): modelo del 09.6 implícito del INDEC ((09.3 y 09.6) − peso de 09.3 × bienes), NG sin rubros(t) y mes (ene a dic)
+      {const: 13.988, ngex: 1.349, meses: [0.0, -24.89, -34.4, -27.51, -20.39, -6.21, 19.48, -30.8, -19.69, -16.12, -13.83, -14.79]}
+    hoteles:          # 11.2 (D-65): NG sin rubros(t) y mes calendario (ene a dic)
+      {const: 31.166, ngex: 0.885, meses: [0.0, -40.89, -44.63, -39.85, -32.39, -28.84, -6.77, -37.81, -37.87, -30.79, -29.24, -29.06]}
+    medicos:          # 06.2 (D-65): ngex × NG sin rubros(t) + ipcba_t2 × IPCBA servicios para pacientes externos(t−2)
+      {ngex: 0.6180, ipcba_t2: 0.3820}
   # Precio que se usa: "lista" (precio de góndola sin promociones) o
   # "efectivo" (el menor entre lista y promo 1 unitaria).
   precio: lista

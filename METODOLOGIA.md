@@ -783,10 +783,10 @@ el total no se presenta como nivel general.
   | Rubro | Hoy | Modelo | Entra |
   |---|---|---|---|
   | Expensas (04.1.3) | reparto: RMSE 7,02; MAPE 129%; R² 0,01 | 2,31; 30%; 0,89 | sí |
-  | 09.3 y 09.6 (juguetes, mascotas y paquetes) | 6,25; 325%; −0,05 | 4,70; 201%; 0,41 | sí, en 09.6 |
+  | 09.3 y 09.6 (juguetes, mascotas y paquetes) | 6,25; 325%; −0,05 | 4,70; 201%; 0,41 | sí, en 09.6 (D-65 lo reemplaza) |
   | Alquiler (04.1.1) | ICL mes a mes: 3,15; 35%; 0,39 | ICL 6 meses: 1,54; 19%; 0,85 | sí |
   | Educación (10) | D-55: 7,52; 177%; −4,06 | D-62: 1,50; 61%; 0,80 | ya estaba (D-62) |
-  | Hoteles (11.2) | 15,77; 136%; −0,02 | 8,71; 149%; 0,69 | no: el MAPE empeora |
+  | Hoteles (11.2) | 15,77; 136%; −0,02 | 8,71; 149%; 0,69 | no por el criterio (MAPE); entra por D-65 |
 
   - **Expensas (04.1.3)**, en %: `0,1556 + 0,1596 × NG sin rubros(t) + 0,7007 × paritaria de encargados(t) + 14,2859 × [junio o diciembre] − 11,9882 × [julio o enero]`.
     La paritaria (serie Representativa del boletín STEySS y acuerdos relevados del repositorio de
@@ -811,6 +811,31 @@ el total no se presenta como nivel general.
     meses anteriores a noviembre de 2026 quedan como se publicaron (D-56). Como usa hasta el mes
     anterior, el dato del mes se conoce el día 1.
   - Semanal: expensas y paquetes por devengado de la variación del mes, como educación.
+
+- **D-65 (18/11/2026). Hoteles, servicios médicos y paquetes turísticos, desde noviembre de 2026.**
+  Decisión de Tadeo (hoteles entra aunque su MAPE empeora: 149% contra 136% del reparto, inflado por
+  meses con variación cerca de cero; RMSE 8,71 contra 15,77 y R² 0,69 contra −0,02). Julio de 2024 a
+  octubre de 2026, GBA, fuera de muestra:
+  - **Hoteles (11.2)**: nivel general sin rubros y mes calendario (2019 a 2026).
+  - **Servicios médicos (06.2)**: `0,618 × NG sin rubros(t) + 0,382 × IPCBA servicios para pacientes
+    externos(t−2)` (combinación convexa, 2022-05 a 2026-10). Contra el reparto: RMSE 1,31 contra
+    1,91; MAPE 36% contra 40%; R² 0,40 contra −0,26. El IPCBA (IDECBA, `ipcba.py`) se usa solo como
+    insumo, con dos meses de rezago (se conoce antes del mes a estimar); no se compara con el INDEC.
+    Se baja de la página del IPCBA y, si no se puede, se usa la copia más nueva (`config/ipcba`).
+    Sin el IPCBA de dos meses antes, el mes queda sin modelo (reparto).
+  - **Paquetes turísticos (09.6), desarrollado**: el INDEC publica 09.3 y 09.6 juntos. En D-64 el
+    modelo de la mezcla se aplicaba a 09.6, pero en el índice 09.3 va con precios propios, así que
+    los saltos de 09.6 quedaban diluidos. Ahora se modela el 09.6 implícito del INDEC: (mezcla −
+    0,68 × bienes) / 0,32 (pesos de GBA; bienes del INDEC como aproximación de 09.3), con nivel
+    general sin rubros y mes calendario. Evaluado como entra al índice (09.3 con bienes y 09.6
+    modelado, contra la mezcla del INDEC): RMSE 4,80 contra 5,43 del modelo de D-64 y 6,27 del
+    reparto; MAPE 170% contra 246% y 289%; R² 0,38 contra 0,20 y −0,06. El IPCBA de paquetes
+    turísticos se probó y no mejora (del mismo mes no se conoce a tiempo; del anterior empeora).
+  - **Pendiente (salarios, para revisar con el ISCEER)**: las expensas usan la paritaria de
+    encargados del mismo mes, que el boletín publica con atraso; casi siempre corre la variante sin
+    paritaria (peor en MAPE que el reparto). Revisar con el índice de salarios del CEER si se puede
+    tener la paritaria del mes a tiempo (actas firmadas, como la de SUTERH de septiembre de 2026 que
+    fija sin aumento de octubre a febrero).
 
 ## 6. Qué medimos, qué estimamos y qué falta (actualizado el 18/11/2026; detalle en D-55 a D-60)
 

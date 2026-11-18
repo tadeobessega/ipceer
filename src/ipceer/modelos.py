@@ -4,7 +4,10 @@ turísticos (09.6).
 
   Expensas (mes t, en %): const + b × NG sin rubros(t) + c × paritaria de encargados de edificio(t)
     + d × [junio o diciembre] + e × [julio o enero]. Sin paritaria del mes, la variante sin ese término.
-  Paquetes turísticos (mes t, en %): const + b × NG sin rubros(t) + efecto del mes calendario.
+  Paquetes turísticos (mes t, en %): const + b × NG sin rubros(t) + efecto del mes calendario (D-65:
+    estimado sobre el 09.6 implícito del INDEC, no sobre la mezcla con 09.3).
+  Hoteles (D-65): const + b × NG sin rubros(t) + efecto del mes calendario.
+  Servicios médicos (D-65): a × NG sin rubros(t) + (1 − a) × IPCBA servicios para pacientes externos(t−2).
 
 Los coeficientes están congelados en config.yaml (`indice.modelos`); se estimaron con el IPC del
 INDEC de GBA (2017-02 a 2026-08) y se probaron fuera de muestra (METODOLOGIA.md, D-62). Se aplican
@@ -53,6 +56,7 @@ log = logging.getLogger(__name__)
 
 ESQUEMA = {"periodo": pl.Utf8, "codigo": pl.Utf8, "region": pl.Utf8, "logrel": pl.Float64, "fuente": pl.Utf8}
 CLASES_EDUC = ("10.1", "10.2", "10.3", "10.5")
+CLASES_MED = ("06.2.1", "06.2.2", "06.2.3")
 MESES = {"ene": 1, "feb": 2, "mar": 3, "abr": 4, "may": 5, "jun": 6, "jul": 7, "ago": 8, "sep": 9, "oct": 10,
          "nov": 11, "dic": 12}
 REPO = "marcos-sacca/salarios"
@@ -235,8 +239,21 @@ def _expensas(p: dict, mes: str, ngex: float, par: float | None) -> tuple[float,
 
 
 def _paquetes(p: dict, mes: str, ngex: float) -> tuple[float, str]:
-    """D-64. 09.6 con el modelo de 09.3 y 09.6 del INDEC (nivel general sin rubros y mes calendario)."""
+    """D-65. 09.6: modelo del 09.6 implícito del INDEC (nivel general sin rubros y mes calendario)."""
     return p["const"] + p["ngex"] * ngex + p["meses"][int(mes[5:]) - 1], "modelo_paquetes"
+
+
+def _hoteles(p: dict, mes: str, ngex: float) -> tuple[float, str]:
+    """D-65. 11.2: nivel general sin rubros y mes calendario."""
+    return p["const"] + p["ngex"] * ngex + p["meses"][int(mes[5:]) - 1], "modelo_hoteles"
+
+
+def _medicos(p: dict, ngex: float, ba_t2: float | None) -> tuple[float | None, str]:
+    """D-65. 06.2: combinación convexa del nivel general sin rubros y del IPCBA de servicios para
+    pacientes externos de dos meses antes. Sin IPCBA, sin dato (queda el reparto)."""
+    if ba_t2 is None:
+        return None, ""
+    return p["ngex"] * ngex + p["ipcba_t2"] * ba_t2, "modelo_medicos"
 
 
 def _restaurantes(p: dict, alim: float, ngex: float, s: float | None) -> tuple[float, str]:
@@ -278,6 +295,10 @@ def mensual(cfg: Config, base: pl.DataFrame) -> tuple[pl.DataFrame, dict]:
     sal = salarios(cfg)
     alim, ngex = _var(base, "grupo", "01.1"), _var(base, "total", "TOTAL")
     ind = _indec(cfg)
+    ba_med = {}
+    if pm.get("medicos"):
+        from . import ipcba
+        ba_med = ipcba.variaciones(cfg, "Servicios para pacientes externos")
     periodos = sorted({p for p, _ in ngex if p >= desde})
     filas, detalle, educ_prop = [], [], {}
     for p in periodos:
@@ -317,6 +338,17 @@ def mensual(cfg: Config, base: pl.DataFrame) -> tuple[pl.DataFrame, dict]:
                 v, fu = _paquetes(pm["paquetes"], p, ng)
                 filas.append({"periodo": p, "codigo": "09.6", "region": r, "logrel": math.log1p(v / 100), "fuente": fu})
                 fila_det.update(paquetes=round(v, 4))
+            if pm.get("hoteles"):
+                v, fu = _hoteles(pm["hoteles"], p, ng)
+                filas.append({"periodo": p, "codigo": "11.2", "region": r, "logrel": math.log1p(v / 100), "fuente": fu})
+                fila_det.update(hoteles=round(v, 4))
+            if pm.get("medicos"):
+                b2 = ba_med.get(_mas(p, -2))
+                v, fu = _medicos(pm["medicos"], ng, b2)
+                if v is not None:
+                    filas += [{"periodo": p, "codigo": c, "region": r, "logrel": math.log1p(v / 100), "fuente": fu}
+                              for c in CLASES_MED]
+                    fila_det.update(medicos=round(v, 4), ipcba_medicos_t2=b2)
             detalle.append(fila_det)
     df = pl.DataFrame(filas, schema=ESQUEMA) if filas else pl.DataFrame(schema=ESQUEMA)
     info = {"desde_mes": desde, "detalle": detalle,
@@ -344,7 +376,7 @@ def semanal(cfg: Config, base: pl.DataFrame, mens: pl.DataFrame) -> pl.DataFrame
         filas.append({"periodo": sem, "codigo": "11.1", "region": r, "logrel": math.log1p(v / 100), "fuente": fu})
     # educación, expensas y paquetes (D-64): el nivel diario sube el día 1 de cada mes; la semana es
     # el promedio de sus 7 días
-    for codigos in (CLASES_EDUC, ("04.1.3",), ("09.6",)):
+    for codigos in (CLASES_EDUC, ("04.1.3",), ("09.6",), ("11.2",), CLASES_MED):
         filas += _devengado(mens.filter(pl.col("codigo") == codigos[0]), codigos, desde)
     return pl.DataFrame(filas, schema=ESQUEMA) if filas else pl.DataFrame(schema=ESQUEMA)
 

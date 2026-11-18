@@ -322,12 +322,15 @@ def test_telefonia_parser():
 
 def test_modelos_d62_en_el_indice(cfg, monkeypatch):
     """D-62: restaurantes y educación entran al nivel general con los modelos, con los insumos propios."""
+    import math
     from ipceer import cli, modelos
     monkeypatch.setitem(cfg["indice"], "modelos", {**cfg["indice"]["modelos"], "desde_mes": "2026-09"})
     monkeypatch.setattr(modelos, "salarios", lambda c: {"gastro": {f"2026-{m:02d}": 3.0 for m in range(1, 11)},
                                                         "paritarias": {f"2026-{m:02d}": 2.0 for m in range(1, 11)},
                                                         "encargados": {"2026-09": 1.5}})
     monkeypatch.setattr(modelos, "_indec", lambda c: {})
+    from ipceer import ipcba
+    monkeypatch.setattr(ipcba, "variaciones", lambda c, a: {"2026-07": 2.0, "2026-08": 4.0})
     rp = cfg.dir_config / "ponderadores_clase.csv"
     orig = rp.read_text(encoding="utf-8")
     rp.write_text(orig + "".join(f'{c},"{n}",{w},{w},{w},{w},{w},{w}\n' for c, n, w in [
@@ -337,7 +340,8 @@ def test_modelos_d62_en_el_indice(cfg, monkeypatch):
     try:
         ext, info = cli._modelos_d62(cfg, {}, {"mensual": None, "semanal": None})
         m = ext["mensual"]
-        assert set(m["codigo"]) == {"11.1", "10.1", "10.2", "10.3", "10.5", "04.1.3", "09.6"} and set(m["periodo"]) == {"2026-09", "2026-10"}
+        assert set(m["codigo"]) == {"11.1", "10.1", "10.2", "10.3", "10.5", "04.1.3", "09.6", "11.2",
+                                   "06.2.1", "06.2.2", "06.2.3"} and set(m["periodo"]) == {"2026-09", "2026-10"}
         fu = dict(m.filter(pl.col("codigo") == "04.1.3").select("periodo", "fuente").unique().iter_rows())
         assert fu == {"2026-09": "modelo_expensas", "2026-10": "modelo_expensas_sin_paritaria"}  # D-64
         base = indice.calcular(cfg, "mensual")["indices"]
@@ -352,6 +356,9 @@ def test_modelos_d62_en_el_indice(cfg, monkeypatch):
         pq = cfg["indice"]["modelos"]["paquetes"]
         assert g(con, "09.6")[0] == pytest.approx(pq["const"] + pq["ngex"] * ng + pq["meses"][9], abs=1e-3)
         assert not ext["semanal"].filter(pl.col("codigo") == "04.1.3").is_empty()
+        pm = cfg["indice"]["modelos"]["medicos"]   # D-65: IPCBA de agosto para octubre
+        md = m.filter((pl.col("codigo") == "06.2.1") & (pl.col("region") == "GBA") & (pl.col("periodo") == "2026-10"))["logrel"][0]
+        assert (math.expm1(md) * 100) == pytest.approx(pm["ngex"] * ng + pm["ipcba_t2"] * 4.0, abs=1e-6)
         assert not ext["semanal"].filter(pl.col("codigo") == "11.1").is_empty() and info["detalle"]
     finally:
         rp.write_text(orig, encoding="utf-8")

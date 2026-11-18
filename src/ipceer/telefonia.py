@@ -49,20 +49,13 @@ PAGINAS = [
     ("personal", "08.3.2", "https://www.personal.com.ar/prepago"),
     ("personal", "hogar", "https://www.personal.com.ar/internet"),
     # D-59: TV paga y streaming (servicios culturales, 09.4.2)
-    ("directv", "09.4.2", "https://www.directv.com.ar/"),
-    ("directv", "09.4.2", "https://www.directv.com.ar/planes"),
-    ("netflix", "09.4.2", "https://www.netflix.com/ar/"),
-    ("disney", "09.4.2", "https://www.disneyplus.com/es-ar"),
+    # Netflix y Disney+ no permiten robots en sus páginas de planes (robots.txt)
     ("max", "09.4.2", "https://www.max.com/ar/es"),
     ("telecentro", "hogar", "https://www.telecentro.com.ar/"),
     # D-59: diarios (suscripciones digitales y en papel, 09.5.2)
-    ("lanacion", "09.5.2", "https://suscripciones.lanacion.com.ar/"),
-    ("clarin", "09.5.2", "https://suscripciones.clarin.com/"),
-    ("clarin", "09.5.2", "https://www.clarin.com/suscripciones/"),
+    ("lanacion", "09.5.2", "https://www.lanacion.com.ar/suscripciones/"),
+    ("clarin", "09.5.2", "https://www.clarin.com/suscripciones/landing.html"),
     ("cronista", "09.5.2", "https://www.cronista.com/suscripciones/"),
-    ("perfil", "09.5.2", "https://www.perfil.com/suscripcion"),
-    ("lavoz", "09.5.2", "https://suscripciones.lavoz.com.ar/"),
-    ("losandes", "09.5.2", "https://www.losandes.com.ar/suscripciones/"),
 ]
 PRECIO = re.compile(r"\$\s?(\d{1,3}(?:\.\d{3})+|\d{3,6})(?:,(\d{2}))?")
 

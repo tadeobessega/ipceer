@@ -102,11 +102,14 @@ jobs:
           # si la PC ya calculó con los mismos días, su versión es la completa
           ult_gh=$(ls data/panel/diario | sort | tail -1 | cut -c1-10)
           ult_pc=""
+          pc_calculo_fallo=""
           if gh release download "$TAG" -p estado_pc.json -O estado_pc.json 2>/dev/null; then
-            ult_pc=$(python -c "import json;print(json.load(open('estado_pc.json'))['ultimo_dia'])")
+            ult_pc=$(python -c "import json;print(json.load(open('estado_pc.json',encoding='utf-8-sig'))['ultimo_dia'])")
+            # si el cálculo de la PC falló, su tablero.html es el de una corrida anterior (quedó viejo)
+            pc_calculo_fallo=$(python -c "import json;e=json.load(open('estado_pc.json',encoding='utf-8-sig'));print('si' if any('lculo' in str(x) for x in (e.get('pasos_con_errores') or [])) else '')")
           fi
-          echo "GitHub tiene hasta $ult_gh; la PC, hasta ${ult_pc:-?}"
-          if [[ -z "$ult_pc" || "$ult_gh" > "$ult_pc" ]]; then
+          echo "GitHub tiene hasta $ult_gh; la PC, hasta ${ult_pc:-?}${pc_calculo_fallo:+ (su cálculo falló)}"
+          if [[ -z "$ult_pc" || "$ult_gh" > "$ult_pc" || -n "$pc_calculo_fallo" ]]; then
             cp tablero_github.html tablero.html
             gh release upload "$TAG" tablero.html --clobber
             echo "tablero.html reemplazado por el de GitHub"

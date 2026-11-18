@@ -1,4 +1,5 @@
-"""Planes de telefonía e internet (D-57): precios publicados en los sitios de las empresas.
+"""Precios publicados en los sitios de las empresas (D-57, D-59): planes de telefonía e internet,
+TV paga y streaming, y suscripciones a diarios.
 
 Clases del IPC: 08.3.1 telefonía fija, 08.3.2 telefonía móvil, 08.3.3 internet. Se leen una vez por
 día las páginas públicas de planes de Claro, Movistar y Personal (respetando robots.txt, con pausa
@@ -47,6 +48,21 @@ PAGINAS = [
     ("personal", "08.3.2", "https://www.personal.com.ar/planes"),
     ("personal", "08.3.2", "https://www.personal.com.ar/prepago"),
     ("personal", "hogar", "https://www.personal.com.ar/internet"),
+    # D-59: TV paga y streaming (servicios culturales, 09.4.2)
+    ("directv", "09.4.2", "https://www.directv.com.ar/"),
+    ("directv", "09.4.2", "https://www.directv.com.ar/planes"),
+    ("netflix", "09.4.2", "https://www.netflix.com/ar/"),
+    ("disney", "09.4.2", "https://www.disneyplus.com/es-ar"),
+    ("max", "09.4.2", "https://www.max.com/ar/es"),
+    ("telecentro", "hogar", "https://www.telecentro.com.ar/"),
+    # D-59: diarios (suscripciones digitales y en papel, 09.5.2)
+    ("lanacion", "09.5.2", "https://suscripciones.lanacion.com.ar/"),
+    ("clarin", "09.5.2", "https://suscripciones.clarin.com/"),
+    ("clarin", "09.5.2", "https://www.clarin.com/suscripciones/"),
+    ("cronista", "09.5.2", "https://www.cronista.com/suscripciones/"),
+    ("perfil", "09.5.2", "https://www.perfil.com/suscripcion"),
+    ("lavoz", "09.5.2", "https://suscripciones.lavoz.com.ar/"),
+    ("losandes", "09.5.2", "https://www.losandes.com.ar/suscripciones/"),
 ]
 PRECIO = re.compile(r"\$\s?(\d{1,3}(?:\.\d{3})+|\d{3,6})(?:,(\d{2}))?")
 
@@ -99,13 +115,17 @@ def _norm(s: str) -> str:
 
 
 def _clase(pagina_clase: str, ctx: str) -> str | None:
-    """Por el contexto de la tarjeta, en cualquier página (las de móvil también publicitan fibra y TV):
-    megas o fibra -> internet; TV sola -> afuera; línea fija sola -> fija; si no, la clase de la página."""
+    """En las páginas de telecomunicaciones, por el contexto de la tarjeta (las de móvil también
+    publicitan fibra y TV): megas o fibra -> internet; TV sola -> TV paga (servicios culturales,
+    09.4.2); línea fija sola -> fija; si no, la clase de la página. Las demás páginas (streaming,
+    diarios) tienen clase fija."""
+    if pagina_clase not in ("08.3.2", "hogar"):
+        return pagina_clase
     c = _norm(ctx)
     if re.search(r"\b(\d+ ?mb|megas?|fibra)\b", c):
         return "08.3.3"
-    if re.search(r"\b(tv|television|flow|disney|hbo|netflix)\b", c):
-        return None
+    if re.search(r"\b(tv|television|flow|disney|hbo|netflix|canales)\b", c):
+        return "09.4.2"
     if re.search(r"\b(telefonia fija|linea fija|telefono fijo)\b", c):
         return "08.3.1"
     return None if pagina_clase == "hogar" else pagina_clase
@@ -232,7 +252,13 @@ def relativos(cfg: Config, frecuencia: str) -> pl.DataFrame:
         e = x.with_columns((pl.col("lp_b") - pl.col("lp")).alias("lr")).filter(pl.col("lr").abs() < math.log(2)) \
              .group_by("clase", "empresa").agg(pl.col("lr").mean(), pl.len().alias("n")) \
              .filter(pl.col("n") >= 2).group_by("clase").agg(pl.col("lr").mean())  # al menos 2 planes por empresa
-        for clase, lr in e.iter_rows():
+        lrs = dict(e.iter_rows())
+        # D-59: telefonía fija con el aumento de las mismas empresas en móvil e internet (suben todo
+        # junto); ninguna publica la línea fija sola
+        if "08.3.1" not in lrs and any(k in lrs for k in ("08.3.2", "08.3.3")):
+            xs = [lrs[k] for k in ("08.3.2", "08.3.3") if k in lrs]
+            lrs["08.3.1"] = sum(xs) / len(xs)
+        for clase, lr in lrs.items():
             filas += [{"periodo": b, "codigo": clase, "region": r, "logrel": lr, "fuente": "telefonia"} for r in REGIONES]
     return pl.DataFrame(filas, schema=esquema) if filas else pl.DataFrame(schema=esquema)
 

@@ -462,6 +462,18 @@ def cmd_github(cfg, args):
     for k, v in base.items():
         if k not in datos or datos[k] in (None, {}, []):
             datos[k] = v
+    # indicadores semanales que necesitan paneles diarios que GitHub no guarda (rotación de la semana
+    # 44, que compara el último día de la 43): se completan con las semanas que calculó la PC
+    ib, ig = base.get("indicadores") or {}, datos.setdefault("indicadores", {})
+    for k, filas in ib.items():
+        if not (isinstance(filas, list) and filas and isinstance(filas[0], dict) and "semana" in filas[0]):
+            continue
+        clave = lambda r: (r.get("semana"), r.get("region"), r.get("codigo"))
+        hay = {clave(r) for r in ig.get(k) or []}
+        extra = [r for r in filas if clave(r) not in hay]
+        if extra:
+            ig[k] = sorted((ig.get(k) or []) + extra, key=lambda r: str(r.get("semana")))
+            log.info("Indicador %s: %d filas de la PC", k, len(extra))
     datos["origen"] = {"calculado_en": "github", "base_pc": base.get("generado")}
     ruta.write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
     cmd_sitio(cfg, args)

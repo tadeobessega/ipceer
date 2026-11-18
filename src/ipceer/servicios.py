@@ -90,9 +90,14 @@ def combustibles_mensual(cfg: Config) -> pl.DataFrame:
     c = pl.read_csv(ruta, schema_overrides={"codigo": pl.Utf8, "periodo": pl.Utf8}, infer_schema_length=None)
     if "nivel" in c.columns:
         c = c.filter(pl.col("nivel") == "clase")
-    return c.filter(pl.col("region").is_in(REGIONES), pl.col("var_pct").is_not_null()).select(
-        "periodo", pl.lit("07.2.2").alias("codigo"), "region", (1 + pl.col("var_pct") / 100).log().alias("logrel"),
-        pl.lit("combustibles").alias("fuente")).cast(ESQUEMA)
+    # D-58: el precio que informa cada estación es el del cierre del mes; el INDEC promedia los
+    # relevamientos del mes. Nivel del mes = media geométrica del cierre del mes y del anterior (contra
+    # el INDEC, 2017-2026: error medio 1,96 pp contra 2,04; desde 2024, 2,08 contra 2,34).
+    c = c.filter(pl.col("region").is_in(REGIONES), pl.col("indice").is_not_null()).sort("region", "periodo").with_columns(
+        (pl.col("indice").log() + pl.col("indice").log().shift(1).over("region")).truediv(2).alias("lnp"))
+    c = c.with_columns((pl.col("lnp") - pl.col("lnp").shift(1).over("region")).alias("logrel"))
+    return c.filter(pl.col("logrel").is_not_null()).select(
+        "periodo", pl.lit("07.2.2").alias("codigo"), "region", "logrel", pl.lit("combustibles").alias("fuente")).cast(ESQUEMA)
 
 
 def _alquiler_icl(cfg: Config, frecuencia: str) -> pl.DataFrame:

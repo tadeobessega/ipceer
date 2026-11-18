@@ -29,7 +29,7 @@ from .config import REGIONES, Config
 log = logging.getLogger(__name__)
 
 ESQUEMA = {"periodo": pl.Utf8, "codigo": pl.Utf8, "region": pl.Utf8, "logrel": pl.Float64, "fuente": pl.Utf8}
-FUENTES = ("tarifas", "prepagas", "educacion", "alquiler_icl", "combustibles")
+FUENTES = ("tarifas", "prepagas", "educacion", "alquiler_icl", "combustibles", "telefonia", "autos")
 # D-55: clases que se imputan con modelo (D-36, D-47)
 EDUCACION = ("10.1", "10.2", "10.3", "10.5")
 RESTAURANTES = ("11.1",)
@@ -204,9 +204,22 @@ def relativos(cfg: Config, frecuencia: str, fuentes: tuple[str, ...] = FUENTES) 
             elif f == "telefonia":
                 from . import telefonia
                 partes.append(telefonia.relativos(cfg, frecuencia))
+            elif f == "autos":  # D-60: guía de precios de la CCA, mensual; en semanal, por devengado
+                from . import autos
+                x = autos.relativos(cfg)
+                partes.append(_a_semanas(x) if frecuencia == "semanal" and not x.is_empty() else x)
             elif f == "combustibles":
+                # D-60: semanal con los precios vigentes por estación; mensual con Energía (Res.
+                # 1104) y, para los meses que Energía todavía no publicó, con los precios vigentes
+                from . import combustibles
+                sur = combustibles.surtidor_relativos(cfg, frecuencia)
                 if frecuencia == "mensual":
-                    partes.append(combustibles_mensual(cfg))
+                    m = combustibles_mensual(cfg)
+                    ult = dict(m.group_by("region").agg(pl.col("periodo").max()).iter_rows()) if not m.is_empty() else {}
+                    sur = sur.filter(pl.struct("region", "periodo").map_elements(
+                        lambda r: r["periodo"] > ult.get(r["region"], ""), return_dtype=pl.Boolean)) if not sur.is_empty() else sur
+                    partes.append(m)
+                partes.append(sur)
             else:
                 log.warning("Servicios: fuente desconocida %s", f)
         except Exception as e:

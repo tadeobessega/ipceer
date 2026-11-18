@@ -40,6 +40,21 @@ jobs:
           fi
       - name: Relevar
         run: ipceer telefonia
+      - uses: actions/checkout@v4
+        with:
+          ref: datos-base
+          path: base
+      - name: Precios en surtidor (D-60)
+        continue-on-error: true
+        run: |
+          mkdir -p data/combustibles/surtidor
+          if grep -qx surtidor.tar.gz <<<"$(gh release view "$TAG" --json assets -q '.assets[].name')"; then
+            gh release download "$TAG" -p surtidor.tar.gz -O surtidor.tar.gz --clobber && tar -xzf surtidor.tar.gz -C data/combustibles
+          fi
+          if [ -d base/combustibles/surtidor ]; then cp -n base/combustibles/surtidor/* data/combustibles/surtidor/; fi
+          timeout 900 ipceer surtidor
+          tar -czf surtidor.tar.gz -C data/combustibles surtidor
+          gh release upload "$TAG" surtidor.tar.gz --clobber
       - name: Guardar
         run: |
           tar -czf telefonia.tar.gz -C data/otras telefonia

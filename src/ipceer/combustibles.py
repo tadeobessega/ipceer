@@ -508,8 +508,12 @@ def indice_mensual(cfg: Config, panel: pl.DataFrame) -> pl.DataFrame:
     """Índice de combustibles (07.2.2) por región del IPC y nacional, con el formato de
     resultados/indices_mensual.csv para sumarse al resto de las series."""
     rel = relativos(panel.filter(pl.col("region").is_not_null()))
-    # pesos de cada producto en cada región: volumen de todo el período
-    w_prod = panel.filter(pl.col("region").is_not_null()).group_by("region", "prod").agg(pl.col("vol").sum().alias("wp"))
+    # pesos de cada producto en cada región: gasto de todo el período (litros x precio). D-60: antes
+    # era el volumen, pero el GNC viene en m3 de gas y los líquidos en m3 (miles de litros), así que el
+    # GNC pesaba 50 a 95% en vez de 1 a 6%; contra el INDEC el error medio baja de 1,95 a 1,47 pp
+    w_prod = panel.filter(pl.col("region").is_not_null()).with_columns(
+        pl.when(pl.col("prod") == "gnc").then(pl.col("vol")).otherwise(pl.col("vol") * 1000).alias("litros")) \
+        .group_by("region", "prod").agg((pl.col("litros") * pl.col("precio")).sum().alias("wp"))
     g = rel.group_by("region", "prod", "mes_id").agg(((pl.col("lr") * pl.col("w")).sum() / pl.col("w").sum()).alias("lr"),
                                                      pl.len().alias("n"))
     g = g.join(w_prod, on=["region", "prod"]).group_by("region", "mes_id").agg(
@@ -675,3 +679,86 @@ def actualizar(cfg: Config) -> None:
             procesar(cfg)
         except Exception as e:
             log.warning("Combustibles: no se pudo procesar el CSV: %s", e)
+
+
+# ---------------------------------------------------------------- semanal con "Precios en surtidor" (D-60)
+
+PROVINCIA_ID = {
+    "capital federal": "02", "ciudad autonoma de buenos aires": "02", "caba": "02", "buenos aires": "06",
+    "catamarca": "10", "cordoba": "14", "corrientes": "18", "chaco": "22", "chubut": "26", "entre rios": "30",
+    "formosa": "34", "jujuy": "38", "la pampa": "42", "la rioja": "46", "mendoza": "50", "misiones": "54",
+    "neuquen": "58", "rio negro": "62", "salta": "66", "san juan": "70", "san luis": "74", "santa cruz": "78",
+    "santa fe": "82", "santiago del estero": "86", "tucuman": "90", "tierra del fuego": "94",
+}
+
+
+def surtidor_diario(cfg: Config) -> pl.DataFrame:
+    """Precio vigente de cada estación y producto (horario diurno) en cada día archivado."""
+    filas = []
+    for a in sorted((directorio(cfg) / "surtidor").glob("*.csv.gz")):
+        try:
+            d = pl.read_csv(a, infer_schema_length=0, ignore_errors=True)
+        except Exception as e:
+            log.warning("Surtidor %s: %s", a.name, e)
+            continue
+        if not {"idempresa", "producto", "precio", "provincia"} <= set(d.columns):
+            continue
+        if "tipohorario" in d.columns:
+            d = d.filter(pl.col("tipohorario").str.to_lowercase().str.contains("diurno"))
+        if "fecha_vigencia" not in d.columns:
+            continue
+        d = d.select(pl.lit(a.name[:10]).str.to_date().alias("dia"), pl.col("idempresa").alias("est"),
+                     pl.col("fecha_vigencia").str.slice(0, 10).str.to_date(strict=False).alias("fv"),
+                     pl.col("producto").map_elements(clasificar_producto, return_dtype=pl.Utf8).alias("prod"),
+                     _numero("precio").alias("precio"),
+                     pl.col("provincia").map_elements(_texto, return_dtype=pl.Utf8).alias("prov"),
+                     _numero("latitud").alias("lat") if "latitud" in d.columns else pl.lit(None, dtype=pl.Float64).alias("lat"),
+                     _numero("longitud").alias("lon") if "longitud" in d.columns else pl.lit(None, dtype=pl.Float64).alias("lon"))
+        # desde que se derogó la Res. 314/2016 muchas estaciones (casi todas las YPF) dejaron de
+        # informar: solo cuentan los precios actualizados en los últimos 75 días, de las que siguen
+        # informando (Shell, Axion, Puma, blancas); los demás quedarían fijos y bajarían la variación
+        filas.append(d.filter(pl.col("prod").is_not_null(), pl.col("precio") > 0,
+                              pl.col("fv") >= pl.col("dia") - pl.duration(days=75)))
+    if not filas:
+        return pl.DataFrame()
+    df = pl.concat(filas)
+    est = df.select("est", "prov", "lat", "lon").unique("est")
+    est = est.with_columns(pl.struct("prov", "lat", "lon").map_elements(
+        lambda r: _region(PROVINCIA_ID.get(r["prov"]), r["lat"], r["lon"], cfg), return_dtype=pl.Utf8).alias("region"))
+    return df.join(est.select("est", "region"), on="est").filter(pl.col("region").is_not_null())
+
+
+def surtidor_relativos(cfg: Config, frecuencia: str) -> pl.DataFrame:
+    """D-60. 07.2.2 por región con los precios vigentes por estación de los archivos diarios: precio
+    medio del período por estación y producto, variación contra el período anterior (mismas
+    estaciones), media por producto y región, y productos ponderados por gasto
+    (config/combustibles_pesos.csv). Solo períodos con al menos 5 días archivados."""
+    esquema = {"periodo": pl.Utf8, "codigo": pl.Utf8, "region": pl.Utf8, "logrel": pl.Float64, "fuente": pl.Utf8}
+    d = surtidor_diario(cfg)
+    if d.is_empty():
+        return pl.DataFrame(schema=esquema)
+    if frecuencia == "semanal":
+        d = d.with_columns(pl.col("dia").map_elements(lambda f: "%d-W%02d" % f.isocalendar()[:2], return_dtype=pl.Utf8).alias("p"))
+    else:
+        d = d.with_columns(pl.col("dia").dt.strftime("%Y-%m").alias("p"))
+    dias = d.group_by("p").agg(pl.col("dia").n_unique().alias("n"))
+    d = d.join(dias.filter(pl.col("n") >= 5), on="p")
+    m = d.group_by("p", "est", "prod", "region").agg(pl.col("precio").log().mean().alias("lp"))
+    ps = sorted(m["p"].unique().to_list())
+    ruta_w = cfg.raiz / "config" / "combustibles_pesos.csv"
+    w = pl.read_csv(ruta_w) if ruta_w.exists() else None
+    filas = []
+    for a, b in zip(ps, ps[1:]):
+        x = m.filter(pl.col("p") == a).join(m.filter(pl.col("p") == b), on=["est", "prod", "region"], suffix="_b")
+        x = x.with_columns((pl.col("lp_b") - pl.col("lp")).alias("lr")).filter(pl.col("lr").abs() < 0.3)
+        g = x.group_by("region", "prod").agg(pl.col("lr").mean(), pl.len().alias("n")).filter(pl.col("n") >= 5)
+        if w is not None:
+            g = g.join(w.rename({"producto": "prod"}), on=["region", "prod"], how="left").with_columns(pl.col("peso").fill_null(0.0))
+        else:
+            g = g.with_columns(pl.lit(1.0).alias("peso"))
+        r = g.group_by("region").agg(((pl.col("lr") * pl.col("peso")).sum() / pl.col("peso").sum()).alias("lr"),
+                                     pl.col("peso").sum().alias("cob"))
+        for reg, lr, cob in r.iter_rows():
+            if cob >= 0.5 and lr == lr:  # al menos la mitad del gasto de la región con dato
+                filas.append({"periodo": b, "codigo": CODIGO, "region": reg, "logrel": lr, "fuente": "combustibles_surtidor"})
+    return pl.DataFrame(filas, schema=esquema) if filas else pl.DataFrame(schema=esquema)

@@ -64,6 +64,8 @@ jobs:
           # lo que bajó la PC y GitHub no tiene (ej. meses viejos de prepagas), de la rama datos-base
           if [ -d base/otras ]; then mkdir -p data/otras; cp -rn base/otras/. data/otras/; fi
           ls data/otras/prepagas 2>/dev/null | tr '\n' ' '; echo
+          mkdir -p data/combustibles
+          if grep -qx surtidor.tar.gz <<<"$activos"; then bajar surtidor.tar.gz surtidor.tar.gz; tar -xzf surtidor.tar.gz -C data/combustibles; fi
           if grep -qx telefonia.tar.gz <<<"$activos"; then bajar telefonia.tar.gz telefonia.tar.gz; mkdir -p data/otras; tar -xzf telefonia.tar.gz -C data/otras; fi
           if grep -qx otras_fuentes_github.json <<<"$activos"; then bajar otras_fuentes_github.json resultados/otras_fuentes.json; fi
           # registro de lo publicado (primeros valores y revisiones)

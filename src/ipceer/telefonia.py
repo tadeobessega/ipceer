@@ -52,6 +52,10 @@ PAGINAS = [
     # Netflix y Disney+ no permiten robots en sus páginas de planes (robots.txt)
     ("max", "09.4.2", "https://www.max.com/ar/es"),
     ("telecentro", "hogar", "https://www.telecentro.com.ar/"),
+    # D-60: cine (entradas de Cinemark Hoyts por complejo y formato)
+    ("cinemark", "09.4.2", "https://www.cinemark.com.ar/precios"),
+    # D-60: paquetes turísticos (precios "desde" por destino; se prueba si la página los trae)
+    ("despegar", "09.6", "https://www.despegar.com.ar/paquetes/"),
     # D-59: diarios (suscripciones digitales y en papel, 09.5.2)
     ("lanacion", "09.5.2", "https://www.lanacion.com.ar/suscripciones/"),
     ("clarin", "09.5.2", "https://www.clarin.com/suscripciones/landing.html"),
@@ -80,6 +84,8 @@ class _Texto(HTMLParser):
         if tag in ("s", "del", "strike"):
             self._tachado += 1
             self.partes.append("\n[ANTES]")
+        elif tag in ("h1", "h2", "h3", "h4"):
+            self.partes.append("\n## ")  # título: identifica la sección (cine, plan) de los precios de abajo
         elif tag in self.BLOQUE:
             self.partes.append("\n")
 
@@ -132,8 +138,16 @@ def precios(lineas: list[str], ventana: int = 6) -> list[dict]:
     """Cada precio con su contexto: las líneas sin precios desde el precio anterior (nombre del plan,
     GB, megas; a lo sumo `ventana`). Marca si es tachado ("antes"), sin impuestos o de promoción, con
     el texto de la misma línea que está justo antes de la cifra."""
-    out, ultimo, ctx = [], -1, ""
+    out, ultimo, ctx, titulos, futuro = [], -1, "", [], False
     for i, l in enumerate(lineas):
+        n_l = _norm(l)
+        if l.startswith("## ") and not PRECIO.search(l):
+            titulos = [l[3:].strip()]  # el título más cercano
+        # precios anunciados que todavía no rigen ("a partir del día 19/11"): se descartan
+        if re.search(r"a partir del?( dia)? \d", n_l):
+            futuro = True
+        elif re.search(r"(tarifas|precios) vigentes", n_l):
+            futuro = False
         ms = list(PRECIO.finditer(l))
         if not ms:
             continue
@@ -144,13 +158,16 @@ def precios(lineas: list[str], ventana: int = 6) -> list[dict]:
         luego = bool(re.search(r"\bluego\b", _norm(l)))
         # "Durante 9 meses / Luego $22.400": el precio después de la promoción es de la misma tarjeta
         if previas and not (luego and ultimo >= 0 and i - ultimo <= 3):
-            ctx = " | ".join(previas[-4:])
+            ctx = " | ".join(x[3:] if x.startswith("## ") else x for x in previas[-4:])
         for m in ms:
             v = float(m.group(1).replace(".", "") + ("." + m.group(2) if m.group(2) else ""))
             if v < 500:  # recargas mínimas y cifras sueltas
                 continue
             antes_txt = _norm(l[max(0, m.start() - 40):m.start()])
-            out.append({"linea": l[:200], "contexto": ctx[:300], "precio": v,
+            if futuro:
+                continue
+            tit = " > ".join(t for t in titulos if t not in ctx)
+            out.append({"linea": l[:200], "contexto": ((tit + " | ") if tit else "") + ctx[:300], "precio": v,
                         "antes": "[antes]" in antes_txt[-12:] or bool(re.search(r"\b(antes|luego)\b\W*$", antes_txt)),
                         "sin_impuestos": bool(re.search(r"sin impuesto", antes_txt)),
                         "promo": bool(re.search(r"\b(off|descuento|promo|bonific|primer(os)? \d+ mes)", _norm(l)))})

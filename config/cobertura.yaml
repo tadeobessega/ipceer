@@ -37,12 +37,13 @@ incluido:          # dentro del índice publicado, con precios propios
   # alquiler con el ICL y combustibles de Energía (D-56)
   - "04.1.1"
   - "07.2.2"
-relevado:          # se releva, pero todavía no entra al índice publicado
+  # D-60: todo lo relevado entra (lo que tiene un solo período, desde el segundo)
   - "07.1.1"       # autos: guía de precios de la CCA (D-41)
   - "08.3.2"       # telefonía móvil: planes de las empresas desde el 16/11/2026 (D-57)
-  - "08.3.3"       # internet: ídem; entran con el segundo período
-  - "09.4.2"       # servicios culturales: TV paga y streaming desde el 18/11/2026 (D-59); faltan cine y teatro
+  - "08.3.3"       # internet: ídem
+  - "09.4.2"       # servicios culturales: TV paga, streaming y cine (D-59, D-60); falta teatro
   - "09.5.2"       # diarios: suscripciones de Clarín y El Cronista desde el 18/11/2026 (D-59)
+relevado: []       # se releva, pero todavía no entra al índice publicado
 estimado:          # sin precios propios: entra al índice con un modelo (D-55)
   - "08.3.1"       # telefonía fija: el aumento de las mismas empresas en móvil e internet (D-59)
   - "10"           # educación: el INDEC del mismo mes del año anterior

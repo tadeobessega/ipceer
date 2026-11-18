@@ -414,6 +414,17 @@ def cmd_diario(cfg, args):
 DE_LA_PC = ("validacion", "carrera", "carrera_historico", "variantes", "pronosticos", "combustibles")
 
 
+def cmd_surtidor(cfg, args):
+    """Archivo diario de "Precios en surtidor" (D-60), para combustibles semanal."""
+    from . import combustibles
+    r = combustibles.archivar_surtidor(cfg)
+    print(r or "sin archivo")
+    for f in ("semanal", "mensual"):
+        x = combustibles.surtidor_relativos(cfg, f)
+        if not x.is_empty():
+            print(f, x.with_columns(((pl.col("logrel").exp() - 1) * 100).round(2).alias("var")).sort("region", "periodo"))
+
+
 def cmd_telefonia(cfg, args):
     """Relevamiento diario de planes de telefonía e internet (D-57)."""
     from . import telefonia
@@ -579,6 +590,7 @@ def main(argv=None):
         fn=lambda cfg, args: combustibles.actualizar(cfg))
     sub.add_parser("cadenas", help="nombres de las cadenas desde los últimos zips").set_defaults(fn=cmd_cadenas)
     sub.add_parser("alimentos-web", help="alternativa de alimentos con los precios web (D-54)").set_defaults(fn=cmd_alimentos_web)
+    sub.add_parser("surtidor", help="archivo diario de precios en surtidor (D-60)").set_defaults(fn=cmd_surtidor)
     sub.add_parser("telefonia", help="planes de telefonía e internet de los sitios de las empresas (D-57)").set_defaults(fn=cmd_telefonia)
     g = sub.add_parser("github", help="calcula el tablero en GitHub, sin la PC (D-49)")
     g.add_argument("--base", default="", help="último datos.json de la PC (partes que GitHub no recalcula)")

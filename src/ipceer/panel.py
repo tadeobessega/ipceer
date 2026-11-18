@@ -68,7 +68,11 @@ def consolidar(periodo: str, frecuencia: str, cfg: Config, clasificador: Clasifi
     archivos = [a for a in archivos if a.exists()]
     if not archivos:
         raise FileNotFoundError(f"No hay datos diarios para {periodo}")
-    diario = pl.concat([pl.read_parquet(a) for a in archivos], how="vertical_relaxed")
+    # en modo streaming: un mes entero de días son decenas de millones de filas y, cargado de una vez,
+    # agotaba la memoria del runner de GitHub (16 GB) a mitad de mes
+    cols = list(dict.fromkeys([*CLAVE, "precio_lista", "precio_efectivo", "fecha", "n_sucursales",
+                               "descripcion", "marca", "es_ean"]))
+    diario = pl.concat([pl.scan_parquet(a).select(cols) for a in archivos], how="vertical_relaxed")
     panel = diario.group_by(CLAVE).agg(
         pl.col("precio_lista").log().mean().exp(),
         pl.col("precio_efectivo").log().mean().exp(),
@@ -77,7 +81,7 @@ def consolidar(periodo: str, frecuencia: str, cfg: Config, clasificador: Clasifi
         pl.col("descripcion").drop_nulls().last(),
         pl.col("marca").drop_nulls().last(),
         pl.col("es_ean").drop_nulls().last(),
-    )
+    ).collect(engine="streaming")
     clasificador = clasificador or Clasificador.desde_config(cfg)
     panel = clasificador.clasificar(panel).with_columns(
         pl.lit(periodo).alias("periodo"),

@@ -837,7 +837,7 @@ el total no se presenta como nivel general.
     tener la paritaria del mes a tiempo (actas firmadas, como la de SUTERH de septiembre de 2026 que
     fija sin aumento de octubre a febrero).
 
-## 6. Qué medimos, qué estimamos y qué falta (actualizado el 18/11/2026; detalle en D-55 a D-60)
+## 6. Qué medimos, qué estimamos y qué falta (actualizado el 18/11/2026; detalle en D-55 a D-65)
 
 Peso en la canasta nacional del INDEC (clases de `config/ponderadores_clase.csv` ponderadas por
 región), según `config/cobertura.yaml`, que es la misma clasificación del gráfico de torta del tablero:
@@ -845,8 +845,8 @@ región), según `config/cobertura.yaml`, que es la misma clasificación del gr�
 | Estado | Bienes | Servicios | Total |
 |---|---|---|---|
 | Relevados e incluidos en el índice | 63,1% | 18,1% | 81,2% |
-| Sin relevar, estimados con un modelo | | 11,5% | 11,5% |
-| Sin relevar | 0,1% | 7,2% | 7,3% |
+| Sin relevar, estimados con un modelo | | 15,2% | 15,2% |
+| Sin relevar | 0,1% | 3,5% | 3,6% |
 
 **Relevados e incluidos.**
 - Supermercados (SEPA): alimentos y bebidas, limpieza, cuidado personal, mascotas, útiles.
@@ -855,24 +855,27 @@ región), según `config/cobertura.yaml`, que es la misma clasificación del gr�
 - Tarifas por norma (D-53): electricidad y gas, agua, servicio doméstico, colectivos y subte.
 - Prepagas (D-53): cuotas de la Superintendencia de Servicios de Salud.
 
-- Alquiler con el ICL y combustibles de Energía (D-56; combustibles solo en el mensual).
+- Alquiler con el ICL (D-56) y combustibles: dataset de Energía (Res. 1104) ponderado por gasto y, para
+  las semanas y los meses que Energía todavía no publicó, precios vigentes del surtidor (D-61).
 
-- Desde D-60, también autos (guía de la CCA), telefonía móvil, internet, TV paga, streaming, cine y
-  diarios (estos desde su segundo período).
+- Desde D-60, también autos (guía de la CCA), telefonía móvil, internet, TV paga, streaming (Max y
+  Netflix), cine (Cinemark Hoyts), teatro (Complejo Teatral de Buenos Aires) y diarios (Clarín, El
+  Cronista); los relevados desde noviembre de 2026 entran desde su segundo período.
 
 **Estimados con un modelo.** Restaurantes (11.1, 8,6%) con alimentos, el nivel general sin estos rubros
 y el salario de convenio gastronómico; educación (10, 2,3%) con un modelo propio para marzo y, el resto
-del año, el nivel general sin estos rubros y las paritarias (D-62, desde noviembre de 2026); telefonía fija (08.3.1, 0,6%) con el
-aumento de las mismas empresas en móvil e internet (D-59).
+del año, el nivel general sin estos rubros y las paritarias (D-62); servicios médicos y odontológicos
+(06.2, 1,6%) con el nivel general sin estos rubros y el IPC de la Ciudad de esos servicios de dos meses
+antes; expensas (04.1.3, 1,2%) con el nivel general sin estos rubros, la paritaria de encargados de
+edificio y el aguinaldo de junio y diciembre; paquetes turísticos (09.6, 0,5%) y hoteles (11.2, 0,4%)
+con el nivel general sin estos rubros y el mes del año (D-64 y D-65). Todos desde noviembre de 2026.
+Telefonía fija (08.3.1, 0,6%) con el aumento de las mismas empresas en móvil e internet (D-59).
 
-**Sin relevar, de mayor a menor peso.** Servicios culturales (2,3%; cine, teatro,
-streaming), expensas (1,2%; sin fuente pública), servicios médicos (0,9%),
-peluquería (0,7%), servicios recreativos y deportivos (0,6%; gimnasios, clubes),
-reparación de la vivienda (0,6%), telefonía fija (0,6%), diarios y revistas (0,5%), paquetes
-turísticos (0,5%), odontología (0,5%), otros servicios del auto (0,4%; estacionamiento, peajes),
-hoteles (0,4%), seguros (0,4%) y el resto con menos de 0,3% cada uno (servicios auxiliares de salud,
-tintorería, talleres mecánicos, pasajes aéreos, telas, correo). Para estos el índice reparte el peso
-entre lo medido (no imputa nada propio).
+**Sin relevar, de mayor a menor peso.** Peluquería (0,7%), servicios recreativos y deportivos (0,6%;
+gimnasios, clubes), reparación de la vivienda (0,6%), otros servicios del auto (0,4%; estacionamiento,
+peajes), seguros (0,4%) y el resto con menos de 0,3% cada uno (otros servicios, tintorería, talleres
+mecánicos, pasajes aéreos, telas, correo). Para estos el índice reparte el peso entre lo medido (no
+imputa nada propio).
 
 **Lo que está incompleto dentro de lo incluido.**
 - Alimentos: carnes (8,9% de la canasta), verduras (2,7%) y frutas (1,3%) salen solo de
@@ -885,7 +888,16 @@ entre lo medido (no imputa nada propio).
   BAN), sin las cantidades por categoría (pedido a ENARGAS pendiente); agua (AySA) cargada a mano;
   colectivos y subte solo de GBA, con meses de la Provincia sin resolución; faltan colectivos y
   trenes nacionales.
-- Prepagas: las 13 entidades más grandes; el servidor de la Superintendencia corta seguido.
+- Prepagas: las 13 entidades más grandes; varias declaran tarde o saltean meses (Medicus, Galeno,
+  Avalian): el mes se calcula con las que declararon y se revisa cuando declaran (D-63).
+- Combustibles semanal: YPF casi no informa precios al surtidor, así que las semanas sin dato de
+  Energía salen de Shell, Axion, Puma y blancas.
+- Telefonía, internet, TV y streaming: planes publicados de las principales empresas (Claro, Movistar,
+  Personal, Telecentro; Max y Netflix); Disney+ no se puede leer (robots.txt).
+- Cine y teatro: Cinemark Hoyts y el Complejo Teatral de Buenos Aires (público); falta el teatro
+  comercial (Plateanet y Alternativa Teatral cargan los precios por JavaScript).
+- Diarios: suscripciones digitales de Clarín y El Cronista; La Nación no publica la página de planes.
+- Autos: guía de la CCA, entra cuando hay dos meses de la guía.
 - Semanal: los servicios suben una vez por mes, así que el nivel general semanal salta la primera
   semana de cada mes (D-53).
 

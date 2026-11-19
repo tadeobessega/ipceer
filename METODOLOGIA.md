@@ -863,6 +863,7 @@ el total no se presenta como nivel general.
   el workflow `dato_consultora.yml` lo valida, lo guarda en `config/externos_manual.csv`, rearma la
   página y cierra el issue (si lo abre otra persona no pasa nada). Lo cargado a mano vale sobre la
   carga automática y sobre `externos.csv`; "Borrar dato" deja una fila que lo tapa.
+- **D-70 (19/11/2026). El hilo se publica desde la página de publicaciones del CEER.** La pestaña Hilo sale del tablero: el hilo semanal y sus placas están en publicaciones-ceer (pestaña IPCEER, dentro de Inflación), que baja el tablero publicado y dibuja las mismas placas. El ipceer sigue armando el hilo (`D.hilo`); solo cambia dónde se muestra. Las placas llevan el logo unificado `ceer_ipceer`.
 - **D-68 (18/11/2026). Rotación sin ponderar.** Además de la parte de la canasta (ponderada) cuyos
   precios cambiaron, subieron y bajaron, se publica la parte de los precios relevados que cambió,
   contando cada precio igual (y cuántos son).

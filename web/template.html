@@ -265,7 +265,6 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <button role="tab" data-tab="cad" aria-selected="false">Cadenas</button>
       <button role="tab" data-tab="val" aria-selected="false">INDEC</button>
       <button role="tab" data-tab="cons" aria-selected="false">Consultoras</button>
-      <button role="tab" data-tab="hilo" aria-selected="false">Hilo</button>
       <button role="tab" data-tab="met" aria-selected="false">Metodología</button>
     </nav><button class="tabflecha der" type="button" aria-label="Ver más pestañas" hidden>›</button>
   </div>
@@ -665,27 +664,6 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
     </section>
   </div>
 
-  <!-- HILO -->
-  <div data-panel="hilo" hidden>
-    <section>
-      <h2>Hilo de la semana</h2>
-      <p class="sub" id="hilo-sub"></p>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px">
-        <span class="seg" id="seg-hilo-ind" role="group" aria-label="Índice del hilo"><button data-v="alimentos">Alimentos GBA</button><button data-v="general">Nivel general</button></span>
-        <button class="btn" id="hilo-copiar">Copiar el hilo completo</button>
-        <button class="btn" id="hilo-txt">Descargar texto</button>
-        <button class="btn" id="hilo-png">Descargar todas las imágenes (X e Instagram, azul y clara)</button>
-      </div>
-      <div id="hilo-lista"></div>
-    </section>
-    <section>
-      <h2>Carrusel de Instagram</h2>
-      <p class="sub">Las mismas placas en formato vertical (<span class="mono">1080 × 1440</span>), en el orden del hilo.</p>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px"><span class="seg" id="seg-tema"><button data-v="azul" aria-pressed="true">Fondo azul</button><button data-v="blanco" aria-pressed="false">Fondo claro</button></span></div>
-      <div id="hilo-ig"></div>
-    </section>
-  </div>
-
   <!-- METODOLOGÍA -->
   <div data-panel="met" hidden>
     <section>
@@ -1060,7 +1038,7 @@ prom. 4 mens.  = (1 + prom. 4 sem.)^(30,44 / 7) − 1</div>
     <p><b>Regulados.</b> Precios que no están en SEPA y que fija una norma pública (por ahora, el salario del personal de casas particulares, que el IPC usa para “Servicio doméstico”). Se registran en <span class="f">config/regulados/tarifas.csv</span> con valor, vigencia, norma y fuente. El precio de un mes es el promedio de sus días; un mes entra solo si todos sus días tienen una tarifa registrada, y si falta un mes la serie se corta. Se comparan con el rubro equivalente del INDEC en Validación.</p>
     <p><b>Municipios.</b> Las sucursales se ubican en su partido con los polígonos de Georef y se arma un índice propio con los mismos ponderadores de la región del IPC. Sirve para comparar con mediciones locales (por ejemplo, la de la Universidad de Morón) cuando se carga su fuente.</p>`],
   ['hilo','Hilo semanal',`
-    <p>Con cada cálculo se arma solo un hilo para X con el dato de la última semana completa: la inflación semanal y su efecto en la proyección del mes, los datos clave (comparación con la semana previa, media de 4 semanas, rubros con mayor y menor variación), la rotación de precios, la comparación entre cadenas y entre regiones. Los rubros extremos se eligen entre los que tienen al menos 20 productos comparados. El texto se guarda en <span class="f">resultados/hilos/</span> y las imágenes (1600 × 900 px) se dibujan en la pestaña Hilo con los mismos datos.</p>`],
+    <p>Con cada cálculo se arma solo un hilo para X con el dato de la última semana completa: la inflación semanal y su efecto en la proyección del mes, los datos clave (comparación con la semana previa, media de 4 semanas, rubros con mayor y menor variación), la rotación de precios, la comparación entre cadenas y entre regiones. Los rubros extremos se eligen entre los que tienen al menos 20 productos comparados. El texto se guarda en <span class="f">resultados/hilos/</span> Desde noviembre de 2026 el hilo y sus placas (X e Instagram) están en la página de publicaciones del CEER (publicaciones-ceer, pestaña IPCEER, dentro de Inflación), que toma estos datos del tablero publicado.</p>`],
   ['limites','Limitaciones',`
     <ul>
     <li><b>Todavía no es un IPC completo.</b> Releva el 81% de la canasta, estima con un modelo un 15% (restaurantes, educación, servicios médicos, expensas, paquetes turísticos, hoteles y telefonía fija) y deja sin relevar un 4%, casi todo servicios (ver “Qué parte de la canasta medimos”). Telefonía, internet, TV, streaming, cine, teatro y diarios se relevan desde noviembre de 2026 y entran desde su segundo período. El nivel general se compara con el INDEC desde diciembre de 2026; alimentos y bebidas, desde octubre.</li>

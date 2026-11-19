@@ -173,10 +173,27 @@ def datos_regulados(cfg: Config) -> dict:
 
 
 def externos(cfg: Config) -> list[dict]:
+    """config/externos.csv (carga a mano) más lo leído de las páginas de las consultoras (D-66). Si un
+    mismo dato (consultora, período, medida, rubro) está en los dos, vale el de la página de la
+    consultora, que es la fuente primaria."""
     ruta = cfg.dir_config / "externos.csv"
-    if not ruta.exists():
+    partes = []
+    if ruta.exists():
+        partes.append(pl.read_csv(ruta, infer_schema_length=0).with_columns(pl.lit(1).alias("_p")))
+    try:
+        from . import consultoras
+        w = consultoras.leidos(cfg)
+        if w.height:
+            partes.append(w.with_columns(pl.lit(0).alias("_p")))
+    except Exception as e:
+        log.warning("Consultoras leídas de sus páginas: %s", e)
+    if not partes:
         return []
-    return pl.read_csv(ruta, schema_overrides={"valor": pl.Float64, "periodo": pl.Utf8, "region": pl.Utf8}).to_dicts()
+    df = pl.concat(partes, how="diagonal_relaxed").with_columns(
+        pl.col("valor").cast(pl.Float64, strict=False), pl.col("region").fill_null(""))
+    df = (df.sort("_p").unique(["fuente", "periodo", "medida", "rubro", "region"], keep="first", maintain_order=True)
+          .drop("_p").with_columns(pl.when(pl.col("region") == "").then(None).otherwise(pl.col("region")).alias("region")))
+    return df.sort("publicado", nulls_last=True).to_dicts()
 
 
 def errores_consultoras(cfg: Config) -> list[dict]:

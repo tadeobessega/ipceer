@@ -159,6 +159,11 @@ def recortar_series(datos: dict, cfg=None) -> None:
                 for x in xs:
                     if x.get("indice") is not None:
                         x["indice"] = round(x["indice"] / b * 100, 4)
+    # los datos originales del nivel general (dot plot de consultoras) siguen la misma regla
+    if ng_s:
+        for cods in (datos.get("originales") or {}).values():
+            if isinstance(cods.get("TOTAL"), dict):
+                cods["TOTAL"] = {w: v for w, v in cods["TOTAL"].items() if w >= ng_s}
 
 
 def _limpio(x):

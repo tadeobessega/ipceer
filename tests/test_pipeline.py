@@ -362,3 +362,34 @@ def test_modelos_d62_en_el_indice(cfg, monkeypatch):
         assert not ext["semanal"].filter(pl.col("codigo") == "11.1").is_empty() and info["detalle"]
     finally:
         rp.write_text(orig, encoding="utf-8")
+
+
+def test_semana_del_mes_y_rpm_ecogo():
+    from ipceer.consultoras import leer_rpm, semana_del_mes
+    assert semana_del_mes(2026, 11, 1) == "2026-W45"
+    assert semana_del_mes(2026, 11, 2) == "2026-W46"
+    assert semana_del_mes(2026, 10, 1) == "2026-W40"
+    assert semana_del_mes(2026, 2, 5) is None
+    h = ("<title>RPM – 2da semana de noviembre de 2026 – EcoGo</title><div>Relevamiento de Precios Minoristas</div>"
+         "<h1>RPM – 2da semana de noviembre de 2026</h1><p>16 noviembre, 2026</p><h2>El RPM subió 0,37% en la segunda semana</h2>"
+         "<h2>Noviembre se encamina a 1,9% mensual</h2><p>Con 0,5% semanal para alimentos en las dos semanas que faltan</p>"
+         "<p>Accede a tu cuenta</p>")
+    f = {(x["medida"], x["periodo"]): x["valor"] for x in leer_rpm(h, "u")}
+    # el 0,5% de alimentos es un supuesto de la proyección: no se carga
+    assert f == {("semanal", "2026-W46"): 0.37, ("proyeccion_mensual", "2026-11"): 1.9}
+
+
+def test_semanas_alternativas():
+    from datetime import date, timedelta
+    from ipceer import semanas_alt
+    d0 = date(2026, 11, 1)
+    serie = [[(d0 + timedelta(i)).isoformat(), 100 + i * 0.1] for i in range(21)]
+    out = semanas_alt.calcular({"series": {"Nacional": {"01": serie}}}, regiones=("Nacional",))
+    tipos = {(r["semana_tipo"], r["hasta"]) for r in out}
+    assert ("iso", "2026-11-15") in tipos and ("mie", "2026-11-18") in tipos and ("jue", "2026-11-19") in tipos
+    r = next(r for r in out if r["semana_tipo"] == "iso" and r["hasta"] == "2026-11-15")
+    a = [100 + i * 0.1 for i in range(8, 15)]; b = [100 + i * 0.1 for i in range(1, 8)]
+    assert abs(r["var"] - (sum(a) / sum(b) - 1) * 100) < 1e-3
+    # sin un día no hay semana
+    corta = [x for x in serie if x[0] != "2026-11-10"]
+    assert not any(r["hasta"] == "2026-11-15" for r in semanas_alt.calcular({"series": {"Nacional": {"01": corta}}}, regiones=("Nacional",)))

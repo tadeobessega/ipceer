@@ -836,8 +836,31 @@ el total no se presenta como nivel general.
     paritaria (peor en MAPE que el reparto). Revisar con el índice de salarios del CEER si se puede
     tener la paritaria del mes a tiempo (actas firmadas, como la de SUTERH de septiembre de 2026 que
     fija sin aumento de octubre a febrero).
+- **D-66 (18/11/2026). Consultoras: datos de sus páginas y un dato por consultora.** EcoGo publica
+  cada informe del RPM en su sitio: se leen la lista y los informes nuevos (`consultoras.py`, respeta
+  robots.txt, pausa de 3 s) y se guardan en `data/otras/consultoras/ecogo.csv`, solo cuando el texto
+  trae el dato con una frase inequívoca ("El RPM subió 0,37% en la segunda semana", "Noviembre se
+  encamina a 1,9% mensual", "registró un incremento del 2,1% mensual en el nivel general"). Si el
+  mismo dato está cargado a mano, vale el de la página. Correcciones: el 0,5% semanal de alimentos de
+  EcoGo para la primera semana de noviembre era el supuesto de su proyección ("con 0,5% semanal para
+  alimentos en las semanas que faltan"), no una medición, y se sacó; el 1,8% de octubre que El
+  Cronista atribuyó a EcoGo era su proyección previa (el RPM de octubre dio 2,1%). En los gráficos,
+  cada consultora aparece una sola vez por período: el dato mensual publicado y, si no hay, su última
+  proyección. X y LinkedIn prohíben la lectura automática (robots.txt): lo que una consultora publica
+  solo ahí se carga a mano.
+- **D-67 (18/11/2026). El ipceer con la semana de cada consultora (comparación aparte).** LCG y EcoGo
+  cierran la semana el miércoles y Econviews el jueves; el ipceer va de lunes a domingo. Con el índice
+  diario de alimentos se rearma la variación con esas semanas, con el mismo devengado (promedio de los
+  siete días contra los siete anteriores) y solo con las dos semanas completas. Rehace la semana ISO
+  publicada con diferencias de 0,01 a 0,02 pp. Primer resultado (semana cerrada el miércoles 11/11,
+  Nacional): 0,24% contra 0,15% de la semana ISO; LCG midió 0,8%. El ipceer publicado no cambia. En
+  GitHub, los días de fines de octubre que no tiene se toman del índice diario de la PC, llevado a la
+  base de GitHub.
+- **D-68 (18/11/2026). Rotación sin ponderar.** Además de la parte de la canasta (ponderada) cuyos
+  precios cambiaron, subieron y bajaron, se publica la parte de los precios relevados que cambió,
+  contando cada precio igual (y cuántos son).
 
-## 6. Qué medimos, qué estimamos y qué falta (actualizado el 18/11/2026; detalle en D-55 a D-65)
+## 6. Qué medimos, qué estimamos y qué falta (actualizado el 18/11/2026; detalle en D-55 a D-68)
 
 Peso en la canasta nacional del INDEC (clases de `config/ponderadores_clase.csv` ponderadas por
 región), según `config/cobertura.yaml`, que es la misma clasificación del gráfico de torta del tablero:

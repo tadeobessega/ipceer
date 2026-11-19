@@ -429,6 +429,11 @@ def cmd_sitio(cfg, args):
     datos = json.loads(ruta.read_text(encoding="utf-8"))
     _datos_fuentes(cfg, datos)
     resumen.recortar_series(datos, cfg)
+    try:  # D-67: el ipceer con las semanas de las consultoras (comparación aparte)
+        from . import semanas_alt
+        datos["semanas_alt"] = semanas_alt.calcular(datos.get("diario") or {})
+    except Exception as e:
+        log.warning("Semanas alternativas: %s", e)
     if True:  # el hilo se rearma sobre las series recortadas (ej. sin nivel general antes de tiempo)
         try:
             datos["hilo"] = resumen._limpio(hilo.armar_todos(cfg, datos, None, datos.get("indicadores", {})))
@@ -537,6 +542,26 @@ def cmd_github(cfg, args):
         if extra:
             ig[k] = sorted((ig.get(k) or []) + extra, key=lambda r: str(r.get("semana")))
             log.info("Indicador %s: %d filas de la PC", k, len(extra))
+    # índice diario (D-67): GitHub no tiene los paneles diarios de fines de octubre que sí tiene la PC.
+    # Los días que le faltan se toman del índice diario de la PC, llevado a la base de GitHub con el
+    # cociente en el día base de GitHub (los dos son Jevons contra un día fijo; difieren en centésimas)
+    try:
+        dg, dp = datos.get("diario") or {}, base.get("diario") or {}
+        b0 = dg.get("base")
+        for reg, cods in (dp.get("series") or {}).items():
+            for cod, filas in cods.items():
+                g = dict(((dg.get("series") or {}).get(reg) or {}).get(cod) or [])
+                p = {d: v for d, v in filas if v is not None}
+                if not g or b0 not in g or b0 not in p or not p[b0]:
+                    continue
+                k = g[b0] / p[b0]
+                extra = {d: round(v * k, 4) for d, v in p.items() if d not in g}
+                if extra:
+                    dg["series"][reg][cod] = sorted([[d, v] for d, v in g.items()] + [[d, v] for d, v in extra.items()])
+        if dp.get("base") and dg.get("base") and dp["base"] < dg["base"]:
+            dg["base_pc"] = dp["base"]
+    except Exception as e:
+        log.warning("Índice diario de la PC: %s", e)
     datos["origen"] = {"calculado_en": "github", "base_pc": base.get("generado")}
     ruta.write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
     cmd_sitio(cfg, args)

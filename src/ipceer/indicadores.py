@@ -209,6 +209,11 @@ def rotacion(cfg: Config, semanas: list[str]) -> list[dict]:
                 "tam_baja": None if mb is None else (math.exp(mb) - 1) * 100,
                 "var": (math.exp((df["W"] * df["m"]).sum() / W) - 1) * 100,
                 "promo": 100 * fp, "desc_promo": None if mp is None else 100 * mp,
+                # sin ponderar: cada precio relevado cuenta igual (cantidad de precios que cambiaron)
+                "n_cambia": int(round((df["n"] * (df["f_s"] + df["f_b"])).sum())),
+                "cambia_n": 100 * (df["n"] * (df["f_s"] + df["f_b"])).sum() / df["n"].sum(),
+                "sube_n": 100 * (df["n"] * df["f_s"]).sum() / df["n"].sum(),
+                "baja_n": 100 * (df["n"] * df["f_b"]).sum() / df["n"].sum(),
             }
 
         base = {"semana": s1, "semana_previa": s0, "desde": d0.isoformat(), "hasta": d1.isoformat()}

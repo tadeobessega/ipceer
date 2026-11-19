@@ -297,11 +297,12 @@ def actualizar(cfg: Config, desde_gh: bool = False) -> dict:
         log.warning("Otras fuentes: GitHub no disponible, se bajan desde esta máquina")
     res = {"actualizado": datetime.now().isoformat(timespec="seconds")}
     from . import frescos
-    from . import autos, boletines, ipcba, normas, prepagas
+    from . import autos, boletines, consultoras, ipcba, normas, prepagas
     for nombre, f in (("ipcba", ipcba.actualizar), ("alquileres_zonaprop", zonaprop), ("medicamentos_pami", pami), ("bcra", bcra),
                       ("hacienda_canuelas", frescos.canuelas), ("frutas_hortalizas_mcba", frescos.mcba),
                       ("prepagas", prepagas.actualizar), ("normas", normas.actualizar),
-                      ("boletines", boletines.actualizar), ("autos_cca", autos.actualizar)):
+                      ("boletines", boletines.actualizar), ("autos_cca", autos.actualizar),
+                      ("consultoras_ecogo", consultoras.ecogo)):
         try:
             res[nombre] = f(cfg)
         except Exception as e:  # una fuente que falla no frena las demás

@@ -4,7 +4,7 @@ name: Dato de consultora
 # cierra el issue con el resultado (D-69).
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened]
 permissions:
   contents: write
   issues: write

@@ -178,6 +178,11 @@ def externos(cfg: Config) -> list[dict]:
     consultora, que es la fuente primaria."""
     ruta = cfg.dir_config / "externos.csv"
     partes = []
+    man = cfg.dir_config / "externos_manual.csv"  # D-69: cargado desde el tablero (issue de GitHub); vale sobre todo lo demás
+    if man.exists():
+        m = pl.read_csv(man, infer_schema_length=0)
+        if m.height:
+            partes.append(m.with_columns(pl.lit(-1).alias("_p"), pl.lit(True).alias("manual")))
     if ruta.exists():
         partes.append(pl.read_csv(ruta, infer_schema_length=0).with_columns(pl.lit(1).alias("_p")))
     try:
@@ -193,6 +198,8 @@ def externos(cfg: Config) -> list[dict]:
         pl.col("valor").cast(pl.Float64, strict=False), pl.col("region").fill_null(""))
     df = (df.sort(["_p", "publicado"], descending=[False, True], nulls_last=True).unique(["fuente", "periodo", "medida", "rubro", "region"], keep="first", maintain_order=True)
           .drop("_p").with_columns(pl.when(pl.col("region") == "").then(None).otherwise(pl.col("region")).alias("region")))
+    if "borrado" in df.columns:  # un dato borrado a mano tapa al de la carga automática y no se muestra
+        df = df.filter(pl.col("borrado").fill_null("") != "1").drop("borrado")
     return df.sort("publicado", nulls_last=True).to_dicts()
 
 

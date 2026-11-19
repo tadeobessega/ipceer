@@ -639,11 +639,11 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
       <div class="grid">
         <div class="card s12"><h3>Consultoras e ipceer por índice comparable</h3><p class="cap">Último período con dato de cada índice que miden las consultoras y el ipceer. El ipceer va redondeado a un decimal, como publican las consultoras; en la semanal, tal como se publicó por primera vez.</p><div class="legend"><span><i style="background:var(--ambar);border-radius:50%"></i>Consultora</span><span><i style="background:#f7ac4d80;border-top:2px solid var(--ambar)"></i>Mediana de las consultoras</span><span><i style="background:var(--accent)"></i>ipceer</span></div><div class="chart"><canvas id="c-ext"></canvas></div><div class="src">Fuente: elaboración propia en base a relevamiento web de precios y a lo publicado por cada consultora (enlaces en la tabla).</div></div>
         <div class="card s12" id="dots-card"><h3 class="h-seg"><span id="dots-tit">Dot plot de consultoras</span> <span class="seg" id="seg-dots"><button data-v="s" aria-pressed="true">Semanal</button><button data-v="m" aria-pressed="false">Mensual</button></span> <span class="seg" id="seg-dots-n"><button data-v="1" aria-pressed="true">Con ipceer</button><button data-v="0" aria-pressed="false">Sin ipceer</button></span> <select id="dots-mes" aria-label="Mes"></select> <button type="button" class="btnpng" id="dots-x" title="Descargar una imagen de 1600 × 900 para publicar en X">Imagen para X</button></h3><p class="cap" id="dots-cap"></p><div class="dots-stat" id="dots-stat"></div><div class="legend" id="dots-leg"></div><div class="chart"><canvas id="c-dots"></canvas></div><div class="src">Fuente: elaboración propia en base a relevamiento web de precios, INDEC y lo publicado por cada consultora (enlaces en la tabla).</div></div>
-        <div class="card s12"><h3>Dato semanal por consultora</h3><p class="cap">Cada número lleva al lugar donde la consultora lo publicó. Sombreado: cargado a mano en esta página. <sup>GBA</sup> o <sup>CABA</sup>: el dato es de esa región, no del país.</p>
-          <div class="ct-bar"><span class="seg" id="ct-rub-s" role="group" aria-label="Índice"><button data-v="alimentos">Alimentos</button><button data-v="total">Nivel general</button></span><span class="ct-ed" hidden><button class="btn sec ct-edbtn">Editar</button> <button class="btn sec ct-add">+ Consultora</button></span></div>
+        <div class="card s12"><h3>Dato semanal por consultora</h3><p class="cap">Cada número lleva al lugar donde la consultora lo publicó. Sombreado: cargado a mano. <sup>GBA</sup> o <sup>CABA</sup>: el dato es de esa región, no del país.</p>
+          <div class="ct-bar"><span class="seg" id="ct-rub-s" role="group" aria-label="Índice"><button data-v="alimentos">Alimentos</button><button data-v="total">Nivel general</button></span><span class="ct-ed" hidden><button class="btn sec ct-edbtn">Cargar o corregir</button> <button class="btn sec ct-add">+ Consultora</button></span></div>
           <div class="tablewrap"><table class="ct" id="ct-sem"></table></div><div class="src">Fuente: lo publicado por cada consultora; ipceer: dato original de cada semana.</div></div>
         <div class="card s12"><h3>Dato mensual por consultora</h3><p class="cap">El dato del mes y, si todavía no lo publicaron, su última proyección (en cursiva, con <span class="mono">p</span>).</p>
-          <div class="ct-bar"><span class="seg" id="ct-rub-m" role="group" aria-label="Índice"><button data-v="total">Nivel general</button><button data-v="alimentos">Alimentos</button></span><span class="ct-ed" hidden><button class="btn sec ct-edbtn">Editar</button> <button class="btn sec ct-add">+ Consultora</button></span></div>
+          <div class="ct-bar"><span class="seg" id="ct-rub-m" role="group" aria-label="Índice"><button data-v="total">Nivel general</button><button data-v="alimentos">Alimentos</button></span><span class="ct-ed" hidden><button class="btn sec ct-edbtn">Cargar o corregir</button> <button class="btn sec ct-add">+ Consultora</button></span></div>
           <div class="tablewrap"><table class="ct" id="ct-mes"></table></div><div class="src">Fuente: lo publicado por cada consultora; INDEC para el dato oficial.</div></div>
         <dialog id="ct-dlg"><form method="dialog" id="ct-form"><h3 id="ct-tit" style="margin:0 0 4px"></h3><div class="cap" id="ct-sub"></div>
           <label for="ct-v">Variación (%)</label><input id="ct-v" inputmode="decimal" placeholder="0,4">
@@ -651,8 +651,8 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
           <label for="ct-reg">Región</label><select id="ct-reg"><option value="">País / sin región</option><option>GBA</option><option>CABA</option></select>
           <label for="ct-url">Link a la fuente</label><input id="ct-url" type="url" placeholder="https://">
           <label for="ct-nota">Nota</label><input id="ct-nota" placeholder="Semana de jueves a miércoles, etc.">
-          <div class="cap" id="ct-err" style="color:var(--neg)"></div>
-          <div class="fila"><button type="button" class="btn neg" id="ct-del">Borrar dato</button><span style="flex:1"></span><button type="button" class="btn sec" id="ct-cancel">Cancelar</button><button type="submit" class="btn" id="ct-ok">Guardar</button></div></form></dialog>
+          <div class="cap">Se abre GitHub con el dato listo: tocá “Create” y en unos minutos aparece acá.</div><div class="cap" id="ct-err" style="color:var(--neg)"></div>
+          <div class="fila"><button type="button" class="btn neg" id="ct-del">Borrar dato</button><span style="flex:1"></span><button type="button" class="btn sec" id="ct-cancel">Cancelar</button><button type="submit" class="btn" id="ct-ok">Guardar en GitHub</button></div></form></dialog>
         <div class="card s12"><h3>Alimentos: el ipceer con la semana de cada consultora</h3><p class="cap">El ipceer semanal va de lunes a domingo. LCG y EcoGo cierran la semana el miércoles y Econviews el jueves. Acá el ipceer de alimentos se recalcula con esas semanas, con el índice diario y el mismo criterio de devengado (promedio de los siete días contra el de los siete anteriores), solo cuando las dos semanas tienen todos sus días. El ipceer publicado no cambia.</p><div class="tablewrap"><table id="t-salt"></table></div><div class="src">Fuente: CEER en base a relevamiento web de precios y a lo publicado por cada consultora.</div></div>
         <div class="card s12"><h3>Detalle</h3><div class="tablewrap"><table id="t-ext"></table></div></div>
       </div>
@@ -1660,8 +1660,8 @@ function nuestro(x){
     return {v:m.var,txt:'Variación mensual'}; }
   return {v:null,txt:'medida no comparable'};
 }
-/* D-69: tablas por consultora, con carga manual (solo la dueña del tablero escribe; queda en la base del artifact) */
-let EXT_DB={}, EXT_CONS={}, _ctDb=null, _ctEdit=false, _ctRubS='alimentos', _ctRubM='total';
+/* D-69: tablas por consultora, con carga manual por GitHub */
+let EXT_DB={}, EXT_CONS={}, _ctEdit=false, _ctRubS='alimentos', _ctRubM='total';
 const extClave=x=>[x.fuente,x.periodo,x.medida,(x.rubro||'').toLowerCase(),x.region||''].join('|');
 const extId=x=>extClave(x).replace(/[^A-Za-z0-9_\-.~:@+]/g,'_').replace(/\|/g,'~').slice(0,190);
 function extTodos(){
@@ -1700,54 +1700,50 @@ function ctTabla(id,E,med,rub){
 }
 function renderTablasCons(E){ ctTabla('ct-sem',E,'semanal',_ctRubS); ctTabla('ct-mes',E,'mensual',_ctRubM);
   [['ct-rub-s',_ctRubS],['ct-rub-m',_ctRubM]].forEach(([i,v])=>document.querySelectorAll('#'+i+' button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v))));
-  document.querySelectorAll('.ct-edbtn').forEach(b=>b.textContent=_ctEdit?'Listo':'Editar'); }
+  document.querySelectorAll('.ct-edbtn').forEach(b=>b.textContent=_ctEdit?'Listo':'Cargar o corregir'); }
 function ctAbrir(f,p,med,rub){
   const sem=med==='semanal', E=extTodos(), xs=E.filter(x=>x.fuente===f&&x.periodo===p&&(x.rubro||'').toLowerCase()===rub&&(sem?x.medida==='semanal':(x.medida==='mensual'||x.medida==='proyeccion_mensual')));
   const x=ctCelda(xs)||{fuente:f,periodo:p,rubro:rub,medida:sem?'semanal':'mensual',region:''};
   const dlg=document.getElementById('ct-dlg'); dlg._x=x;
   document.getElementById('ct-tit').textContent=f;
-  document.getElementById('ct-sub').textContent=(rub==='total'?'Nivel general':'Alimentos')+' · '+(sem?semS(p)+' ('+diaLbl(lunesISO(p).toISOString().slice(0,10))+' en adelante)':mesLbl(p));
+  document.getElementById('ct-sub').textContent=(rub==='total'?'Nivel general':'Alimentos')+' · '+(sem?(()=>{ const l=lunesISO(p), d=new Date(l); d.setUTCDate(d.getUTCDate()+6); return semS(p)+' ('+diaLbl(l.toISOString().slice(0,10))+' al '+diaLbl(d.toISOString().slice(0,10))+')'; })():mesLbl(p));
   const ms=document.getElementById('ct-med'); ms.innerHTML=sem?'<option value="semanal">Semanal</option>':'<option value="mensual">Dato del mes</option><option value="proyeccion_mensual">Proyección</option>'; ms.value=x.medida;
   document.getElementById('ct-v').value=x.valor!=null?String(x.valor).replace('.',','):'';
   document.getElementById('ct-reg').value=x.region&&x.region!=='Nacional'?x.region:'';
   document.getElementById('ct-url').value=x.url||''; document.getElementById('ct-nota').value=x.nota||''; document.getElementById('ct-err').textContent='';
   document.getElementById('ct-del').hidden=!xs.length; dlg.showModal(); document.getElementById('ct-v').focus();
 }
-async function ctGuardar(borrar){
+/* guardar = abrir un issue prellenado en GitHub; un workflow lo pasa a config/externos_manual.csv
+   (solo si lo abre la dueña del repositorio) y rearma la página */
+const REPO_GH='tadeobessega/ipceer';
+function ctGuardar(borrar){
   const dlg=document.getElementById('ct-dlg'), x=dlg._x, err=document.getElementById('ct-err');
   const reg=document.getElementById('ct-reg').value, med=document.getElementById('ct-med').value;
   const vs=document.getElementById('ct-v').value.trim().replace(/\s|%/g,'').replace(',','.'), v=Number(vs);
   if(!borrar&&(vs===''||!isFinite(v))){ err.textContent='Escribí la variación, por ejemplo 0,4.'; return; }
   const url=document.getElementById('ct-url').value.trim();
   if(!borrar&&url&&!/^https?:\/\//i.test(url)){ err.textContent='El link tiene que empezar con http:// o https://.'; return; }
-  const nuevo={fuente:x.fuente,tipo:'consultora',periodo:x.periodo,medida:borrar?x.medida:med,rubro:x.rubro,region:borrar?(x.region||''):reg,valor:borrar?null:v,url:borrar?'':url,nota:borrar?'':document.getElementById('ct-nota').value.trim(),publicado:new Date().toISOString().slice(0,10),borrado:!!borrar};
-  try{
-    /* si cambió el tipo de dato o la región, el dato anterior se tapa para que no queden dos */
-    if(!borrar&&x.valor!=null&&extClave(x)!==extClave(nuevo)) await _ctDb.collection('externos').doc(extId(x)).set({...x,manual:undefined,borrado:true});
-    await _ctDb.collection('externos').doc(extId(nuevo)).set(JSON.parse(JSON.stringify(nuevo)));
-    dlg.close();
-  }catch(e){ err.textContent='No se pudo guardar'+(e&&e.code?' ('+e.code+')':'')+'.'; }
+  const campos={accion:borrar?'borrar':'guardar',fuente:x.fuente,periodo:x.periodo,medida:borrar?x.medida:med,rubro:x.rubro,region:borrar?(x.region||''):reg,
+    valor:borrar?'':String(v),url:borrar?'':url,nota:borrar?'':document.getElementById('ct-nota').value.trim(),
+    reemplaza:(!borrar&&x.valor!=null&&(x.medida!==med||(x.region||'')!==reg))?[x.medida,x.region||''].join('|'):''};
+  const cuerpo='Dato cargado desde el tablero. Al enviar el issue, GitHub lo pasa al registro y rearma la página.\n\n```\n'+Object.entries(campos).map(([k,v])=>k+': '+String(v).replace(/\n/g,' ')).join('\n')+'\n```\n';
+  const tit=(borrar?'Borrar':'Dato de consultora')+': '+x.fuente+' '+x.periodo+' '+x.rubro;
+  const u='https://github.com/'+REPO_GH+'/issues/new?labels=dato-consultora&title='+encodeURIComponent(tit)+'&body='+encodeURIComponent(cuerpo);
+  const w=window.open(u,'_blank');
+  if(!w){ err.innerHTML='El navegador no abrió la pestaña: <a href="'+u+'" target="_blank" rel="noopener">abrir GitHub con el dato</a>.'; return; }
+  dlg.close();
 }
-async function ctIniciar(){
-  try{ _ctDb=await claude.use('db'); }catch(e){ _ctDb=null; }
-  if(!_ctDb) return;
-  let u=null; try{ u=await claude.use('user'); }catch(e){}
-  const puede=u?(u.isOwner()||u.canEdit()):false;
-  const rerender=()=>{ if(document.querySelector('[data-panel="cons"]')?.offsetParent||document.getElementById('ct-sem')?.offsetParent) renderExt(); };
-  _ctDb.collection('externos').onSnapshot(s=>{ EXT_DB={}; s.docs.forEach(d=>{ const x=d.data(); if(x&&x.fuente&&x.periodo) EXT_DB[d.id]=x; }); rerender(); },()=>{});
-  _ctDb.collection('consultoras').onSnapshot(s=>{ EXT_CONS={}; s.docs.forEach(d=>{ const x=d.data(); if(x&&x.nombre) EXT_CONS[x.nombre]=x; }); rerender(); },()=>{});
-  if(!puede) return;
+function ctIniciar(){
   document.querySelectorAll('.ct-ed').forEach(e=>e.hidden=false);
   document.querySelectorAll('.ct-edbtn').forEach(b=>b.addEventListener('click',()=>{ _ctEdit=!_ctEdit; renderExt(); }));
-  document.querySelectorAll('.ct-add').forEach(b=>b.addEventListener('click',async()=>{ const n=(prompt('Nombre de la consultora')||'').trim(); if(!n) return;
-    try{ await _ctDb.collection('consultoras').doc(n.replace(/[^A-Za-z0-9_\-.~:@+]/g,'_').slice(0,190)).set({nombre:n}); _ctEdit=true; }catch(e){ alert('No se pudo agregar ('+(e&&e.code||'error')+').'); } }));
+  document.querySelectorAll('.ct-add').forEach(b=>b.addEventListener('click',()=>{ const n=(prompt('Nombre de la consultora')||'').trim(); if(!n) return; EXT_CONS[n]={nombre:n}; _ctEdit=true; renderExt(); }));
   ['ct-sem','ct-mes'].forEach(i=>document.getElementById(i).addEventListener('click',ev=>{ if(!_ctEdit) return; const td=ev.target.closest('td.c[data-f]'); if(!td) return; ev.preventDefault(); ctAbrir(td.dataset.f,td.dataset.p,td.dataset.m,td.dataset.r); }));
   document.getElementById('ct-form').addEventListener('submit',ev=>{ ev.preventDefault(); ctGuardar(false); });
   document.getElementById('ct-del').addEventListener('click',()=>ctGuardar(true));
   document.getElementById('ct-cancel').addEventListener('click',()=>document.getElementById('ct-dlg').close());
 }
 document.addEventListener('click',ev=>{ const b=ev.target.closest('#ct-rub-s button,#ct-rub-m button'); if(!b) return; if(b.parentElement.id==='ct-rub-s') _ctRubS=b.dataset.v; else _ctRubM=b.dataset.v; renderExt(); });
-if(window.claude&&typeof window.claude.use==='function') ctIniciar();
+ctIniciar();
 /* D-67: alimentos con la semana de cada consultora */
 const SEM_DE={LCG:'mie',EcoGo:'mie',Econviews:'jue'}, SEM_NOM={iso:'lun-dom',mie:'jue-mié',jue:'vie-jue'};
 function renderSemAlt(E){

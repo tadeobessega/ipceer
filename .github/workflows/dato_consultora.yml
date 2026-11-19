@@ -1,0 +1,56 @@
+name: Dato de consultora
+# Un dato cargado desde el tablero llega como issue con la etiqueta dato-consultora. Solo se acepta si
+# lo abre la dueña del repositorio: se pasa a config/externos_manual.csv, se rearma la página y se
+# cierra el issue con el resultado (D-69).
+on:
+  issues:
+    types: [opened, labeled]
+permissions:
+  contents: write
+  issues: write
+  actions: write
+concurrency:
+  group: dato-consultora
+  cancel-in-progress: false
+jobs:
+  cargar:
+    if: contains(github.event.issue.labels.*.name, 'dato-consultora') && github.event.issue.user.login == github.repository_owner && github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pasar el dato al registro
+        id: dato
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          set +e
+          salida=$(python scripts/dato_consultora.py); rc=$?
+          echo "$salida"
+          { echo "salida<<FIN"; echo "$salida"; echo "FIN"; } >> "$GITHUB_OUTPUT"
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Guardar
+        if: steps.dato.outputs.rc == '0'
+        run: |
+          git config user.name "ipceer-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add config/externos_manual.csv
+          git commit -m "Dato de consultora desde el tablero (#${{ github.event.issue.number }})" || exit 0
+          for i in 1 2 3; do git pull --rebase -q origin main && git push -q origin HEAD:main && break; sleep 5; done
+      - name: Rearmar la página
+        if: steps.dato.outputs.rc == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run tablero.yml -f solo_sitio=true
+      - name: Responder y cerrar
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RC: ${{ steps.dato.outputs.rc }}
+          SALIDA: ${{ steps.dato.outputs.salida }}
+          NUM: ${{ github.event.issue.number }}
+        run: |
+          if [ "$RC" = "0" ]; then
+            gh issue close "$NUM" --comment "Cargado: $SALIDA. La página se rearma en unos minutos."
+          else
+            gh issue comment "$NUM" --body "No se cargó. $SALIDA"
+          fi

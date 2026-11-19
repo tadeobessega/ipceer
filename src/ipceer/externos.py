@@ -191,7 +191,7 @@ def externos(cfg: Config) -> list[dict]:
         return []
     df = pl.concat(partes, how="diagonal_relaxed").with_columns(
         pl.col("valor").cast(pl.Float64, strict=False), pl.col("region").fill_null(""))
-    df = (df.sort("_p").unique(["fuente", "periodo", "medida", "rubro", "region"], keep="first", maintain_order=True)
+    df = (df.sort(["_p", "publicado"], descending=[False, True], nulls_last=True).unique(["fuente", "periodo", "medida", "rubro", "region"], keep="first", maintain_order=True)
           .drop("_p").with_columns(pl.when(pl.col("region") == "").then(None).otherwise(pl.col("region")).alias("region")))
     return df.sort("publicado", nulls_last=True).to_dicts()
 

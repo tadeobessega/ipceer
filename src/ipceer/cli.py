@@ -106,6 +106,11 @@ def cmd_consolidar(cfg, args):
 def _datos_fuentes(cfg, datos: dict) -> None:
     """Partes del tablero que salen de otras fuentes y regulados (baratas de recalcular): las arma
     `calcular` y las refresca `sitio`, así una corrida de otras fuentes se ve sin recalcular el índice."""
+    try:  # el INDEC hace falta para las comparaciones; en una corrida "solo sitio" no se bajó
+        if not (indec.directorio(cfg) / "serie_ipc_divisiones.csv").exists():
+            indec.descargar(cfg)
+    except Exception as e:
+        log.warning("INDEC: %s", e)
     try:
         ra = cfg.ruta("resultados") / "alimentos_web.json"
         if ra.exists():

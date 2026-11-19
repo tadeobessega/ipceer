@@ -856,6 +856,13 @@ el total no se presenta como nivel general.
   Nacional): 0,24% contra 0,15% de la semana ISO; LCG midió 0,8%. El ipceer publicado no cambia. En
   GitHub, los días de fines de octubre que no tiene se toman del índice diario de la PC, llevado a la
   base de GitHub.
+- **D-69 (19/11/2026). Tablas por consultora y carga manual.** En Consultoras, dos tablas (semanal y
+  mensual) con las consultoras en filas y los períodos en columnas; cada número lleva a donde se
+  publicó. Lo que no se puede leer solo (X, LinkedIn, notas sueltas) lo carga la dueña del tablero en
+  la misma página: el dato queda en la base del artifact (solo ella escribe; el resto solo lee) y
+  entra en todas las comparaciones de la pestaña. Un dato cargado a mano reemplaza al de la carga
+  automática del mismo período; "Borrar dato" lo oculta. En la versión que no corre dentro de Claude,
+  las tablas se ven sin edición.
 - **D-68 (18/11/2026). Rotación sin ponderar.** Además de la parte de la canasta (ponderada) cuyos
   precios cambiaron, subieron y bajaron, se publica la parte de los precios relevados que cambió,
   contando cada precio igual (y cuántos son).

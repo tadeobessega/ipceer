@@ -49,6 +49,8 @@ if ($msg) {
 
 # copia del estado en GitHub
 if ($Subir -and (Get-Command gh -ErrorAction SilentlyContinue)) {
+    # paneles diarios recientes a datos-base: GitHub no puede bajar SEPA (403) y los necesita
+    python scripts\subir_paneles.py 2>&1 | Write-Output
   cmd /c "gh auth status >nul 2>&1"
   if ($LASTEXITCODE -eq 0) {
     Copy-Item $destino "$env:TEMP\estado_pc.json" -Force

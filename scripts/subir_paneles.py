@@ -9,7 +9,7 @@ tok = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True).st
 if not tok:
     sys.exit("gh no está conectado")
 H = {"Authorization": f"token {tok}", "Accept": "application/vnd.github+json"}
-for f in sorted(Path("data/panel/diario").glob("*.parquet"))[-5:]:
+for f in sorted((Path(__file__).resolve().parents[1] / "data/panel/diario").glob("*.parquet"))[-5:]:
     url = f"https://api.github.com/repos/{REPO}/contents/panel/diario/{f.name}"
     if requests.get(url, headers=H, params={"ref": RAMA}, timeout=60).status_code == 200:
         continue

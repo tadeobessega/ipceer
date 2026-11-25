@@ -6,9 +6,10 @@
 # lotes"). Arreglo: las tareas corren con la sesión del usuario (también con la PC bloqueada), sin
 # contraseña guardada, y no esperan a que Windows "detecte" la red (la tarea ya reintenta si no hay).
 #
-# Uso: powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\Documents\ipceer\scripts\reparar_tareas.ps1"
+# Uso: clic derecho > "Ejecutar con PowerShell" (anda desde scripts\ o desde Documentos)
 $ErrorActionPreference = "Continue"
 $Repo = Split-Path -Parent $PSScriptRoot
+if (-not (Test-Path "$Repo\.git")) { $Repo = "$env:USERPROFILE\Documents\ipceer" }
 $Log = "$Repo\logs\reparar_tareas_$(Get-Date -Format yyyy-MM-dd_HHmm).log"
 New-Item -ItemType Directory -Force -Path "$Repo\logs" | Out-Null
 function Log($m) { $l = "$(Get-Date -Format s) $m"; $l | Out-File -Append -Encoding utf8 $Log; Write-Host $l }

@@ -49,21 +49,46 @@ if ($msg) {
 
 # copia del estado en GitHub
 if ($Subir -and (Get-Command gh -ErrorAction SilentlyContinue)) {
-    # paneles diarios recientes a datos-base: GitHub no puede bajar SEPA (403) y los necesita
-    python "$PSScriptRoot\subir_paneles.py" 2>&1 | Write-Output
+  # D-71: cada PC es un nodo con nombre (variable de usuario IPCEER_NODO). Sin la variable es la
+  # HP15, que sigue subiendo con los nombres de siempre. Los demás nodos suben con sufijo y no pisan.
+  $Nodo = if ($env:IPCEER_NODO) { $env:IPCEER_NODO.ToLower() } else { "hp15" }
+  $Py = if (Test-Path "$Repo\.venv\Scripts\python.exe") { "$Repo\.venv\Scripts\python.exe" } else { "python" }
+  # paneles diarios recientes a datos-base: GitHub no puede bajar SEPA (403) y los necesita.
+  # Idempotente: lo que ya está arriba (lo haya subido cualquier nodo) no se vuelve a subir.
+  & $Py "$PSScriptRoot\subir_paneles.py" 2>&1 | Write-Output
   cmd /c "gh auth status >nul 2>&1"
   if ($LASTEXITCODE -eq 0) {
-    Copy-Item $destino "$env:TEMP\estado_pc.json" -Force
-    gh release upload sepa-archivo "$env:TEMP\estado_pc.json" --clobber -R tadeobessega/ipceer 2>&1 | Write-Output
-    # tablero: lo sirve el Worker "ipceer" de Cloudflare (ipceer.tadeobessega.workers.dev)
+    $R = "tadeobessega/ipceer"
+    # zips de SEPA de los últimos 14 días que no estén en el release: así cada día queda en PC + GitHub
+    $ArchivoSepa = if ($env:IPCEER_ARCHIVO) { $env:IPCEER_ARCHIVO } else { "$env:USERPROFILE\Documents\SEPA" }
+    $arriba = @(gh release view sepa-archivo -R $R --json assets -q ".assets[].name" 2>$null)
+    if ($LASTEXITCODE -eq 0 -and $arriba.Count) {
+      Get-ChildItem "$ArchivoSepa\sepa_*.zip" -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-14) } |
+        Where-Object { $arriba -notcontains $_.Name } | ForEach-Object {
+          Write-Output "Subiendo $($_.Name) al release"
+          gh release upload sepa-archivo $_.FullName -R $R 2>&1 | Write-Output
+        }
+    }
+    # latido del nodo (lo lee vigilancia.yml)
+    Copy-Item $destino "$env:TEMP\estado_$Nodo.json" -Force
+    gh release upload sepa-archivo "$env:TEMP\estado_$Nodo.json" --clobber -R $R 2>&1 | Write-Output
+    $suf = if ($Nodo -eq "hp15") { "pc" } else { $Nodo }
+    if ($Nodo -eq "hp15") {
+      # compatibilidad: estado_pc.json sigue siendo el de la HP15
+      Copy-Item $destino "$env:TEMP\estado_pc.json" -Force
+      gh release upload sepa-archivo "$env:TEMP\estado_pc.json" --clobber -R $R 2>&1 | Write-Output
+    }
+    # tablero: lo sirve el Worker "ipceer" de Cloudflare (ipceer.tadeobessega.workers.dev); solo la HP15
+    # sube tablero.html; los otros nodos suben tablero_<nodo>.html para comparar
     if (Test-Path "$Repo\sitio\index.html") {
-      Copy-Item "$Repo\sitio\index.html" "$env:TEMP\tablero.html" -Force
-      gh release upload sepa-archivo "$env:TEMP\tablero.html" --clobber -R tadeobessega/ipceer 2>&1 | Write-Output
+      $nt = if ($Nodo -eq "hp15") { "tablero.html" } else { "tablero_$Nodo.html" }
+      Copy-Item "$Repo\sitio\index.html" "$env:TEMP\$nt" -Force
+      gh release upload sepa-archivo "$env:TEMP\$nt" --clobber -R $R 2>&1 | Write-Output
     }
     # datos del último cálculo: GitHub los usa para las partes que no puede recalcular (D-49)
     if (Test-Path "$Repo\resultados\datos.json") {
-      Copy-Item "$Repo\resultados\datos.json" "$env:TEMP\datos_pc.json" -Force
-      gh release upload sepa-archivo "$env:TEMP\datos_pc.json" --clobber -R tadeobessega/ipceer 2>&1 | Write-Output
+      Copy-Item "$Repo\resultados\datos.json" "$env:TEMP\datos_$suf.json" -Force
+      gh release upload sepa-archivo "$env:TEMP\datos_$suf.json" --clobber -R $R 2>&1 | Write-Output
     }
   } else { Write-Output "gh no está conectado: el estado no se sube a GitHub (correr 'gh auth login')." }
 }

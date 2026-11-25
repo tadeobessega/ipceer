@@ -10,6 +10,7 @@ on:
 
 permissions:
   actions: read
+  contents: read
   issues: write
 
 jobs:
@@ -42,3 +43,31 @@ jobs:
               echo "$wf: bien"
             fi
           done
+      - name: Revisar los nodos (PC)
+        # D-71: cada PC sube estado_<nodo>.json al release. Si un nodo pasa 30 h sin latido, issue; si
+        # pasan los dos, issue urgente (nadie está bajando SEPA). También avisa si a datos-base le falta
+        # el panel de ayer y ningún nodo lo subió.
+        run: |
+          R="$GITHUB_REPOSITORY"; hoy=$(date -u +%F); ahora=$(date -u +%s); caidos=0; nodos="hp15 thinkpad"
+          for n in $nodos; do
+            f="estado_$n.json"; [ "$n" = hp15 ] && ! gh release view sepa-archivo -R "$R" --json assets -q '.assets[].name' | grep -qx "$f" && f="estado_pc.json"
+            if gh release download sepa-archivo -R "$R" -p "$f" -O "e_$n.json" --clobber 2>/dev/null; then
+              c=$(jq -r '.corrida // empty' "e_$n.json"); u=$(jq -r '.ultimo_dia // empty' "e_$n.json")
+              edad=$(( (ahora - $(date -d "${c:-1970-01-01}-03:00" +%s)) / 3600 ))
+            else edad=9999; u="?"; fi
+            if [ "$edad" -gt 30 ]; then
+              caidos=$((caidos+1)); titulo="Vigilancia: nodo $n sin latido ($hoy)"
+              gh issue list -R "$R" --state open --search "\"$titulo\" in:title" --json number -q '.[0].number' | grep -q . || \
+                gh issue create -R "$R" --title "$titulo" --body "El nodo $n no sube su estado hace $edad horas (último día con datos: $u). Revisar que la PC esté prendida y con la tarea IPCEER diario activa."
+              echo "::warning::nodo $n: $edad h sin latido"
+            else echo "nodo $n: bien ($edad h, último día $u)"; fi
+          done
+          if [ "$caidos" -ge 2 ]; then
+            titulo="URGENTE: los dos nodos del IPCEER están caídos ($hoy)"
+            gh issue list -R "$R" --state open --search "\"$titulo\" in:title" --json number -q '.[0].number' | grep -q . || \
+              gh issue create -R "$R" --title "$titulo" --body "Ninguna PC sube SEPA. El portal solo guarda los últimos 7 días: cada día sin nodo activo se pierde."
+          fi
+          ayer=$(date -u -d yesterday +%F)
+          if ! gh api "repos/$R/contents/panel/diario/$ayer.parquet?ref=datos-base" >/dev/null 2>&1; then
+            echo "::warning::datos-base no tiene el panel de $ayer"
+          fi

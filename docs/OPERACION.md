@@ -84,6 +84,17 @@ otros ya están haciendo el trabajo, no hace falta "pasarle la posta".
 5. Resolver la memoria del cálculo en PC (procesar por partes, `engine="streaming"`, menos hilos).
 6. Dejar todo documentado acá y en `METODOLOGIA.md` (nuevas decisiones D-71 en adelante).
 
+## 4 bis. Estado de la implementación (25/11/2026)
+
+- Hecho en el repo (D-71): `control.ps1` sube con nombre de nodo y no pisa; sube los zips de SEPA que
+  falten en el release; `vigilancia.yml` vigila los latidos de `hp15` y `thinkpad`;
+  `scripts/nodo_nuevo.ps1` arma un nodo de cero.
+- ThinkPad (`eco-9774`, usuario `308657`, equipo con dominio): falta correr `nodo_nuevo.ps1` (pide
+  aprobar GitHub en el navegador y la contraseña de Windows para las tareas). Desde un chat remoto no
+  hay terminal en esa PC: la instalación la tiene que lanzar Tadeo una vez, o un chat abierto en ella.
+- Pendiente: comparar varios días ThinkPad contra HP15 y GitHub (paso 3), mover scrapers de a uno
+  (paso 4, segunda parte) y la memoria del cálculo (paso 5).
+
 ## 5. Acceso para Claude
 
 - Repo: `git clone https://github.com/tadeobessega/ipceer` (GitHub CLI `gh` autenticado con la cuenta de Tadeo).

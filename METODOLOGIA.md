@@ -864,6 +864,16 @@ el total no se presenta como nivel general.
   página y cierra el issue (si lo abre otra persona no pasa nada). Lo cargado a mano vale sobre la
   carga automática y sobre `externos.csv`; "Borrar dato" deja una fila que lo tapa.
 - **D-70 (19/11/2026). El hilo se publica desde la página de publicaciones del CEER.** La pestaña Hilo sale del tablero: el hilo semanal y sus placas están en publicaciones-ceer (pestaña IPCEER, dentro de Inflación), que baja el tablero publicado y dibuja las mismas placas. El ipceer sigue armando el hilo (`D.hilo`); solo cambia dónde se muestra. Las placas llevan el logo unificado `ceer_ipceer`.
+- **D-71 (25/11/2026). Dos PC como nodos idénticos.** La HP15 y la ThinkPad corren la misma tarea
+  diaria. Cada PC tiene un nombre de nodo (variable de usuario `IPCEER_NODO`; sin ella es `hp15`). Lo
+  que sube cada una es idempotente y no pisa: paneles diarios a `datos-base` solo si faltan, zips de
+  SEPA al release solo si faltan (así cada día queda en PC y GitHub, también los que hoy solo tiene la
+  HP15), latido `estado_<nodo>.json`, y el tablero y los datos de la ThinkPad como
+  `tablero_thinkpad.html` y `datos_thinkpad.json` (la HP15 sigue con `tablero.html` y `datos_pc.json`).
+  `vigilancia.yml` abre un issue si un nodo pasa 30 h sin latido y uno urgente si pasan los dos. El nodo
+  nuevo se arma con `scripts/nodo_nuevo.ps1`, que trae el historial cerrado de `datos-base` y del release
+  y marca las reglas de clasificación como aplicadas para no reconsolidar con historia parcial. No cambia
+  el método: no altera ningún número publicado.
 - **D-68 (18/11/2026). Rotación sin ponderar.** Además de la parte de la canasta (ponderada) cuyos
   precios cambiaron, subieron y bajaron, se publica la parte de los precios relevados que cambió,
   contando cada precio igual (y cuántos son).

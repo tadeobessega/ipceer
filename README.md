@@ -10,6 +10,8 @@ Produce:
 
 No es un IPC completo: no cubre servicios, tarifas, alquileres ni bienes que no se venden en supermercados. Ver la pestaña *Metodología* del tablero o `METODOLOGIA.md`.
 
+> Operación, redundancia y traspaso: `docs/OPERACION.md`.
+
 ## Cómo funciona
 
 ```

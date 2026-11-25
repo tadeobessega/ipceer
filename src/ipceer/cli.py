@@ -33,14 +33,15 @@ log = logging.getLogger("ipceer")
 
 
 def cmd_descargar(cfg, args):
-    try:
-        descarga.descargar_wayback(cfg)
-    except Exception as e:  # la Wayback Machine es un extra: si falla, sigue el día normal
-        log.warning("Wayback Machine no disponible: %s", e)
+    # D-72: primero el portal (lo único que trae días nuevos) y después la Wayback Machine
     try:
         pend = descarga.descargar_pendientes(cfg)
     except Exception as e:  # si el portal no responde, igual se completa desde el respaldo
         log.error("Portal de SEPA: %s", e)
+    try:
+        descarga.descargar_wayback(cfg)
+    except Exception as e:  # la Wayback Machine es un extra: si falla, sigue el día normal
+        log.warning("Wayback Machine no disponible: %s", e)
     try:
         n = descarga.desde_github(cfg)
         if n:

@@ -874,6 +874,11 @@ el total no se presenta como nivel general.
   nuevo se arma con `scripts/nodo_nuevo.ps1`, que trae el historial cerrado de `datos-base` y del release
   y marca las reglas de clasificación como aplicadas para no reconsolidar con historia parcial. No cambia
   el método: no altera ningún número publicado.
+- **D-72 (25/11/2026). Recuperación de SEPA acotada a los días recientes.** La descarga va primero al
+  portal y después a la Wayback Machine, y tanto la Wayback como el respaldo del release se limitan a
+  los últimos `descarga.ventana_recuperacion_dias` (15). Motivo: la ThinkPad, sin `wayback.csv`, se puso
+  a bajar capturas de 2025 durante horas y nunca llegó a pedirle al portal los días nuevos. No cambia
+  ningún número publicado.
 - **D-68 (18/11/2026). Rotación sin ponderar.** Además de la parte de la canasta (ponderada) cuyos
   precios cambiaron, subieron y bajaron, se publica la parte de los precios relevados que cambió,
   contando cada precio igual (y cuántos son).

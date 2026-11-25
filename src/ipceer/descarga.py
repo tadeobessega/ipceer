@@ -17,7 +17,7 @@ import re
 import time
 import zipfile
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import requests
@@ -195,8 +195,12 @@ def descargar_wayback(cfg: Config) -> list[Path]:
     if registro.exists():
         hechas = {l.split(",")[0] + "," + l.split(",")[1] for l in registro.read_text(encoding="utf-8").splitlines()[1:]}
     nuevos = []
+    # D-72: solo capturas de los últimos `ventana_recuperacion_dias` (un nodo nuevo, sin wayback.csv,
+    # se ponía a bajar toda la historia de la Wayback Machine y nunca llegaba al portal)
+    ventana = int(d.get("ventana_recuperacion_dias") or 15)
+    limite = (date.today() - timedelta(days=ventana)).strftime("%Y%m%d")
     for ts, orig, largo in listar_wayback(d["timeout_segundos"]):
-        if f"{ts},{orig}" in hechas:
+        if f"{ts},{orig}" in hechas or ts[:8] < limite:
             continue
         tmp = dir_crudos / f"wayback_{ts}.zip"
         log.info("Wayback: bajando captura %s de %s (%.0f MB)", ts, orig.rsplit("/", 1)[-1], largo / 1e6)
@@ -263,6 +267,9 @@ def desde_github(cfg: Config) -> list[Path]:
     for a in r.json().get("assets", []):
         nombre = a.get("name", "")
         if not re.fullmatch(r"sepa_\d{4}-\d{2}-\d{2}\.zip", nombre):
+            continue
+        # D-72: solo los días recientes; lo viejo ya está procesado en GitHub (proc_*.tar, datos-base)
+        if nombre[5:15] < (date.today() - timedelta(days=int(d.get("ventana_recuperacion_dias") or 15))).isoformat():
             continue
         destino = dir_crudos / nombre
         if destino.exists():

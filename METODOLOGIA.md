@@ -879,6 +879,11 @@ el total no se presenta como nivel general.
   los últimos `descarga.ventana_recuperacion_dias` (15). Motivo: la ThinkPad, sin `wayback.csv`, se puso
   a bajar capturas de 2025 durante horas y nunca llegó a pedirle al portal los días nuevos. No cambia
   ningún número publicado.
+- **D-73 (25/11/2026). Tareas con la sesión del usuario en equipos con dominio.** En la ThinkPad las
+  tareas registradas con usuario y contraseña nunca corrieron (resultado 267011, "todavía no se
+  ejecutó"). `scripts/reparar_tareas.ps1` las pasa a correr con la sesión del usuario (también con la
+  PC bloqueada), sin esperar la detección de red, y deja la PC sin suspenderse con el cargador puesto.
+  Límite: si se cierra la sesión o se apaga la PC no corren; lo cubre la HP15 y lo avisa la vigilancia.
 - **D-68 (18/11/2026). Rotación sin ponderar.** Además de la parte de la canasta (ponderada) cuyos
   precios cambiaron, subieron y bajaron, se publica la parte de los precios relevados que cambió,
   contando cada precio igual (y cuántos son).

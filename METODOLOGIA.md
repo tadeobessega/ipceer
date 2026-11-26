@@ -904,6 +904,11 @@ el total no se presenta como nivel general.
   rótulo "cuarta semana de septiembre" con otro valor (0,5%). Pendiente de revisar: LCG y Analytica
   rotulan "cuarta semana de octubre" en W44, pero con el criterio de `semana_del_mes` es W43 (octubre de
   2026 tiene cinco jueves). No cambia el método del índice.
+- **D-75 (26/11/2026). Comparación con consultoras.** El "promedio de 4 semanas" que publican las
+  consultoras es el acumulado de sus últimas 4 semanas: se compara con nuestras 4 semanas encadenadas (antes
+  se comparaba con el promedio simple semanal, unas 4 veces menor). El tablero suma la inflación acumulada
+  por consultora desde la semana que se elija; una semana sin dato de una consultora no suma y se indica.
+  No cambia ningún número del índice.
 - **D-68 (18/11/2026). Rotación sin ponderar.** Además de la parte de la canasta (ponderada) cuyos
   precios cambiaron, subieron y bajaron, se publica la parte de los precios relevados que cambió,
   contando cada precio igual (y cuántos son).

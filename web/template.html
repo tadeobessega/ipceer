@@ -1874,10 +1874,11 @@ function renderDots(E){
 /* imagen para X (1600 × 900, estética CEER sobre azul): el mismo dot plot con los filtros elegidos */
 async function imgDots(){
   await fuentes(); const E=(D.externos||[]).filter(x=>x.tipo!=='municipio'), P=puntosDots(E), {rub,per,fmtP,todos}=P; if(!per.length) return;
-  const prev=T; T=TEMAS.azul; formato('x'); const c=document.createElement('canvas'), {W,H,M}=IMG; c.width=W; c.height=H; const x=c.getContext('2d');
+  /* modo claro, como las placas claras de la pestaña de datos de publicaciones-ceer */
+  const prev=T; T=TEMAS.blanco; formato('x'); const c=document.createElement('canvas'), {W,H,M}=IMG; c.width=W; c.height=H; const x=c.getContext('2d');
   fondo(x,'esq');
-  const rubT=rub==='total'?'nivel general':'alimentos y bebidas', perT=per.length===1?fmtP(per[0]):`${fmtP(per[0])} a ${fmtP(per[per.length-1])}`;
-  const yTop=encabezado(x,stDots.f==='s'?'Inflación semanal: consultoras':'Inflación mensual: consultoras',`Variación ${stDots.f==='s'?'semanal':'mensual'} del ${rubT}, ${perT}, %`);
+  const rubT=rub==='total'?'del nivel general':'de alimentos y bebidas'+(P.regN==='GBA'?' (ipceer: GBA)':''), perT=per.length===1?fmtP(per[0]):`${fmtP(per[0])} a ${fmtP(per[per.length-1])}`;
+  const yTop=encabezado(x,stDots.f==='s'?'Inflación semanal: consultoras':'Inflación mensual: consultoras',`Variación ${stDots.f==='s'?'semanal':'mensual'} ${rubT}, ${perT}, %`);
   /* leyenda */
   let lx=M; const ly=yTop-34; x.textBaseline='middle'; x.font=FT(400,24);
   const item=(dib,txt)=>{ dib(lx+11,ly); x.fillStyle=T.txt; x.font=FT(400,24); x.fillText(txt,lx+32,ly); lx+=32+x.measureText(txt).width+40; };
@@ -1885,7 +1886,7 @@ async function imgDots(){
   const romb=(cx,cy,r,col,bor)=>{ x.beginPath(); x.moveTo(cx,cy-r); x.lineTo(cx+r,cy); x.lineTo(cx,cy+r); x.lineTo(cx-r,cy); x.closePath(); x.fillStyle=col; x.fill(); if(bor){ x.lineWidth=2; x.strokeStyle=bor; x.stroke(); } };
   const cruz=(cx,cy,r)=>{ x.strokeStyle=T.txt; x.lineWidth=4; x.beginPath(); x.moveTo(cx-r,cy); x.lineTo(cx+r,cy); x.moveTo(cx,cy-r); x.lineTo(cx,cy+r); x.stroke(); };
   item((a,b)=>circ(a,b,10,T.ser),'Consultora'); item((a,b)=>cruz(a,b,10),P.hayNos?'Mediana (consultoras e ipceer)':'Mediana de las consultoras');
-  if(P.hayInd) item((a,b)=>romb(a,b,13,CI),'INDEC'); if(P.hayNos) item((a,b)=>romb(a,b,13,T.am),'ipceer');
+  if(P.hayInd) item((a,b)=>romb(a,b,13,T.ci),'INDEC'); if(P.hayNos) item((a,b)=>romb(a,b,13,T.am),'ipceer');
   x.textBaseline='alphabetic';
   /* ejes */
   const X0=M+70, X1=W-M, Y0=yTop+20, Y1=H-140, ys=todos.map(q=>q.y);
@@ -1897,7 +1898,7 @@ async function imgDots(){
   /* puntos del tamaño justo para que dos valores a 0,1 de distancia no se pisen */
   const d01=0.1/(hi-lo)*(Y1-Y0), r=Math.max(5,Math.min(11,d01/2-1)), A=apilarDots(per,todos,pxp,2*r+5,(hi-lo)/(Y1-Y0)*(2*r+1)), X=q=>X0+pxp*(q.x+.5);
   A.con.forEach(q=>circ(X(q),yv(q.y),r,T.ser)); A.med.forEach(q=>cruz(X(q),yv(q.y),r));
-  A.ind.forEach(q=>romb(X(q),yv(q.y),r*1.3,CI,AZ)); A.nos.forEach(q=>romb(X(q),yv(q.y),r*1.3,T.am,AZ));
+  A.ind.forEach(q=>romb(X(q),yv(q.y),r*1.3,T.ci,T.claro?null:AZ)); A.nos.forEach(q=>romb(X(q),yv(q.y),r*1.3,T.am,T.claro?null:AZ));
   pieC(x,'ipceer · consultoras',`Fuente: elaboración propia, INDEC y lo publicado por cada consultora`);
   T=prev;
   await bajar(`ipceer-dot-plot-${stDots.f==='s'?'semanal':'mensual'}-${rub}${stDots.mes?'-'+stDots.mes:''}.png`,await aBlob(c));

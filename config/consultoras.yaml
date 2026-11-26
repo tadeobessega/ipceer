@@ -8,6 +8,7 @@ x:
   - {usuario: econviews, lector: econviews}         # canasta de alimentos en supermercados de GBA
   - {usuario: AnalyticaARG, lector: analytica}      # alimentos y bebidas, semanal
   - {usuario: lilianafranco20, lector: analytica}   # Liliana Franco (Analytica) publica el mismo dato
+  - {usuario: inflargy, lector: inflargy}           # Infla Argy: alimentos y bebidas, semanal
 
 # Cómo se nombra a cada consultora en la prensa (expresiones regulares). Una frase cuenta solo si
 # nombra a una sola de estas.
@@ -20,6 +21,7 @@ nombres:
   C&T: ["\\bC&T\\b", "C&amp;T"]
   Invecq: ["\\bInvecq\\b"]
   FMyA: ["\\bFMyA\\b", "Fundación Mercado y Agro"]
+  Infla Argy: ["\\bInfla ?Argy\\b"]
 
 # Diarios con RSS de economía. Se respeta robots.txt (El Cronista lo prohíbe, por eso no está).
 prensa:

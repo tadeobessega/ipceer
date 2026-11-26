@@ -900,7 +900,7 @@ el total no se presenta como nivel general.
   en 0,26% (no 0,24%); Econviews 3.ª y 4.ª de septiembre, 3.ª de octubre y octubre mensual (2,2%), con
   las fechas y enlaces reales de las semanas ya cargadas; Analytica 2.ª y 3.ª de octubre (tuits de
   Liliana Franco); C&T y Equilibra de septiembre (1,9% ambas, dicho en sus tuits de octubre); FIEL en
-  CABA, 2.ª de noviembre (tuit de M. Kanenguiser). No se cargó el tuit de Econviews del 6/10 que repite el
+  CABA, 2.ª de noviembre (tuit de M. Kanenguiser); Infla Argy (@inflargy, alimentos y bebidas semanal, W43 a W47; su proyección viene como rango y no se carga). No se cargó el tuit de Econviews del 6/10 que repite el
   rótulo "cuarta semana de septiembre" con otro valor (0,5%). Pendiente de revisar: LCG y Analytica
   rotulan "cuarta semana de octubre" en W44, pero con el criterio de `semana_del_mes` es W43 (octubre de
   2026 tiene cinco jueves). No cambia el método del índice.

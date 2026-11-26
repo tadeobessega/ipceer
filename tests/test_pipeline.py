@@ -398,7 +398,7 @@ def test_semanas_alternativas():
 def test_consultoras_auto_tuits_y_prensa():
     """D-74: lectores de tuits de las consultoras y de frases de prensa (solo frases inequívocas)."""
     from datetime import date
-    from ipceer.consultoras_auto import frases_prensa, semana, tuit_analytica, tuit_ecogo, tuit_econviews
+    from ipceer.consultoras_auto import frases_prensa, semana, tuit_analytica, tuit_ecogo, tuit_econviews, tuit_inflargy
     assert semana("última", 10, 2026) == "2026-W44" and semana("tercer", 11, 2026) == "2026-W47"
     f = {(x["medida"], x["periodo"], x["rubro"]): x["valor"] for x in tuit_ecogo(
         "💸 Relevamiento de Precios Minoristas Eco Go | 2da semana de noviembre 2026 📌Var. semanal de alimentos: 0,26% "
@@ -421,6 +421,10 @@ def test_consultoras_auto_tuits_y_prensa():
         "y bebidas. De esta forma, el promedio de cuatro semanas es de 2,6%. Para el nivel general de precios "
         "proyectan una suba mensual del 2,0% durante octubre.", date(2026, 10, 26), "u")}
     assert f == {("semanal", "2026-W42"): 0.8, ("promedio_4_semanas", "2026-W42"): 2.6, ("proyeccion_mensual", "2026-10"): 2.0}
+    f = {(x["medida"], x["periodo"]): x["valor"] for x in tuit_inflargy(
+        "📊 ALIMENTOS Y BEBIDAS NO ALCOHÓLICAS - Semana 16/11-20/11 ☑️ Variación Semanal: -0,21% ☑️ Últimas 4 semanas: +1,14% "
+        "☑️ Proyección para Noviembre: 0,6%-0,7%", date(2026, 11, 20), "u")}
+    assert f == {("semanal", "2026-W47"): -0.21, ("promedio_4_semanas", "2026-W47"): 1.14}
     nombres = {"LCG": [r"\bLCG\b"], "Analytica": [r"\bAnalytica\b"]}
     t = ("Según LCG, los alimentos subieron 0,3% en la tercera semana de noviembre. "
          "LCG y Analytica midieron 0,3% y 0,5% en la segunda semana de noviembre en alimentos.")

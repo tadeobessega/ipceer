@@ -174,7 +174,28 @@ def tuit_analytica(t: str, pub: date, url: str) -> list[dict]:
     return filas
 
 
-LECTORES = {"ecogo": tuit_ecogo, "econviews": tuit_econviews, "analytica": tuit_analytica}
+def tuit_inflargy(t: str, pub: date, url: str) -> list[dict]:
+    """"📊 ALIMENTOS Y BEBIDAS NO ALCOHÓLICAS - Semana 16/11-20/11 ☑️ Variación Semanal: -0,21% ☑️
+    Últimas 4 semanas: +1,14%". La semana ISO sale del primer día del rango. La proyección viene como
+    rango ("0,6%-0,7%") y no se carga."""
+    m = re.search(r"ALIMENTOS Y BEBIDAS NO ALCOH[ÓO]LICAS\s*-\s*Semana\s+(\d{1,2})/(\d{1,2})\s*-\s*\d{1,2}/\d{1,2}", t, re.I)
+    v = re.search(r"Variación Semanal:\s*\+?" + _NUM + r"\s?%", t, re.I)
+    if not (m and v):
+        return []
+    dia, mes = int(m.group(1)), int(m.group(2))
+    anio = pub.year - 1 if (mes == 12 and pub.month == 1) else pub.year
+    a, w, _ = date(anio, mes, dia).isocalendar()
+    per, rango = f"{a}-W{w:02d}", f"{dia}/{mes}"
+    filas = [_fila("Infla Argy", per, "semanal", "alimentos", None, _n(v.group(1)), pub, url,
+                   f"Alimentos y bebidas no alcohólicas, semana que empieza el {rango} (cuenta de Infla Argy en X; lectura automática)")]
+    c = re.search(r"(?:Últimas 4 semanas|Acumulado 4 Semanas):\s*\+?" + _NUM + r"\s?%", t, re.I)
+    if c:
+        filas.append(_fila("Infla Argy", per, "promedio_4_semanas", "alimentos", None, _n(c.group(1)), pub, url,
+                           "Últimas cuatro semanas (cuenta de Infla Argy en X; lectura automática)"))
+    return filas
+
+
+LECTORES = {"ecogo": tuit_ecogo, "econviews": tuit_econviews, "analytica": tuit_analytica, "inflargy": tuit_inflargy}
 
 
 # ---------------------------------------------------------------------------------------------

@@ -884,6 +884,26 @@ el total no se presenta como nivel general.
   ejecutó"). `scripts/reparar_tareas.ps1` las pasa a correr con la sesión del usuario (también con la
   PC bloqueada), sin esperar la detección de red, y deja la PC sin suspenderse con el cargador puesto.
   Límite: si se cierra la sesión o se apaga la PC no corren; lo cubre la HP15 y lo avisa la vigilancia.
+- **D-74 (25/11/2026). Relevador automático de consultoras y revisión contra sus cuentas de X.**
+  `consultoras_auto.py` corre en `otras_fuentes.yml` (todos los días a las 9:41) y suma dos lecturas a
+  la de la página de EcoGo (D-66), con frases inequívocas y el enlace a cada dato:
+  (1) las cuentas de las consultoras en X **por la API oficial**, solo si está el secret
+  `X_BEARER_TOKEN` (pago por uso, unos USD 0,005 por tuit; se guarda el último tuit visto de cada
+  cuenta). x.com no se lee directo: su robots.txt lo prohíbe y pide sesión iniciada. Cuentas y lector de
+  cada formato en `config/consultoras.yaml` (EcoGo, Econviews, Analytica); (2) notas de prensa por RSS
+  (Infobae, Perfil, El Economista, Ámbito; El Cronista no, su robots.txt lo prohíbe): solo frases que
+  nombran a una única consultora, traen una sola cifra y dicen la semana o el mes. Prioridad: carga desde
+  el tablero > página o cuenta de X de la consultora > `externos.csv` > prensa automática.
+  Revisión del 25/11 contra las cuentas de X (cargada en `externos.csv` con el enlace al tuit): EcoGo
+  alimentos semanal 1.ª, 2.ª y 3.ª de octubre (0,08%, 1,03%, 0,59%), alimentos mensual de agosto, septiembre
+  y octubre (1,1%, 2,1%, 2,5%; el 2,4% de octubre era de una nota previa al cierre) y la 2.ª de noviembre
+  en 0,26% (no 0,24%); Econviews 3.ª y 4.ª de septiembre, 3.ª de octubre y octubre mensual (2,2%), con
+  las fechas y enlaces reales de las semanas ya cargadas; Analytica 2.ª y 3.ª de octubre (tuits de
+  Liliana Franco); C&T y Equilibra de septiembre (1,9% ambas, dicho en sus tuits de octubre); FIEL en
+  CABA, 2.ª de noviembre (tuit de M. Kanenguiser); Infla Argy (@inflargy, alimentos y bebidas semanal, W43 a W47; su proyección viene como rango y no se carga). No se cargó el tuit de Econviews del 6/10 que repite el
+  rótulo "cuarta semana de septiembre" con otro valor (0,5%). Pendiente de revisar: LCG y Analytica
+  rotulan "cuarta semana de octubre" en W44, pero con el criterio de `semana_del_mes` es W43 (octubre de
+  2026 tiene cinco jueves). No cambia el método del índice.
 - **D-68 (18/11/2026). Rotación sin ponderar.** Además de la parte de la canasta (ponderada) cuyos
   precios cambiaron, subieron y bajaron, se publica la parte de los precios relevados que cambió,
   contando cada precio igual (y cuántos son).

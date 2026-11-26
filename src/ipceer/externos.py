@@ -189,7 +189,10 @@ def externos(cfg: Config) -> list[dict]:
         from . import consultoras
         w = consultoras.leidos(cfg)
         if w.height:
-            partes.append(w.with_columns(pl.lit(0).alias("_p")))
+            # D-74: lo leído de notas de prensa (prensa.csv) es lo de menor prioridad; la página y la
+            # cuenta de X de la consultora valen sobre la carga a mano de externos.csv
+            prio = pl.when(pl.col("nota").fill_null("").str.contains("lectura automática de prensa")).then(2).otherwise(0)
+            partes.append(w.with_columns(prio.alias("_p")))
     except Exception as e:
         log.warning("Consultoras leídas de sus páginas: %s", e)
     if not partes:

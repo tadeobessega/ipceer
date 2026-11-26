@@ -1,0 +1,30 @@
+# Relevador automático de consultoras (D-74, src/ipceer/consultoras_auto.py).
+
+# Cuentas de X que se leen por la API oficial (solo si está el secret X_BEARER_TOKEN). "lector" es la
+# función de consultoras_auto.LECTORES que entiende el formato de sus tuits. Costo: unos USD 0,005 por
+# tuit leído (pago por uso); se guarda el último tuit visto de cada cuenta para no leerlo dos veces.
+x:
+  - {usuario: EcoGoConsultor1, lector: ecogo}       # RPM: "Var. semanal de alimentos: 0,26%"
+  - {usuario: econviews, lector: econviews}         # canasta de alimentos en supermercados de GBA
+  - {usuario: AnalyticaARG, lector: analytica}      # alimentos y bebidas, semanal
+  - {usuario: lilianafranco20, lector: analytica}   # Liliana Franco (Analytica) publica el mismo dato
+
+# Cómo se nombra a cada consultora en la prensa (expresiones regulares). Una frase cuenta solo si
+# nombra a una sola de estas.
+nombres:
+  LCG: ["\\bLCG\\b", "Labour, Capital (?:&|y) Growth"]
+  EcoGo: ["\\bEco ?Go\\b"]
+  Analytica: ["\\bAnalytica\\b"]
+  Econviews: ["\\bEcon[Vv]iews\\b"]
+  Equilibra: ["\\bEquilibra\\b"]
+  C&T: ["\\bC&T\\b", "C&amp;T"]
+  Invecq: ["\\bInvecq\\b"]
+  FMyA: ["\\bFMyA\\b", "Fundación Mercado y Agro"]
+
+# Diarios con RSS de economía. Se respeta robots.txt (El Cronista lo prohíbe, por eso no está).
+prensa:
+  rss:
+    - https://www.infobae.com/arc/outboundfeeds/rss/category/economia/
+    - https://www.perfil.com/feed/economia
+    - https://eleconomista.com.ar/feed/
+    - https://www.ambito.com/rss/pages/economia.xml

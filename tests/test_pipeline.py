@@ -393,3 +393,36 @@ def test_semanas_alternativas():
     # sin un día no hay semana
     corta = [x for x in serie if x[0] != "2026-11-10"]
     assert not any(r["hasta"] == "2026-11-15" for r in semanas_alt.calcular({"series": {"Nacional": {"01": corta}}}, regiones=("Nacional",)))
+
+
+def test_consultoras_auto_tuits_y_prensa():
+    """D-74: lectores de tuits de las consultoras y de frases de prensa (solo frases inequívocas)."""
+    from datetime import date
+    from ipceer.consultoras_auto import frases_prensa, semana, tuit_analytica, tuit_ecogo, tuit_econviews
+    assert semana("última", 10, 2026) == "2026-W44" and semana("tercer", 11, 2026) == "2026-W47"
+    f = {(x["medida"], x["periodo"], x["rubro"]): x["valor"] for x in tuit_ecogo(
+        "💸 Relevamiento de Precios Minoristas Eco Go | 2da semana de noviembre 2026 📌Var. semanal de alimentos: 0,26% "
+        "📌Proyección RPM Noviembre: 1,9%", date(2026, 11, 17), "u")}
+    assert f == {("semanal", "2026-W46", "alimentos"): 0.26, ("proyeccion_mensual", "2026-11", "total"): 1.9}
+    f = {(x["medida"], x["periodo"], x["rubro"]): x["valor"] for x in tuit_ecogo(
+        "Relevamiento de Precios Minoristas Eco Go | Octubre 2026 📌Var. promedio octubre de Alimentos y bebidas: 2,5% "
+        "📌Var. mensual RPM: 2,1%.", date(2026, 11, 4), "u")}
+    assert f == {("mensual", "2026-10", "alimentos"): 2.5, ("mensual", "2026-10", "total"): 2.1}
+    f = {(x["medida"], x["periodo"]): x["valor"] for x in tuit_econviews(
+        "🛒Nuestro relevamiento de precios arroja caída del 0.1% en la tercer semana de noviembre para una canasta de "
+        "alimentos y bebidas en supermercados. Las últimas 4 semanas acumulan 1.4%.", date(2026, 11, 20), "u")}
+    assert f == {("semanal", "2026-W47"): -0.1, ("promedio_4_semanas", "2026-W47"): 1.4}
+    f = {(x["medida"], x["periodo"]): x["valor"] for x in tuit_econviews(
+        "Nuestro relevamiento de precios arroja una suba de 0.3% en la última semana de octubre para una canasta de "
+        "alimentos y bebidas en supermercados. Octubre cerró con una suba promedio del 2.2%.", date(2026, 11, 2), "u")}
+    assert f == {("semanal", "2026-W44"): 0.3, ("mensual", "2026-10"): 2.2}
+    f = {(x["medida"], x["periodo"]): x["valor"] for x in tuit_analytica(
+        "Durante la tercera semana de octubre @AnalyticaARG registró una variación de 0,8% en los precios de alimentos "
+        "y bebidas. De esta forma, el promedio de cuatro semanas es de 2,6%. Para el nivel general de precios "
+        "proyectan una suba mensual del 2,0% durante octubre.", date(2026, 10, 26), "u")}
+    assert f == {("semanal", "2026-W42"): 0.8, ("promedio_4_semanas", "2026-W42"): 2.6, ("proyeccion_mensual", "2026-10"): 2.0}
+    nombres = {"LCG": [r"\bLCG\b"], "Analytica": [r"\bAnalytica\b"]}
+    t = ("Según LCG, los alimentos subieron 0,3% en la tercera semana de noviembre. "
+         "LCG y Analytica midieron 0,3% y 0,5% en la segunda semana de noviembre en alimentos.")
+    f = frases_prensa(t, nombres, date(2026, 11, 21), "u")
+    assert [(x["fuente"], x["periodo"], x["valor"]) for x in f] == [("LCG", "2026-W47", 0.3)]

@@ -269,7 +269,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
     </nav><button class="tabflecha der" type="button" aria-label="Ver más pestañas" hidden>›</button>
   </div>
   <div class="subbar"><div class="subin">
-    <span class="seg" id="seg-princ" role="group" aria-label="Índices principales"><button data-r="Nacional" data-s="TOTAL">Nivel general</button><button data-r="GBA" data-s="01">Alimentos GBA</button></span>
+    <span class="seg" id="seg-princ" role="group" aria-label="Índices principales"><button data-r="GBA" data-s="01">Alimentos GBA</button><button data-r="Nacional" data-s="TOTAL">Nivel general</button></span>
     <label>Región <select id="f-reg"></select></label>
     <label>Serie <select id="f-ser"></select></label>
     <label>Decimales <span class="seg" id="seg-dec"><button data-v="-1" aria-pressed="false" aria-label="Menos decimales">−</button><button data-v="0" aria-pressed="false" aria-label="Volver a los decimales de cada dato" id="dec-lbl">auto</button><button data-v="1" aria-pressed="false" aria-label="Más decimales">+</button></span></label>
@@ -642,7 +642,7 @@ footer.banner{flex-shrink:0;background:#2840a5;color:#fff;margin-top:0}
           <div class="ct-bar"><span class="seg" id="ct-rub-s" role="group" aria-label="Índice"><button data-v="alimentos">Alimentos</button><button data-v="total">Nivel general</button></span><span class="ct-ed" hidden><button class="btn sec ct-edbtn">Cargar o corregir</button> <button class="btn sec ct-add">+ Consultora</button></span></div>
           <div class="tablewrap"><table class="ct" id="ct-sem"></table></div><div class="src">Fuente: lo publicado por cada consultora; ipceer: dato original de cada semana.</div></div>
         <div class="card s12"><h3>Dato mensual por consultora</h3><p class="cap">El dato del mes y, si todavía no lo publicaron, su última proyección (en cursiva, con <span class="mono">p</span>).</p>
-          <div class="ct-bar"><span class="seg" id="ct-rub-m" role="group" aria-label="Índice"><button data-v="total">Nivel general</button><button data-v="alimentos">Alimentos</button></span><span class="ct-ed" hidden><button class="btn sec ct-edbtn">Cargar o corregir</button> <button class="btn sec ct-add">+ Consultora</button></span></div>
+          <div class="ct-bar"><span class="seg" id="ct-rub-m" role="group" aria-label="Índice"><button data-v="alimentos">Alimentos</button><button data-v="total">Nivel general</button></span><span class="ct-ed" hidden><button class="btn sec ct-edbtn">Cargar o corregir</button> <button class="btn sec ct-add">+ Consultora</button></span></div>
           <div class="tablewrap"><table class="ct" id="ct-mes"></table></div><div class="src">Fuente: lo publicado por cada consultora; INDEC para el dato oficial.</div></div>
         <dialog id="ct-dlg"><form method="dialog" id="ct-form"><h3 id="ct-tit" style="margin:0 0 4px"></h3><div class="cap" id="ct-sub"></div>
           <label for="ct-v">Variación (%)</label><input id="ct-v" inputmode="decimal" placeholder="0,4">
@@ -710,9 +710,9 @@ const semLbl = s => diaLbl(s.desde)+'–'+diaLbl(s.hasta);
 const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 const SERIES = {TOTAL:'Nivel general (bienes relevados)','01':'Alimentos y bebidas no alcohólicas','02':'Bebidas alcohólicas y tabaco','05':'Equipamiento y mantenimiento del hogar','09':'Recreación y cultura','12':'Bienes y servicios varios'};
-const st = {reg:'Nacional', ser:'TOTAL', semModo:'s'};
-/* sin nivel general publicado todavía, la página arranca en alimentos de GBA */
-if(!((((D.series||{}).Nacional||{}).TOTAL||{}).semanal||[]).length&&(((D.series||{}).GBA||{})['01'])){ st.reg='GBA'; st.ser='01'; }
+/* la página arranca siempre en alimentos de GBA, semanal (lo que se difunde); el nivel general queda a un clic */
+const st = {reg:'GBA', ser:'01', semModo:'s'};
+if(!(((D.series||{}).GBA||{})['01'])){ st.reg='Nacional'; st.ser='TOTAL'; }
 const charts = {};
 
 function serie(){ return (D.series[st.reg]||{})[st.ser] || {}; }
@@ -1639,7 +1639,7 @@ function nuestro(x){
   return {v:null,txt:'medida no comparable'};
 }
 /* D-69: tablas por consultora, con carga manual por GitHub */
-let EXT_DB={}, EXT_CONS={}, _ctEdit=false, _ctRubS='alimentos', _ctRubM='total';
+let EXT_DB={}, EXT_CONS={}, _ctEdit=false, _ctRubS='alimentos', _ctRubM='alimentos';
 const extClave=x=>[x.fuente,x.periodo,x.medida,(x.rubro||'').toLowerCase(),x.region||''].join('|');
 const extId=x=>extClave(x).replace(/[^A-Za-z0-9_\-.~:@+]/g,'_').replace(/\|/g,'~').slice(0,190);
 function extTodos(){
@@ -1657,14 +1657,16 @@ function ctTabla(id,E,med,rub){
   const sem=med==='semanal', esMed=x=>sem?x.medida==='semanal':(x.medida==='mensual'||x.medida==='proyeccion_mensual');
   const X=E.filter(x=>esMed(x)&&(x.rubro||'').toLowerCase()===rub&&x.valor!=null&&x.tipo!=='municipio');
   /* columnas: los últimos períodos (8 semanas, 6 meses) hasta el último con dato nuestro o de alguna consultora */
-  const cod=RUBRO_COD[rub], sN=((D.series.Nacional||{})[cod]||{})[sem?'semanal':'mensual']||[];
-  let per=[...new Set([...X.map(x=>x.periodo),...sN.map(s=>s[sem?'semana':'periodo'])])].sort(); per=per.slice(-(sem?8:6));
+  /* ipceer: alimentos semanal de GBA (lo que se difunde); el resto, nacional. La serie mensual usa la clave "mes" */
+  const cod=RUBRO_COD[rub], regI=(sem&&rub==='alimentos'&&D.series.GBA)?'GBA':'Nacional', kP=sem?'semana':'mes';
+  const sN=((D.series[regI]||{})[cod]||{})[sem?'semanal':'mensual']||[];
+  let per=[...new Set([...X.map(x=>x.periodo),...sN.filter(s=>s.var!=null).map(s=>s[kP])])].filter(Boolean).sort(); per=per.slice(-(sem?8:6));
   const fuentes=[...new Set([...X.map(x=>x.fuente),...Object.keys(EXT_CONS)])].sort((a,b)=>a.localeCompare(b,'es'));
   const pl=p=>sem?semS(p):mesLbl(p);
-  const nos=p=>{ if(sem){ const o=((D.originales||{}).Nacional||{})[cod]||{}; if(o[p]!=null) return o[p]; } const s=sN.find(s=>s[sem?'semana':'periodo']===p); return s?s.var:null; };
+  const nos=p=>{ if(sem){ const o=((D.originales||{})[regI]||{})[cod]||{}; if(o[p]!=null) return o[p]; } const s=sN.find(s=>s[kP]===p); return s?s.var:null; };
   const ind=sem?null:p=>indecMes(rub,p);
   let h='<thead><tr><th>'+(sem?'Semana':'Mes')+'</th>'+per.map(p=>`<th class="n">${pl(p)}</th>`).join('')+'</tr></thead><tbody>';
-  h+='<tr class="nos"><td>ipceer</td>'+per.map(p=>{ const v=nos(p); return `<td class="c">${v!=null?pct(v,sem?2:1):'–'}</td>`; }).join('')+'</tr>';
+  h+='<tr class="nos"><td>ipceer'+(regI==='GBA'?' <sup>GBA</sup>':'')+'</td>'+per.map(p=>{ const v=nos(p); return `<td class="c">${v!=null?pct(v,sem?2:1):'–'}</td>`; }).join('')+'</tr>';
   if(!sem&&per.some(p=>ind(p)!=null)) h+='<tr><td>INDEC</td>'+per.map(p=>{ const v=ind(p); return `<td class="c">${v!=null?pct(v,1):'–'}</td>`; }).join('')+'</tr>';
   h+=fuentes.map(f=>'<tr><td>'+esc(f)+'</td>'+per.map(p=>{ const x=ctCelda(X.filter(x=>x.fuente===f&&x.periodo===p));
       const at=`data-f="${esc(f)}" data-p="${p}" data-m="${med}" data-r="${rub}"`;
@@ -1772,7 +1774,7 @@ function renderExt(){
 
 
 /* gráfico de puntos como el de la Fed: todas las mediciones de un período sobre la misma vertical; si dos coinciden, quedan lado a lado */
-const stDots={f:'s',r:'total',n:true,mes:''}, DOTS_DESDE_SEM='2026-W44', DOTS_DESDE_MES='2026-10';
+const stDots={f:'s',r:'alimentos',n:true,mes:''}, DOTS_DESDE_SEM='2026-W44', DOTS_DESDE_MES='2026-10';
 const mesDeSemD=w=>{ const d=lunesISO(w); d.setUTCDate(d.getUTCDate()+3); return d.toISOString().slice(0,7); }; /* la semana va al mes de su jueves */
 /* datos oficiales del INDEC: variación mensual publicada (v_m_IPC) del rubro, Nacional */
 function indecMes(rub,m){ const v=(((D.indec_var||{})[rub]||{}).Nacional||{})[m]; if(v!=null) return v;

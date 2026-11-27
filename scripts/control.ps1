@@ -87,13 +87,19 @@ if ($Subir -and (Get-Command gh -ErrorAction SilentlyContinue)) {
     }
     # tablero: lo sirve el Worker "ipceer" de Cloudflare (ipceer.tadeobessega.workers.dev); solo la HP15
     # sube tablero.html; los otros nodos suben tablero_<nodo>.html para comparar
-    if (Test-Path "$Repo\sitio\index.html") {
+    # D-77: si el cálculo de esta corrida falló, no se suben el tablero ni los datos (serían los de un
+    # cálculo viejo y Cloudflare los mostraría como actuales); GitHub sirve el suyo
+    $calcOk = $true
+    try { $pj = Get-Content "$Repo\resultados\ultima_corrida_pasos.json" -Raw -Encoding utf8 | ConvertFrom-Json
+          if ("$($pj.'Cálculo')" -like "con errores*" -or "$($pj.'Tablero')" -like "con errores*") { $calcOk = $false } } catch {}
+    if (-not $calcOk) { Write-Output "El cálculo falló: no se suben tablero ni datos de esta PC." }
+    if ($calcOk -and (Test-Path "$Repo\sitio\index.html")) {
       $nt = if ($Nodo -eq "hp15") { "tablero.html" } else { "tablero_$Nodo.html" }
       Copy-Item "$Repo\sitio\index.html" "$env:TEMP\$nt" -Force
       gh release upload sepa-archivo "$env:TEMP\$nt" --clobber -R $R 2>&1 | Write-Output
     }
     # datos del último cálculo: GitHub los usa para las partes que no puede recalcular (D-49)
-    if (Test-Path "$Repo\resultados\datos.json") {
+    if ($calcOk -and (Test-Path "$Repo\resultados\datos.json")) {
       Copy-Item "$Repo\resultados\datos.json" "$env:TEMP\datos_$suf.json" -Force
       gh release upload sepa-archivo "$env:TEMP\datos_$suf.json" --clobber -R $R 2>&1 | Write-Output
     }

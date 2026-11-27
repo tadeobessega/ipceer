@@ -106,7 +106,17 @@ jobs:
             ult_pc=$(python -c "import json;print(json.load(open('estado_pc.json'))['ultimo_dia'])")
           fi
           echo "GitHub tiene hasta $ult_gh; la PC, hasta ${ult_pc:-?}"
-          if [[ -z "$ult_pc" || "$ult_gh" > "$ult_pc" ]]; then
+          # D-77: además, si el tablero.html de la PC se generó hace más de 30 h (su cálculo viene fallando
+          # aunque baje SEPA), se reemplaza igual: Cloudflare no puede quedar mostrando un cálculo viejo
+          viejo=0
+          if gh release download "$TAG" -p tablero.html -O tablero_pc.html --clobber 2>/dev/null; then
+            gen=$(grep -o '"generado": *"[^"]*"' tablero_pc.html | head -1 | sed 's/.*: *"\(.*\)"/\1/')
+            if [ -n "$gen" ]; then
+              edad=$(( ( $(date -u +%s) - $(date -d "${gen}-03:00" +%s) ) / 3600 ))
+              echo "tablero.html de la PC generado $gen (hace $edad h)"; [ "$edad" -gt 30 ] && viejo=1
+            fi
+          fi
+          if [[ -z "$ult_pc" || "$ult_gh" > "$ult_pc" || "$viejo" = 1 ]]; then
             cp tablero_github.html tablero.html
             gh release upload "$TAG" tablero.html --clobber
             echo "tablero.html reemplazado por el de GitHub"

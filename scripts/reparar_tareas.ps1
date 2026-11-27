@@ -34,8 +34,8 @@ foreach ($n in "IPCEER diario", "IPCEER historico", "IPCEER verificacion 18 h", 
   $s.StartWhenAvailable = $true
   $s.DisallowStartIfOnBatteries = $false
   $s.StopIfGoingOnBatteries = $false
-  try { Set-ScheduledTask -TaskName $n -Principal $p -Settings $s -ErrorAction Stop | Out-Null; Log "Tarea $n: con la sesión del usuario" }
-  catch { Log "ERROR al cambiar $n: $($_.Exception.Message)" }
+  try { Set-ScheduledTask -TaskName $n -Principal $p -Settings $s -ErrorAction Stop | Out-Null; Log "Tarea ${n}: con la sesión del usuario" }
+  catch { Log "ERROR al cambiar ${n}: $($_.Exception.Message)" }
 }
 
 # 3. que la PC no se suspenda enchufada (si se suspende, la tarea no corre hasta que se despierte)

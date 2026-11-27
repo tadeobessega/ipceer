@@ -40,8 +40,8 @@ foreach ($n in "IPCEER verificacion 18 h", "IPCEER control") {
   $t = Get-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue; if (-not $t) { continue }
   $s = $t.Settings; $s.RunOnlyIfNetworkAvailable = $false; $s.StartWhenAvailable = $true
   $s.DisallowStartIfOnBatteries = $false; $s.StopIfGoingOnBatteries = $false
-  try { Set-ScheduledTask -TaskName $n -Principal $p -Settings $s -ErrorAction Stop | Out-Null; Log "$n: con la sesión del usuario" }
-  catch { Log "ERROR en $n: $($_.Exception.Message)" }
+  try { Set-ScheduledTask -TaskName $n -Principal $p -Settings $s -ErrorAction Stop | Out-Null; Log "${n}: con la sesión del usuario" }
+  catch { Log "ERROR en ${n}: $($_.Exception.Message)" }
 }
 if (Get-ScheduledTask -TaskName "IPCEER historico" -ErrorAction SilentlyContinue) {
   Disable-ScheduledTask -TaskName "IPCEER historico" | Out-Null; Log "IPCEER historico: desactivada en esta PC (la hace la HP15)"

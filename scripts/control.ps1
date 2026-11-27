@@ -69,6 +69,13 @@ if ($Subir -and (Get-Command gh -ErrorAction SilentlyContinue)) {
           gh release upload sepa-archivo $_.FullName -R $R 2>&1 | Write-Output
         }
     }
+    # D-76: precios web relevados por este nodo (últimos 3 días), al release como web_<nodo>_<fecha>.parquet
+    if ($env:IPCEER_SCRAPEO -eq "1") {
+      Get-ChildItem "$Repo\data\web\20*.parquet" -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -gt (Get-Date).AddDays(-3) } | ForEach-Object {
+        $n = "web_$($Nodo)_$($_.Name)"; Copy-Item $_.FullName "$env:TEMP\$n" -Force
+        gh release upload sepa-archivo "$env:TEMP\$n" --clobber -R $R 2>&1 | Write-Output
+      }
+    }
     # latido del nodo (lo lee vigilancia.yml)
     Copy-Item $destino "$env:TEMP\estado_$Nodo.json" -Force
     gh release upload sepa-archivo "$env:TEMP\estado_$Nodo.json" --clobber -R $R 2>&1 | Write-Output

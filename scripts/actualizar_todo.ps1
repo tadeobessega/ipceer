@@ -109,7 +109,10 @@ Paso "SEPA: procesamiento" { Ipceer procesar }
 Paso "Nombres de las cadenas" { Ipceer cadenas }
 Paso "Municipios (Morón)" { Ipceer municipios }
 Paso "Otras fuentes (traídas de GitHub)" { Ipceer otras --desde-github }
-Paso "Precios web (tiendas en línea)" { Ipceer web --sin-bajar }
+# D-76: el nodo con IPCEER_SCRAPEO=1 (la ThinkPad) releva las tiendas en línea él mismo; los demás solo
+# rearman con lo que bajó GitHub. Lo propio y lo de GitHub conviven (gana lo de la PC) y se comparan.
+if ($env:IPCEER_SCRAPEO -eq "1") { Paso "Precios web (relevamiento propio)" { Ipceer web } }
+else { Paso "Precios web (tiendas en línea)" { Ipceer web --sin-bajar } }
 # Reconsolidar todo (2016 en adelante) tarda más de media hora: solo se hace si cambiaron las reglas
 # de clasificación; si no, se consolidan solo las semanas y meses nuevos.
 $reglas = (Get-FileHash "$Repo\config\clasificador.yaml").Hash + (Get-FileHash "$Repo\config\clasificacion_manual.csv" -ErrorAction SilentlyContinue).Hash

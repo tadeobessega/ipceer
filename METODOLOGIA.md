@@ -909,6 +909,13 @@ el total no se presenta como nivel general.
   se comparaba con el promedio simple semanal, unas 4 veces menor). El tablero suma la inflación acumulada
   por consultora desde la semana que se elija; una semana sin dato de una consultora no suma y se indica.
   No cambia ningún número del índice.
+- **D-76 (27/11/2026). El relevamiento de tiendas en línea pasa a la ThinkPad.** La tarea diaria de la
+  ThinkPad corre todos los días a las 08:00 y a las 13:00 (`scripts/nodo_scrapeo.ps1`) y, con
+  `IPCEER_SCRAPEO=1`, releva ella misma las tiendas en línea (`ipceer web`) además de SEPA. Lo propio se
+  guarda como `data/web/AAAA-MM-DD.parquet` y se sube al release como `web_thinkpad_<fecha>.parquet`;
+  lo de GitHub (`gh_`) sigue llegando y, para un mismo artículo, gana lo de la PC. El relevamiento de
+  GitHub Actions se apaga recién cuando varios días seguidos den lo mismo (artículos y precios por
+  tienda). Otras fuentes y telefonía se mueven después, de a una. La HP15 sigue igual, como respaldo.
 - **D-68 (18/11/2026). Rotación sin ponderar.** Además de la parte de la canasta (ponderada) cuyos
   precios cambiaron, subieron y bajaron, se publica la parte de los precios relevados que cambió,
   contando cada precio igual (y cuántos son).

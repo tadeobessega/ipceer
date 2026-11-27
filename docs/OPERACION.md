@@ -94,6 +94,8 @@ otros ya están haciendo el trabajo, no hace falta "pasarle la posta".
   hay terminal en esa PC: la instalación la tiene que lanzar Tadeo una vez, o un chat abierto en ella.
 - ThinkPad, 25/11: la primera corrida se trabó en la Wayback (arreglado en D-72) y las tareas nunca
   arrancaron (267011, política del dominio): `scripts/reparar_tareas.ps1` (D-73).
+- 27/11: la ThinkPad pasa a relevar las tiendas en línea, todos los días 08:00 y 13:00
+  (`scripts/nodo_scrapeo.ps1`, D-76). GitHub sigue relevando en paralelo hasta comparar.
 - Pendiente: comparar varios días ThinkPad contra HP15 y GitHub (paso 3), mover scrapers de a uno
   (paso 4, segunda parte) y la memoria del cálculo (paso 5).
 
